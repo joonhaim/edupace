@@ -41,44 +41,14 @@ The system communicates via serial USB, reproducing real-time pacing responses s
 
 ---
 
-## 💡 Training Features
-
-- Adjustable pacing modes: **VVI** and **VOO**  
-- Adjustable parameters with visible numeric feedback  
-- ECG variations (bradycardia, asystole, PVCs, PACs)  
-- **Capture and sensing** threshold training  
-- Visual error alerts (e.g., pacing on T-wave → red screen)  
-- **Sound and alarm feedback** for realistic clinical simulation  
-
----
-
-## 🧩 Development Roadmap
-
-| Stage | Focus | Key Deliverables |
-|--------|--------|-----------------|
-| ✅ **Prototype 2024** | Proof of concept (Medtronic 53401 copy) | Arduino Mega + PC interface |
-| 🔄 **Upgrade 2025** | Hardware and ECG improvement | GIGA R1 + Display Shield, new UI |
-| 🚀 **Next Steps** | Clinical usability + data logging | Nurse evaluation + scenario expansion |
-
----
-
 ## 🧰 Hardware
 
 - **Arduino GIGA R1 WiFi**
 - **Arduino GIGA Display Shield**
-- Rotary encoders × 3  
-- RGB LEDs × 3  
-- Piezo buzzer (for alarms)  
-- 3D-printed housing based on Medtronic 53401 layout  
 
 ---
 
 ## 💻 Software
-
-- **Language:** C++ / Arduino IDE  
-- **Architecture:** multi-threaded ECG simulation (Heart logic + ECG + Pacemaker)  
-- **Display:** real-time ECG visualization with interactive feedback  
-- **Communication:** Serial data exchange for knob and LED control  
 
 
 ---
