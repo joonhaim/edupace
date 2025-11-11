@@ -80,35 +80,14 @@ The system communicates via serial USB, reproducing real-time pacing responses s
 - **Display:** real-time ECG visualization with interactive feedback  
 - **Communication:** Serial data exchange for knob and LED control  
 
----
-
-## 🏥 Clinical Context
-
-At **Reinier de Graaf Hospital**, external pacemakers are used only occasionally in the CCU, leaving nurses with limited routine.  
-EduPace addresses this gap by providing a **safe, hands-on training platform** to build and maintain confidence in device handling.
-
----
-
-## 🔊 Future Improvements
-
-According to hospital feedback (2024–2025):
-
-- Add **intrinsic rate readout** on screen  
-- Show **narrow vs. broad QRS** complexes  
-- Simulate **realistic voltages and currents**  
-- Include **mal-sensing and wire-displacement scenarios**  
-- Add **audible alarms and case-based training modules**  
 
 ---
 
 ## 👥 Contributors
 
-- **Minor BME 2025 Team:** EduPace 2.0  
+- **Minor BME 2025 Team:**  
 - **Reinier de Graaf Hospital:** Paul Verschuren (Clinical Supervisor)  
-- **TU Delft Faculty of Mechanical, Maritime and Materials Engineering**
-
-Based on work by **Group 8 (2024)** – *Bayle et al., TU Delft*  
-🔗 [Original Repository — AdamBayle/BME-Project](https://github.com/AdamBayle/BME-Project)
+- **TU Delft Faculty of Mechanical Engineering**
 
 ---
 
