@@ -114,7 +114,6 @@ Based on work by **Group 8 (2024)** – *Bayle et al., TU Delft*
 
 ## ⚠️ Disclaimer
 
-EduPace is **for educational use only**.  
-It is **not a medical device** and must **never be connected to a patient**.
+EduPace is **for educational use only** and is **not a medical device**.
 
 ---
