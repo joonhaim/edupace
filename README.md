@@ -1,2 +1,2 @@
-# edupace
+# EduPace
 EduPace
