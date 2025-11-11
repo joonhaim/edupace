@@ -55,9 +55,8 @@ The system communicates via serial USB, reproducing real-time pacing responses s
 
 ## 👥 Contributors
 
-- **Minor BME 2025 Team:**  
+- **Minor BME 2025 Team:**  Ashley Jacobi, Süheyla Nurlu, Adrien Joon-Ha Im, Cees Vlasman 
 - **Reinier de Graaf Hospital:** Paul Verschuren (Clinical Supervisor)  
-- **TU Delft Faculty of Mechanical Engineering**
 
 ---
 
