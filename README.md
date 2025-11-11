@@ -3,65 +3,37 @@
 **EduPace** is an educational simulator that trains nurses and students to configure a **temporary external single-chamber pacemaker** safely and realistically.  
 It allows users to practice pacing, sensing, and threshold adjustments **without patient risk**.
 
-Developed within the **TU Delft Minor Biomedical Engineering (2025)** in collaboration with the **Reinier de Graaf Hospital (Delft)**, this version builds upon the **2024 prototype (Group 8)** with new hardware, improved ECG realism, and a redesigned interface.
+Developed within the **TU Delft Minor Biomedical Engineering (2025)** in collaboration with the **Reinier de Graaf Hospital (Delft)**, this version builds upon the **2024 prototype (Group 8)** with new hardware and an improved, more intuitive interface.
 
 ---
 
 ## 🔧 Overview
 
-EduPace replicates the functions of the **Medtronic 53401 Temporary External Pacemaker** through a combination of:
+EduPace replicates the behavior of the **Medtronic 53401 Temporary External Pacemaker** using:
 
-- 🖥️ **Software simulator** with real-time ECG visualization  
-- ⚙️ **Physical control unit** with functional knobs, LEDs, and display  
+- 🖥️ A software-based ECG simulator  
+- ⚙️ A physical control unit with knobs, LEDs, and display  
 
-Together they create a realistic environment to train on **rate, output, and sensitivity** adjustments, threshold finding, and pacing modes.
-
----
-
-## 🎯 Project Objectives
-
-- Upgrade hardware to **Arduino GIGA R1 WiFi** + **GIGA Display Shield**  
-- Develop modular software for flexible scenarios and ECG generation  
-- Simulate **intrinsic rhythms**, **PVCs/PACs**, **loss of capture**, and **mal-sensing**  
-- Add **visual + auditory feedback** for user errors and alarms  
-- Enable **data logging** for training review and progress tracking  
+Together, they provide a safe and realistic environment for pacing practice.
 
 ---
 
-## 🧠 System Concept
-
-EduPace integrates two main components:
+## 🧩 System
 
 | Component | Function |
 |------------|-----------|
-| **Hardware unit** | Knobs for *Rate*, *Output*, *Sensitivity* + LED feedback (Pace / Sense / Async) |
-| **Software interface** | ECG display + scenario menu + error and threshold feedback |
-
-The system communicates via serial USB, reproducing real-time pacing responses similar to the Medtronic 53401.
-
----
-
-## 🧰 Hardware
-
-- **Arduino GIGA R1 WiFi**
-- **Arduino GIGA Display Shield**
-
----
-
-## 💻 Software
-
+| **Hardware** | Arduino GIGA R1 WiFi + Display Shield |
+| **Software** | Real-time ECG and pacemaker interaction (TBD) |
 
 ---
 
 ## 👥 Contributors
 
-- **Minor BME 2025 Team:**  Ashley Jacobi, Süheyla Nurlu, Adrien Joon-Ha Im, Cees Vlasman 
-- **Reinier de Graaf Hospital:** Paul Verschuren (Clinical Supervisor)  
+- **Minor BME 2025 Team:** Ashley Jacobi, Süheyla Nurlu, Adrien Joon-Ha Im, Cees Vlasman  
+- **Reinier de Graaf Hospital:** Paul Verschuren (Clinical Supervisor)
 
 ---
 
 ## ⚠️ Disclaimer
 
-EduPace is **for educational use only** and is **not a medical device**.
-
----
+EduPace is **for educational use only** and **not a medical device**.
