@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>EduPace</title>
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+  <body>
+    <header class="top-bar">
+      <h1>EduPace – Temporary Pacemaker Simulator</h1>
+    </header>
+
+    <main class="layout">
+      <section class="ecg-panel">
+        <canvas id="ecgCanvas" width="1200" height="300"></canvas>
+      </section>
+
+      <section class="controls-panel">
+        <!-- later we will add: rate/output/sensitivity, LEDs, etc. -->
+        <div id="controlsRoot"></div>
+      </section>
+    </main>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
