@@ -1,4 +1,4 @@
-# 🫀 EduPace — External Pacemaker Training Simulator
+# EduPace — External Temporary Pacemaker Training Simulator
 
 **EduPace** is an educational simulator that trains nurses and students to configure a **temporary external single-chamber pacemaker** safely and realistically. It allows users to practice pacing, sensing, and threshold adjustments.
 
