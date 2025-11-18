@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EduPace – Simulator</title>
+    <meta name="application-name" content="EduPace">
+    <meta name="theme-color" content="#050d1c">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body class="simulation-dark theme-transition">
+    <div class="app-shell">
+        <!-- Top nav -->
+        <header class="global-nav">
+            <div class="global-nav-inner">
+                <div class="brand">EduPace</div>
+                <nav class="nav-buttons" aria-label="Primary navigation">
+                    <a class="nav-btn" href="index.html">Home</a>
+                    <a class="nav-btn active" href="simulation.html">Simulation</a>
+                    <a class="nav-btn" href="instructions.html">Instructions</a>
+                </nav>
+                <div class="nav-actions">
+                    <label class="language-label" for="languageSelect">Language</label>
+                    <select id="languageSelect" aria-label="Language selector">
+                        <option value="en">EN</option>
+                        <option value="nl">NL</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <main class="screen-stack">
+            <section aria-label="Simulation">
+                <div class="sim-shell">
+                    <div class="sim-header">
+                        <div>
+                            <p class="eyebrow">Hands-on practice</p>
+                            <h2>Patient monitor simulator</h2>
+                        </div>
+                        <div class="connection-group">
+                            <span class="connection-label">Device</span>
+                            <span id="connectionStatus" class="chip chip-disconnected">DISCONNECTED</span>
+                        </div>
+                    </div>
+
+                    <div class="scenario-banner" role="region" aria-label="Scenario selection">
+                        <div class="scenario-banner-text">
+                            <span class="scenario-pill">Scenario</span>
+                            <div id="scenarioName" class="scenario-name">No scenario active</div>
+                            <p id="scenarioText" class="scenario-text">
+                                Select a scenario to begin a training case.
+                            </p>
+                        </div>
+                        <div class="scenario-controls" aria-label="Scenario controls">
+                            <label for="scenarioSelect" class="scenario-label">Choose scenario</label>
+                            <select id="scenarioSelect" class="scenario-select">
+                                <option value="" disabled selected>Loading scenarios…</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="sim-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Scenario</span>
+                            <span class="summary-value" id="summaryScenario">
+                                Training case · Junctional bradycardia
+                            </span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Location</span>
+                            <span class="summary-value">CCU · Bay 3</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Primary rhythm</span>
+                            <span class="summary-value" id="rhythmLabel">
+                                Junctional bradycardia
+                            </span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Monitoring</span>
+                            <span class="summary-value">25 mm/s · 10 s window</span>
+                        </div>
+                    </div>
+
+                    <div class="sim-main">
+                        <!-- Left: ECG + vitals -->
+                        <section class="graph-column" aria-label="Telemetry">
+                            <div id="alarmBanner" class="alarm-banner alarm-normal">
+                                <span id="alarmText">No active alarms</span>
+                            </div>
+
+                            <div class="ecg-frame">
+                                <canvas id="ecgCanvas" width="1200" height="350"></canvas>
+                                <div class="ecg-overlay">
+                                    <div class="ecg-label">
+                                        <span class="label-heading">Lead</span>
+                                        <button
+                                            type="button"
+                                            id="leadLabel"
+                                            class="lead-indicator"
+                                            title="Toggle ECG lead"
+                                            aria-live="polite">Lead II</button>
+                                    </div>
+                                    <div class="ecg-vitals">
+                                        <div class="vital-block">
+                                            <span class="vital-label">HR</span>
+                                            <span id="hrValue" class="vital-value hr-value">--</span>
+                                            <span class="vital-unit">bpm</span>
+                                        </div>
+                                        <div class="vital-block">
+                                            <span class="vital-label">PACE</span>
+                                            <span id="paceMode" class="vital-value pace-value small">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="telemetry-grid" aria-label="Supplemental vitals">
+                                <div class="telemetry-item">
+                                    <span class="telemetry-label">ART BP</span>
+                                    <div>
+                                        <span id="bpValue" class="telemetry-value">118/64</span>
+                                        <span class="telemetry-unit">mmHg</span>
+                                    </div>
+                                </div>
+                                <div class="telemetry-item">
+                                    <span class="telemetry-label">SpO₂</span>
+                                    <div>
+                                        <span id="spo2Value" class="telemetry-value">98</span>
+                                        <span class="telemetry-unit">%</span>
+                                    </div>
+                                </div>
+                                <div class="telemetry-item">
+                                    <span class="telemetry-label">Temp</span>
+                                    <div>
+                                        <span id="tempValue" class="telemetry-value">36.7</span>
+                                        <span class="telemetry-unit">°C</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="calibration-note">
+                                <span class="calibration-label">Calibration</span>
+                                <span class="calibration-value">
+                                    10 mm/mV · 25 mm/s · 10 s window · Not for diagnostic use
+                                </span>
+                            </div>
+                        </section>
+
+                        <!-- Right: controls -->
+                        <aside class="control-column" aria-label="Controls">
+                            <div class="card mode-card">
+                                <div class="card-heading">
+                                    <h3>Input source</h3>
+                                    <p>Select hardware or virtual control.</p>
+                                </div>
+                                <div class="mode-row">
+                                    <label class="mode-option">
+                                        <input type="radio" name="inputMode" value="hardware" checked>
+                                        <span>Hardware (Arduino)</span>
+                                    </label>
+                                    <label class="mode-option">
+                                        <input type="radio" name="inputMode" value="virtual">
+                                        <span>Virtual controller</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="card parameters-card">
+                                <h3 class="card-title">Pacemaker parameters</h3>
+                                <div class="param-grid">
+                                    <div class="param-tile">
+                                        <div class="param-label">Rate</div>
+                                        <div class="param-value">
+                                            <span id="rateValue">--</span>
+                                            <span class="param-unit">bpm</span>
+                                        </div>
+                                    </div>
+                                    <div class="param-tile">
+                                        <div class="param-label">Output</div>
+                                        <div class="param-value">
+                                            <span id="outputValue">--</span>
+                                            <span class="param-unit">mA</span>
+                                        </div>
+                                    </div>
+                                    <div class="param-tile">
+                                        <div class="param-label">Sensitivity</div>
+                                        <div class="param-value">
+                                            <span id="sensValue">--</span>
+                                            <span class="param-unit">mV</span>
+                                        </div>
+                                    </div>
+                                    <div class="param-tile">
+                                        <div class="param-label">Mode</div>
+                                        <div class="param-value">
+                                            <span id="modeValue">VVI</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="led-row">
+                                    <div class="led-group">
+                                        <div class="led led-pace" id="paceLed"></div>
+                                        <span>PACE</span>
+                                    </div>
+                                    <div class="led-group">
+                                        <div class="led led-sense" id="senseLed"></div>
+                                        <span>SENSE</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card performance-card">
+                                <h3 class="card-title">Performance</h3>
+                                <div class="perf-row">
+                                    <span>Current objective</span>
+                                    <span id="objectiveText" class="perf-value">–</span>
+                                </div>
+                                <div class="perf-row">
+                                    <span>Feedback</span>
+                                    <span id="feedbackText" class="perf-value small">–</span>
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
+
+                    <footer class="sim-footer">
+                        <span>Ventricular single-chamber training only · EduPace</span>
+                    </footer>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <p>© 2025 EduPace</p>
+        </footer>
+    </div>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

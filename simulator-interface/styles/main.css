@@ -1,37 +1,300 @@
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Inter, Arial, sans-serif;
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #050608;
-  color: #f5f5f5;
+    background: #f6f8fb;
+    color: #1c1c1c;
+    line-height: 1.6;
 }
 
-.top-bar {
-  padding: 12px 24px;
-  border-bottom: 1px solid #222;
-  background: #0a0c10;
+a {
+    text-decoration: none;
+    color: inherit;
 }
 
-.layout {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 16px;
-  padding: 16px 24px;
-  height: calc(100vh - 56px);
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
-.ecg-panel {
-  background: #0b0d11;
-  border: 1px solid #222;
-  padding: 12px;
+.global-nav {
+    background: #ffffff;
+    border-bottom: 1px solid #dce2ea;
 }
 
-.controls-panel {
-  background: #0b0d11;
-  border: 1px solid #222;
-  padding: 12px;
+.global-nav-inner {
+    max-width: 1100px;
+    margin: auto;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brand {
+    font-weight: 600;
+    font-size: 1.4rem;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 1.2rem;
+}
+
+.nav-btn {
+    padding: 0.4rem 0.2rem;
+    color: #4a5568;
+}
+
+.nav-btn.active {
+    font-weight: 600;
+    color: #0b74c9;
+}
+
+.nav-actions select {
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #c4cbd6;
+    background: #fff;
+}
+
+.screen-stack {
+    flex: 1;
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 1rem;
+    width: 100%;
+}
+
+.eyebrow {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #6b7280;
+    letter-spacing: 0.05em;
+}
+
+h1, h2, h3 {
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+}
+
+.landing-panel {
+    padding: 2rem;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e1e5ec;
+}
+
+.landing-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.8rem 1.3rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.btn-primary {
+    background: #0b74c9;
+    color: #ffffff;
+}
+
+.btn-ghost {
+    background: #eef1f6;
+    color: #1c1c1c;
+}
+
+.instructions-shell {
+    background: #ffffff;
+    border: 1px solid #e1e5ec;
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.instruction-list {
+    margin-top: 1rem;
+    padding-left: 1.2rem;
+}
+
+.instruction-list li {
+    margin-bottom: 1.3rem;
+}
+
+.sim-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.sim-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chip {
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.chip-disconnected {
+    background: #ffe3e3;
+    color: #b90000;
+}
+
+.scenario-banner {
+    display: flex;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #e1e5ec;
+    padding: 1rem 1.2rem;
+    border-radius: 12px;
+}
+
+.scenario-pill {
+    padding: 0.2rem 0.5rem;
+    background: #0b74c9;
+    color: #ffffff;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.sim-main {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+}
+
+.graph-column,
+.control-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.ecg-frame {
+    position: relative;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e1e5ec;
+    padding: 1rem;
+}
+
+.ecg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 0.6rem;
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.vital-block {
+    text-align: right;
+}
+
+.vital-value {
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.param-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+}
+
+.param-tile {
+    background: #ffffff;
+    border: 1px solid #e1e5ec;
+    border-radius: 10px;
+    padding: 1rem;
+}
+
+.card {
+    background: #ffffff;
+    border: 1px solid #e1e5ec;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.led-row {
+    display: flex;
+    gap: 1.2rem;
+    margin-top: 1rem;
+}
+
+.led-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.led {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #333;
+}
+
+.site-footer {
+    padding: 1.5rem;
+    text-align: center;
+    color: #6e7782;
+    font-size: 0.85rem;
+}
+
+/* Dark mode */
+
+body.simulation-dark {
+    background: #0a0d12;
+    color: #e5e8ed;
+}
+
+body.simulation-dark .global-nav {
+    background: #10141a;
+    border-bottom-color: #1d232d;
+}
+
+body.simulation-dark .nav-btn {
+    color: #b7c0cd;
+}
+
+body.simulation-dark .nav-btn.active {
+    color: #4facff;
+}
+
+body.simulation-dark .landing-panel,
+body.simulation-dark .instructions-shell,
+body.simulation-dark .card,
+body.simulation-dark .param-tile,
+body.simulation-dark .ecg-frame,
+body.simulation-dark .scenario-banner {
+    background: #131821;
+    border-color: #1f242e;
+}
+
+body.simulation-dark .btn-primary {
+    background: #3c7ff0;
+}
+
+body.simulation-dark .btn-ghost {
+    background: #1d2330;
+    color: #d7dce5;
+}
+
+body.simulation-dark .led {
+    background: #4facff;
 }

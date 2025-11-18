@@ -1,26 +1,71 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>EduPace</title>
-    <link rel="stylesheet" href="styles/main.css" />
-  </head>
-  <body>
-    <header class="top-bar">
-      <h1>EduPace – Temporary Pacemaker Simulator</h1>
-    </header>
+    <meta name="description"
+          content="EduPace is an educational simulator for temporary external single-chamber ventricular pacing.">
+    <meta name="application-name" content="EduPace">
+    <meta name="theme-color" content="#0b74c9">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Top nav -->
+        <header class="global-nav">
+            <div class="global-nav-inner">
+                <div class="brand">EduPace</div>
+                <nav class="nav-buttons" aria-label="Primary navigation">
+                    <a class="nav-btn active" href="index.html">Home</a>
+                    <a class="nav-btn" href="simulation.html">Simulation</a>
+                    <a class="nav-btn" href="instructions.html">Instructions</a>
+                </nav>
+                <div class="nav-actions">
+                    <label class="language-label" for="languageSelect">Language</label>
+                    <select id="languageSelect" aria-label="Language selector">
+                        <option value="en">EN</option>
+                        <option value="nl">NL</option>
+                    </select>
+                </div>
+            </div>
+        </header>
 
-    <main class="layout">
-      <section class="ecg-panel">
-        <canvas id="ecgCanvas" width="1200" height="300"></canvas>
-      </section>
+        <!-- Main content -->
+        <main class="screen-stack">
+            <section aria-label="Home page">
+                <div class="landing-panel">
+                    <div class="landing-grid">
+                        <div class="landing-main">
+                            <p class="eyebrow">Ventricular pacing trainer</p>
+                            <h1 class="landing-title">EduPace</h1>
+                            <p class="landing-subtitle">
+                                Focused practice for temporary single-chamber pacing.
+                            </p>
+                            <ul class="landing-highlights">
+                                <li>Real-time ECG with pacing spikes and sensing LEDs</li>
+                                <li>Scenario-based training with feedback</li>
+                            </ul>
+                            <div class="landing-actions">
+                                <a class="btn btn-primary" href="simulation.html">Launch simulator</a>
+                                <a class="btn btn-ghost" href="instructions.html">Instructions</a>
+                            </div>
+                            <p class="landing-meta">
+                                Designed for CCU / ER nurse training · Not for diagnostic use.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
 
-      <section class="controls-panel">
-        <!-- later we will add: rate/output/sensitivity, LEDs, etc. -->
-        <div id="controlsRoot"></div>
-      </section>
-    </main>
-
-    <script type="module" src="src/main.js"></script>
-  </body>
+        <footer class="site-footer">
+            <p>© 2025 EduPace</p>
+        </footer>
+    </div>
+</body>
 </html>

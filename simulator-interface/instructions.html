@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EduPace – Instructions</title>
+    <meta name="application-name" content="EduPace">
+    <meta name="theme-color" content="#0b74c9">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Top nav -->
+        <header class="global-nav">
+            <div class="global-nav-inner">
+                <div class="brand">EduPace</div>
+                <nav class="nav-buttons" aria-label="Primary navigation">
+                    <a class="nav-btn" href="index.html">Home</a>
+                    <a class="nav-btn" href="simulation.html">Simulation</a>
+                    <a class="nav-btn active" href="instructions.html">Instructions</a>
+                </nav>
+                <div class="nav-actions">
+                    <label class="language-label" for="languageSelect">Language</label>
+                    <select id="languageSelect" aria-label="Language selector">
+                        <option value="en">EN</option>
+                        <option value="nl">NL</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <main class="screen-stack">
+            <section aria-label="Instructions">
+                <div class="instructions-shell">
+                    <div>
+                        <p class="eyebrow">Quick start</p>
+                        <h2>Run a pacing session in four steps</h2>
+                    </div>
+
+                    <ol class="instruction-list">
+                        <li>
+                            <h3>Connect the device</h3>
+                            <p>
+                                Plug in the EduPace console via USB-C. Open the Simulation page and
+                                allow the browser to access the serial device when prompted.
+                            </p>
+                        </li>
+                        <li>
+                            <h3>Choose input mode</h3>
+                            <p>
+                                Select <strong>Hardware</strong> if the Arduino console is available.
+                                Otherwise switch to the <strong>Virtual controller</strong> for
+                                keyboard / mouse practice.
+                            </p>
+                        </li>
+                        <li>
+                            <h3>Select a scenario</h3>
+                            <p>
+                                Pick a training case from the scenario dropdown (e.g. symptomatic
+                                bradycardia, undersensing, oversensing) and read the summary banner.
+                            </p>
+                        </li>
+                        <li>
+                            <h3>Adjust pacing parameters</h3>
+                            <p>
+                                Use the knobs (or virtual sliders) to set Rate, Output and Sensitivity.
+                                Watch the ECG, PACE/SENSE LEDs and HR tile to confirm capture and
+                                appropriate sensing.
+                            </p>
+                        </li>
+                    </ol>
+
+                    <div class="instruction-cta">
+                        <a class="btn btn-primary" href="simulation.html">Go to simulator</a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="site-footer">
+            <p>© 2025 EduPace</p>
+        </footer>
+    </div>
+</body>
+</html>
