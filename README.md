@@ -10,8 +10,8 @@ Developed within the **TU Delft Minor Biomedical Engineering (2025)** in collabo
 
 EduPace replicates the behavior of the **Medtronic 53401 Temporary External Pacemaker** using:
 
-- 🖥️ A software-based ECG simulator  
-- ⚙️ A physical control unit with knobs, LEDs, and display  
+- A software-based ECG simulator  
+- A physical control unit with knobs, LEDs, and display  
 
 ---
 
