@@ -13,27 +13,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="styles/main.css">
+    <script src="js/layout.js" defer></script>
 </head>
 <body>
     <div class="app-shell">
         <!-- Top nav -->
-        <header class="global-nav">
-            <div class="global-nav-inner">
-                <div class="brand">EduPace</div>
-                <nav class="nav-buttons" aria-label="Primary navigation">
-                    <a class="nav-btn active" href="index.html">Home</a>
-                    <a class="nav-btn" href="simulation.html">Simulation</a>
                     <a class="nav-btn" href="instructions.html">Instructions</a>
-                </nav>
-                <div class="nav-actions">
-                    <label class="language-label" for="languageSelect">Language</label>
-                    <select id="languageSelect" aria-label="Language selector">
-                        <option value="en">EN</option>
-                        <option value="nl">NL</option>
-                    </select>
-                </div>
-            </div>
-        </header>
+        <div data-partial="nav" data-active-page="home"></div>
 
         <!-- Main content -->
         <main class="screen-stack">
@@ -62,10 +48,7 @@
                 </div>
             </section>
         </main>
-
-        <footer class="site-footer">
-            <p>© 2025 EduPace</p>
-        </footer>
+        <div data-partial="footer"></div>
     </div>
 </body>
 </html>
