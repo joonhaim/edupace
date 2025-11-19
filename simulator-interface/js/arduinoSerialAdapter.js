@@ -29,7 +29,7 @@ function initHardwareIntegration() {
     const supported = 'serial' in navigator;
 
     if (!supported) {
-        updateConnectionStatus('Web Serial not available', false, true);
+        updateConnectionStatus('UNSUPPORTED BROWSER', false, true);
         ui.connectBtn.disabled = true;
     }
 
