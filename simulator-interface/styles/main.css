@@ -898,6 +898,11 @@ body.simulation-dark .nav-actions,
 body.simulation-dark .scenario-text,
 body.simulation-dark .telemetry-unit,
 body.simulation-dark .calibration-note,
-body.simulation-dark .card-heading p {
+body.simulation-dark .card-heading p,
+body.simulation-dark .summary-value {
     color: #c2c7d3;
+}
+
+body.simulation-dark .brand {
+    color: #e5e8ed;
 }
