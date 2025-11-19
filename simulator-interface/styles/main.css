@@ -5,6 +5,7 @@
     --frost: #f5f7fa;
     --frost-strong: #e6ecf5;
     --grid-line: rgba(23, 42, 69, 0.08);
+    --grid-line-dark: rgba(255, 255, 255, 0.035);
     --muted: #5f7088;
     --card: #ffffff;
     --border: #d7deea;
@@ -538,6 +539,13 @@ h1, h2, h3 {
     overflow: hidden;
 }
 
+.ecg-frame canvas {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+
 .ecg-frame::before {
     content: "";
     position: absolute;
@@ -835,8 +843,11 @@ h1, h2, h3 {
 /* Dark mode */
 
 body.simulation-dark {
-    background: #0a0d12;
-    color: #e5e8ed;
+background-color: #0a0d12;
+    background-image:
+        linear-gradient(90deg, var(--grid-line-dark) 1px, transparent 1px),
+        linear-gradient(0deg, var(--grid-line-dark) 1px, transparent 1px);
+    background-size: 28px 28px;    color: #e5e8ed;
 }
 
 body.simulation-dark .global-nav {
