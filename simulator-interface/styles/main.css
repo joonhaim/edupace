@@ -1,5 +1,6 @@
 :root {
-    --primary: #e53945;
+    --primary: #0f6cc5;
+    --accent: #23c1c3;
     --deep-navy: #0e1a2b;
     --mid-navy: #1f2e43;
     --frost: #f5f7fa;
@@ -60,7 +61,7 @@ a {
     top: 0;
     width: 100%;
     height: 4px;
-    background: linear-gradient(90deg, var(--primary), #ff7b7f);
+    background: linear-gradient(90deg, var(--primary), var(--accent));
 }
 
 .global-nav-inner {
@@ -120,7 +121,7 @@ a {
     bottom: -0.55rem;
     width: 100%;
     height: 3px;
-    background: linear-gradient(90deg, var(--primary), #ff7b7f);
+    background: linear-gradient(90deg, var(--primary), var(--accent));
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.2s ease;
@@ -199,7 +200,7 @@ h1, h2, h3 {
     top: 24px;
     width: 8px;
     height: 82%;
-    background: linear-gradient(180deg, var(--primary), #ff7b7f);
+    background: linear-gradient(180deg, var(--primary), var(--accent));
     border-radius: 10px;
 }
 
@@ -282,7 +283,7 @@ h1, h2, h3 {
 .btn-primary {
     background: var(--primary);
     color: #ffffff;
-    box-shadow: 0 14px 24px rgba(229, 57, 69, 0.24);
+    box-shadow: 0 14px 24px rgba(15, 108, 197, 0.28);
 }
 
 .btn-primary:hover { transform: translateY(-1px); }
@@ -389,9 +390,9 @@ h1, h2, h3 {
 }
 
 .chip-disconnected {
-    background: rgba(229, 57, 69, 0.12);
-    color: #b10013;
-    border-color: rgba(229, 57, 69, 0.24);
+    background: rgba(15, 108, 197, 0.12);
+    color: #084a85;
+    border-color: rgba(15, 108, 197, 0.3);
 }
 
 .chip-connected {
@@ -429,7 +430,7 @@ h1, h2, h3 {
     gap: 0.3rem;
     padding: 0.2rem 0.65rem;
     border-radius: 999px;
-    background: rgba(229, 57, 69, 0.12);
+    background: rgba(15, 108, 197, 0.12);
     color: var(--primary);
     font-size: 0.75rem;
     font-weight: 700;
@@ -550,7 +551,7 @@ h1, h2, h3 {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(229, 57, 69, 0.06), transparent 50%);
+    background: linear-gradient(135deg, rgba(15, 108, 197, 0.08), transparent 50%);
     pointer-events: none;
 }
 
@@ -583,7 +584,7 @@ h1, h2, h3 {
     padding: 0.25rem 0.8rem;
     font-size: 0.8rem;
     font-weight: 700;
-    background: rgba(229, 57, 69, 0.1);
+    background: rgba(15, 108, 197, 0.12);
     color: var(--primary);
 }
 
