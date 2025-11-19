@@ -152,6 +152,14 @@ a {
     letter-spacing: 0.02em;
 }
 
+.language-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+}
+
+
 .screen-stack {
     flex: 1;
    max-width: 1120px;
@@ -199,6 +207,13 @@ h1, h2, h3 {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.8rem;
 }
+
+.landing-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
 
 .landing-title {
     font-size: clamp(2.6rem, 4vw, 3rem);
@@ -400,6 +415,90 @@ h1, h2, h3 {
 
 }
 
+.scenario-banner-text {
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.scenario-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(229, 57, 69, 0.12);
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.scenario-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.scenario-text {
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.scenario-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 220px;
+}
+
+.scenario-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+}
+
+.scenario-select {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 0.6rem 0.7rem;
+    font-weight: 600;
+    color: var(--deep-navy);
+    background: var(--card);
+}
+
+.sim-summary {
+    margin-top: 1.5rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.1rem 1.3rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.summary-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+}
+
+.summary-value {
+    font-weight: 600;
+    color: var(--deep-navy);
+}
+
+
 .sim-main {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -411,6 +510,22 @@ h1, h2, h3 {
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
+}
+
+.alarm-banner {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.alarm-normal {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #bbf7d0;
 }
 
 .ecg-frame {
@@ -441,6 +556,101 @@ h1, h2, h3 {
     justify-content: space-between;
 }
 
+.ecg-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.label-heading {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+}
+
+.lead-indicator {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.25rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: rgba(229, 57, 69, 0.1);
+    color: var(--primary);
+}
+
+.ecg-vitals {
+    display: flex;
+    gap: 1.3rem;
+    text-align: right;
+}
+
+.vital-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+}
+
+.vital-value {
+    font-size: 1.8rem;
+    line-height: 1;
+    font-weight: 700;
+}
+
+.vital-unit {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.hr-value {
+    color: var(--primary);
+}
+
+.pace-value {
+    font-size: 1.2rem;
+}
+
+.small {
+    font-size: 0.85rem;
+}
+
+.telemetry-grid {
+    margin-top: 1.2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.telemetry-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.telemetry-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.telemetry-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.telemetry-unit {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+
 .vital-block {
     text-align: right;
 }
@@ -463,12 +673,64 @@ h1, h2, h3 {
     padding: 1rem;
 }
 
+.param-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+}
+
+.param-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.param-unit {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
 .card {
     background: #ffffff;
     border: 1px solid #e1e5ec;
     border-radius: 12px;
     padding: 1rem;
 }
+
+.card-title {
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+}
+
+.card-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.mode-card,
+.parameters-card,
+.performance-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.mode-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.mode-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 600;
+}
+
 
 .led-row {
     display: flex;
@@ -508,11 +770,61 @@ h1, h2, h3 {
     gap: 0.6rem;
 }
 
+.calibration-note {
+    margin-top: 1.1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    border: 1px dashed var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.calibration-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+}
+
+.calibration-value {
+    font-weight: 600;
+}
+
+.parameters-card {
+    gap: 1rem;
+}
+
+.performance-card {
+    gap: 0.7rem;
+}
+
+.perf-row {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+}
+
+.perf-value {
+    font-weight: 700;
+}
+
 .site-footer {
     padding: 1.5rem;
     text-align: center;
         color: var(--muted);
     font-size: 0.85rem;
+}
+
+.sim-footer {
+    margin-top: 1.5rem;
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    border: 1px dashed var(--border);
+    font-size: 0.85rem;
+    text-align: center;
+    color: var(--muted);
 }
 
 .theme-transition {
