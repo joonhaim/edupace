@@ -533,6 +533,19 @@ h1, h2, h3 {
     border-color: #bbf7d0;
 }
 
+.alarm-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+.alarm-critical {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+
 .ecg-frame {
     position: relative;
     background: var(--card);
