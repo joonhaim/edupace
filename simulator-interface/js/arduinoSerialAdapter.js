@@ -14,6 +14,8 @@ const ui = {
     inputModeRadios: document.querySelectorAll('input[name="inputMode"]')
 };
 
+const defaultPaceMode = ui.paceMode?.textContent ?? '--';
+
 const serialState = {
     port: null,
     reader: null,
@@ -30,9 +32,29 @@ const parameterState = {
     sensitivity: null
 };
 
+function setBasePaceMode(mode) {
+    if (!ui.paceMode) return;
+
+    const baseMode = mode ?? defaultPaceMode;
+    ui.paceMode.dataset.baseMode = baseMode;
+    ui.paceMode.textContent = baseMode;
+}
+
+function applyAsyncModeFromSensitivity(sensitivity) {
+    if (!ui.paceMode) return;
+
+    const baseMode = ui.paceMode.dataset.baseMode ?? defaultPaceMode;
+    if (typeof sensitivity === 'number' && sensitivity > 20) {
+        ui.paceMode.textContent = 'ASYNC';
+    } else {
+        ui.paceMode.textContent = baseMode;
+    }
+}
+
 function initHardwareIntegration() {
     const supported = 'serial' in navigator;
-    
+
+    setBasePaceMode(defaultPaceMode);
 
     if (!supported) {
         updateConnectionStatus('UNSUPPORTED BROWSER', false, true);
@@ -62,6 +84,11 @@ function initHardwareIntegration() {
 
     ui.ledTestPace.addEventListener('click', () => triggerPaceFlash());
     ui.ledTestSense.addEventListener('click', () => triggerSenseFlash());
+
+    window.addEventListener('edupace-parameters', (event) => {
+        const sensitivity = event.detail?.sensitivity;
+        applyAsyncModeFromSensitivity(sensitivity);
+    });
 
     window.edupaceHardware = {
         connectToHardware,
@@ -191,7 +218,7 @@ function handleHardwareMessage(line) {
     }
 
     if (payload.mode !== undefined) {
-        ui.paceMode.textContent = payload.mode;
+        setBasePaceMode(payload.mode);
     }
 
     if (payload.paceLed) {
@@ -209,6 +236,8 @@ function handleHardwareMessage(line) {
             })
         );
     }
+
+    applyAsyncModeFromSensitivity(parameterState.sensitivity);
 }
 
 function parsePayload(line) {
