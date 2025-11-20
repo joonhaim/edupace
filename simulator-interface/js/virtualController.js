@@ -1,7 +1,9 @@
+import { knobPresets } from './knobPresets.js';
+
 const controllerState = {
-    rate: 70,
-    output: 5,
-    sensitivity: 2.5
+    rate: getNearestPreset('rate', 70),
+    output: getNearestPreset('output', 5),
+    sensitivity: getNearestPreset('sensitivity', 2.5)
 };
 
 function initVirtualController() {
@@ -32,9 +34,21 @@ function initVirtualController() {
 
     Object.entries(inputs).forEach(([key, input]) => {
         if (!input) return;
-        input.value = controllerState[key];
+
+        const presets = knobPresets[key] ?? [];
+
+        if (presets.length) {
+            input.min = 0;
+            input.max = presets.length - 1;
+            input.step = 1;
+            input.value = getPresetIndex(key, controllerState[key]);
+        } else {
+            input.value = controllerState[key];
+        }
+
         input.addEventListener('input', () => {
-            controllerState[key] = Number(input.value);
+            controllerState[key] = getPresetValue(key, Number(input.value));
+            updateInputs();
             updateLabels();
             broadcastParameters();
         });
@@ -42,25 +56,25 @@ function initVirtualController() {
 
     const updateLabels = () => {
         if (labels.rate) {
-            labels.rate.textContent = `${controllerState.rate} bpm`;
+            labels.rate.textContent = `${formatValue('rate', controllerState.rate)} bpm`;
         }
         if (labels.output) {
-            labels.output.textContent = `${controllerState.output.toFixed(1)} mA`;
+            labels.output.textContent = `${formatValue('output', controllerState.output)} mA`;
         }
         if (labels.sensitivity) {
-            labels.sensitivity.textContent = `${controllerState.sensitivity.toFixed(1)} mV`;
+            labels.sensitivity.textContent = `${formatValue('sensitivity', controllerState.sensitivity)} mV`;
         }
     };
 
     const updateTiles = () => {
         if (display.rate) {
-            display.rate.textContent = controllerState.rate;
+            display.rate.textContent = formatValue('rate', controllerState.rate);
         }
         if (display.output) {
-            display.output.textContent = controllerState.output.toFixed(1);
+            display.output.textContent = formatValue('output', controllerState.output);
         }
         if (display.sensitivity) {
-            display.sensitivity.textContent = controllerState.sensitivity.toFixed(1);
+            display.sensitivity.textContent = formatValue('sensitivity', controllerState.sensitivity);
         }
     };
 
@@ -77,6 +91,7 @@ function initVirtualController() {
         const isVirtual = Array.from(modeRadios).some((radio) => radio.checked && radio.value === 'virtual');
         card.hidden = !isVirtual;
         if (isVirtual) {
+            updateInputs();
             broadcastParameters();
         }
     };
@@ -85,8 +100,86 @@ function initVirtualController() {
         radio.addEventListener('change', toggleCardVisibility);
     });
 
+    updateInputs();
     updateLabels();
     toggleCardVisibility();
+}
+
+function getPresetValue(parameter, index) {
+    const presets = knobPresets[parameter] ?? [];
+    if (!presets.length) {
+        return index;
+    }
+
+    const clampedIndex = Math.min(Math.max(Math.round(index), 0), presets.length - 1);
+    return presets[clampedIndex];
+}
+
+function getPresetIndex(parameter, value) {
+    const presets = knobPresets[parameter] ?? [];
+    if (!presets.length) {
+        return value;
+    }
+
+    const exactIndex = presets.findIndex((preset) => preset === value);
+    if (exactIndex !== -1) {
+        return exactIndex;
+    }
+
+    return presets.reduce((closestIndex, preset, index) => {
+        const currentDiff = Math.abs(preset - value);
+        const bestDiff = Math.abs(presets[closestIndex] - value);
+        return currentDiff < bestDiff ? index : closestIndex;
+    }, 0);
+}
+
+function getNearestPreset(parameter, value) {
+    const presets = knobPresets[parameter] ?? [];
+    if (!presets.length) {
+        return value;
+    }
+
+    const exactMatch = presets.find((preset) => preset === value);
+    if (exactMatch !== undefined) {
+        return exactMatch;
+    }
+
+    return presets.reduce((closest, preset) => {
+        const currentDiff = Math.abs(preset - value);
+        const bestDiff = Math.abs(closest - value);
+        return currentDiff < bestDiff ? preset : closest;
+    }, presets[0]);
+}
+
+function formatValue(parameter, value) {
+    if (parameter === 'rate') {
+        return `${Math.round(value)}`;
+    }
+    return `${value.toFixed(1)}`;
+}
+
+function updateInputs() {
+    const card = document.getElementById('virtualControllerCard');
+    if (!card) {
+        return;
+    }
+
+    const inputs = {
+        rate: card.querySelector('[data-control="rate"]'),
+        output: card.querySelector('[data-control="output"]'),
+        sensitivity: card.querySelector('[data-control="sensitivity"]')
+    };
+
+    Object.entries(inputs).forEach(([key, input]) => {
+        if (!input) return;
+
+        const presets = knobPresets[key] ?? [];
+        if (presets.length) {
+            input.value = getPresetIndex(key, controllerState[key]);
+        } else {
+            input.value = controllerState[key];
+        }
+    });
 }
 
 export { initVirtualController };
