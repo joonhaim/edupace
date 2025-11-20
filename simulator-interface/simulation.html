@@ -29,13 +29,17 @@
                         </div>
                         <div class="connection-group">
                             <span class="connection-label">Device</span>
-                            <span id="connectionStatus" class="chip chip-disconnected">DISCONNECTED</span>
-                        <button id="connectBtn" type="button" class="btn btn-small">Connect</button>
-                            <div class="device-flags" aria-live="polite">
-                                <span id="powerStatus" class="flag-label">Power: --</span>
-                                <span id="lockStatus" class="flag-label">Lock: --</span>
-                            </div>
+
+                            <span id="connectionStatus" class="chip chip-disconnected">
+                                <span class="status-dot"></span>
+                                <span class="status-text">Disconnected</span>
+                            </span>
+
+                            <button id="connectBtn" type="button" class="btn btn-small connect-btn">
+                                CONNECT
+                            </button>
                         </div>
+
                     </div>
 
                     <div class="scenario-banner" role="region" aria-label="Scenario selection">
@@ -80,7 +84,7 @@
                                             <span id="hrValue" class="vital-value hr-value">--</span>
                                             <span class="vital-unit">bpm</span>
                                         </div>
-                                        <div class="vital-block">
+                                        <div class="vital-block pace-block" aria-hidden="true">
                                             <span class="vital-label">PACE</span>
                                             <span id="paceMode" class="vital-value pace-value small">--</span>
                                         </div>
@@ -115,32 +119,15 @@
                             <div class="calibration-note">
                                 <span class="calibration-label">Calibration</span>
                                 <span class="calibration-value">
-                                    10 mm/mV · 25 mm/s · 10 s window · Not for diagnostic use
+                                    10 mm/mV · 25 mm/s · 10 s window
                                 </span>
                             </div>
                         </section>
 
                         <!-- Right: controls -->
                         <aside class="control-column" aria-label="Controls">
-                            <div class="card mode-card">
-                                <div class="card-heading">
-                                    <h3>Input source</h3>
-                                    <p>Select hardware or virtual control.</p>
-                                </div>
-                                <div class="mode-row">
-                                    <label class="mode-option">
-                                        <input type="radio" name="inputMode" value="hardware" checked>
-                                        <span>Hardware (Arduino)</span>
-                                    </label>
-                                    <label class="mode-option">
-                                        <input type="radio" name="inputMode" value="virtual">
-                                        <span>Virtual controller</span>
-                                    </label>
-                                </div>
-                            </div>
-
                             <div class="card parameters-card">
-                             <h3 class="card-title">Pacemaker parameters</h3>
+                                <h3 class="card-title">Pacemaker parameters</h3>
 
                                 <div class="led-row">
                                     <div class="led-group">
@@ -151,11 +138,7 @@
                                         <div class="led led-sense" id="senseLed"></div>
                                         <span>SENSE</span>
                                     </div>
-                                    <div class="led-group led-test-group">
-                                        <button type="button" id="testPaceLed" class="btn btn-secondary btn-small">Test PACE</button>
-                                        <button type="button" id="testSenseLed" class="btn btn-secondary btn-small">Test SENSE</button>
-                                    </div>
-                                   
+
                                 </div>
 
                                 <div class="param-grid">
@@ -182,53 +165,56 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="card virtual-card" id="virtualControllerCard" hidden>
-                                <h3 class="card-title">Virtual controller</h3>
-                                <p>Use the sliders to emulate the three hardware knobs.</p>
-                                <div class="virtual-control">
-                                    <label for="virtualRate">Rate</label>
-                                    <div class="virtual-input">
-                                        <input
-                                            id="virtualRate"
-                                            type="range"
-                                            min="30"
-                                            max="120"
-                                            step="1"
-                                            data-control="rate"
-                                        >
-                                        <span class="virtual-value" data-value="rate">80 bpm</span>
-                                    </div>
-                                </div>
-                                <div class="virtual-control">
-                                    <label for="virtualOutput">Output</label>
-                                    <div class="virtual-input">
-                                        <input
-                                            id="virtualOutput"
-                                            type="range"
-                                            min="0"
-                                            max="10"
-                                            step="0.1"
-                                            data-control="output"
-                                        >
-                                        <span class="virtual-value" data-value="output">10.0 mA</span>
-                                    </div>
-                                </div>
-                                <div class="virtual-control">
-                                    <label for="virtualSensitivity">Sensitivity</label>
-                                    <div class="virtual-input">
-                                        <input
-                                            id="virtualSensitivity"
-                                            type="range"
-                                            min="0"
-                                            max="10"
-                                            step="0.1"
-                                            data-control="sensitivity"
-                                        >
-                                        <span class="virtual-value" data-value="sensitivity">2.0 mV</span>
-                                    </div>
-                                </div>
 
+                            <div class="card mode-card">
+                                <div class="card-heading">
+                                    <h3>Input source</h3>
+                                    <p>Pick hardware controls or the on-screen controller.</p>
+                                </div>
+                                <div class="mode-toggle" role="radiogroup" aria-label="Input source">
+                                    <label class="mode-pill">
+                                        <input type="radio" name="inputMode" value="hardware" checked>
+                                        <span>Hardware</span>
+                                    </label>
+                                    <label class="mode-pill">
+                                        <input type="radio" name="inputMode" value="virtual">
+                                        <span>Virtual</span>
+                                    </label>
+                                </div>
+                            </div>
 
+                            <div class="card virtual-card" id="virtualControllerCard" aria-hidden="true">
+                                <div class="virtual-card-header">
+                                    <div>
+                                        <h3 class="card-title">Virtual controller</h3>
+                                        <p>Use the arrows to match the three hardware knobs.</p>
+                                    </div>
+                                    <span class="virtual-hint">Left/Right arrows adjust values</span>
+                                </div>
+                                <div class="virtual-control" data-control="rate" data-min="30" data-max="120" data-step="1" tabindex="0">
+                                    <div class="virtual-label">Rate</div>
+                                    <div class="virtual-input">
+                                        <button type="button" class="step-btn" data-direction="down" aria-label="Decrease rate">←</button>
+                                        <span class="virtual-value" data-value="rate" aria-live="polite">70 bpm</span>
+                                        <button type="button" class="step-btn" data-direction="up" aria-label="Increase rate">→</button>
+                                    </div>
+                                </div>
+                                <div class="virtual-control" data-control="output" data-min="0" data-max="10" data-step="0.1" tabindex="0">
+                                    <div class="virtual-label">Output</div>
+                                    <div class="virtual-input">
+                                        <button type="button" class="step-btn" data-direction="down" aria-label="Decrease output">←</button>
+                                        <span class="virtual-value" data-value="output" aria-live="polite">5.0 mA</span>
+                                        <button type="button" class="step-btn" data-direction="up" aria-label="Increase output">→</button>
+                                    </div>
+                                </div>
+                                <div class="virtual-control" data-control="sensitivity" data-min="0" data-max="10" data-step="0.1" tabindex="0">
+                                    <div class="virtual-label">Sensitivity</div>
+                                    <div class="virtual-input">
+                                        <button type="button" class="step-btn" data-direction="down" aria-label="Decrease sensitivity">←</button>
+                                        <span class="virtual-value" data-value="sensitivity" aria-live="polite">2.5 mV</span>
+                                        <button type="button" class="step-btn" data-direction="up" aria-label="Increase sensitivity">→</button>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="card performance-card">

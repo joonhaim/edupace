@@ -49,7 +49,7 @@
       "summaryLabel": "Junctional bradycardia",
       "primaryRhythm": "Junctional bradycardia",
       "location": "CCU",
-      "waveformId": "paced-stable",
+      "waveformId": "junctional-bradycardia",
       "vitals": {
         "hr": 35,
         "bp": "88/50",
