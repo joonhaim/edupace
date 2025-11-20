@@ -29,13 +29,17 @@
                         </div>
                         <div class="connection-group">
                             <span class="connection-label">Device</span>
-                            <span id="connectionStatus" class="chip chip-disconnected">DISCONNECTED</span>
-                        <button id="connectBtn" type="button" class="btn btn-small">Connect</button>
-                            <div class="device-flags" aria-live="polite">
-                                <span id="powerStatus" class="flag-label">Power: --</span>
-                                <span id="lockStatus" class="flag-label">Lock: --</span>
-                            </div>
+
+                            <span id="connectionStatus" class="chip chip-disconnected">
+                                <span class="status-dot"></span>
+                                <span class="status-text">Disconnected</span>
+                            </span>
+
+                            <button id="connectBtn" type="button" class="btn btn-small connect-btn">
+                                CONNECT
+                            </button>
                         </div>
+
                     </div>
 
                     <div class="scenario-banner" role="region" aria-label="Scenario selection">

@@ -2,6 +2,7 @@
   "waveforms": [
     { "id": "normal-sinus", "file": "normal-sinus.json", "label": "Lead II" },
     { "id": "paced-stable", "file": "paced-stable.json", "label": "Lead II paced" },
+    { "id": "junctional-bradycardia", "file": "junctional-bradycardia.json", "label": "Lead II – junctional bradycardia" },
     { "id": "loss-of-capture", "file": "loss-of-capture.json", "label": "Lead II – loss of capture" },
     { "id": "oversensing", "file": "oversensing.json", "label": "Lead II – oversensing" }
   ]
