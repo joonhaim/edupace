@@ -1,6 +1,6 @@
 :root {
-    --primary: #0f6cc5;
-    --accent: #23c1c3;
+    --primary: #0a355c;
+    --accent: #0f5075;
     --deep-navy: #0e1a2b;
     --mid-navy: #1f2e43;
     --frost: #f5f7fa;
@@ -209,8 +209,32 @@ h1, h2, h3 {
 
 .landing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.8rem;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 2.2rem;
+    align-items: center;
+}
+
+/* On small screens, fall back to a single column */
+@media (max-width: 768px) {
+    .landing-panel {
+        padding: 1.8rem 1.4rem;
+        border-radius: 14px;
+    }
+
+    .landing-panel::before {
+        left: -24px;
+        top: 18px;
+        height: 86%;
+    }
+
+    .landing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 
 .landing-main {
