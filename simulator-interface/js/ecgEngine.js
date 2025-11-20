@@ -540,15 +540,17 @@ function drawPauseOverlay(width, height) {
     if (!isPaused || !ctx) return;
 
     ctx.save();
-    ctx.fillStyle = 'rgba(2, 6, 23, 0.55)';
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.10)';
     ctx.fillRect(0, 0, width, height);
 
     ctx.fillStyle = '#f8fafc';
     ctx.textAlign = 'center';
+    const mainY = height - 60;   // primary message 60px from bottom
+    const subY  = height - 34;   // secondary message 34px from bottom
     ctx.font = '600 20px "Inter", sans-serif';
-    ctx.fillText('Telemetry paused', width / 2, height / 2 - 20);
+    ctx.fillText('Telemetry paused', width / 2, mainY);
     ctx.font = '14px "Inter", sans-serif';
-    ctx.fillText('Click and drag to place calipers, or tap to resume', width / 2, height / 2 + 4);
+    ctx.fillText('Click and drag to place calipers, or tap to resume', width / 2, subY);
     ctx.restore();
 }
 
