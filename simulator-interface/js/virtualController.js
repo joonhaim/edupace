@@ -10,12 +10,6 @@ function initVirtualController() {
         return;
     }
 
-    const inputs = {
-        rate: card.querySelector('[data-control="rate"]'),
-        output: card.querySelector('[data-control="output"]'),
-        sensitivity: card.querySelector('[data-control="sensitivity"]')
-    };
-
     const labels = {
         rate: card.querySelector('[data-value="rate"]'),
         output: card.querySelector('[data-value="output"]'),
@@ -29,16 +23,6 @@ function initVirtualController() {
     };
 
     const modeRadios = document.querySelectorAll('input[name="inputMode"]');
-
-    Object.entries(inputs).forEach(([key, input]) => {
-        if (!input) return;
-        input.value = controllerState[key];
-        input.addEventListener('input', () => {
-            controllerState[key] = Number(input.value);
-            updateLabels();
-            broadcastParameters();
-        });
-    });
 
     const updateLabels = () => {
         if (labels.rate) {
@@ -73,9 +57,55 @@ function initVirtualController() {
         );
     };
 
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+    const adjustValue = (key, delta, min, max, step) => {
+        const decimals = `${step}`.split('.')[1]?.length ?? 0;
+        const next = clamp(controllerState[key] + delta, min, max);
+        const rounded = Number(next.toFixed(decimals));
+        if (rounded !== controllerState[key]) {
+            controllerState[key] = rounded;
+            updateLabels();
+            broadcastParameters();
+        }
+    };
+
+    const controls = card.querySelectorAll('.virtual-control');
+
+    controls.forEach((control) => {
+        const key = control.dataset.control;
+        if (!key || !(key in controllerState)) return;
+
+        const min = Number(control.dataset.min ?? 0);
+        const max = Number(control.dataset.max ?? 100);
+        const step = Number(control.dataset.step ?? 1);
+
+        const decrement = control.querySelector('[data-direction="down"]');
+        const increment = control.querySelector('[data-direction="up"]');
+
+        const handleAdjust = (direction) => {
+            const delta = direction === 'down' ? -step : step;
+            adjustValue(key, delta, min, max, step);
+        };
+
+        decrement?.addEventListener('click', () => handleAdjust('down'));
+        increment?.addEventListener('click', () => handleAdjust('up'));
+
+        control.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                handleAdjust('down');
+            } else if (event.key === 'ArrowRight') {
+                event.preventDefault();
+                handleAdjust('up');
+            }
+        });
+    });
+
     const toggleCardVisibility = () => {
         const isVirtual = Array.from(modeRadios).some((radio) => radio.checked && radio.value === 'virtual');
-        card.hidden = !isVirtual;
+        card.classList.toggle('is-active', isVirtual);
+        card.setAttribute('aria-hidden', String(!isVirtual));
         if (isVirtual) {
             broadcastParameters();
         }
