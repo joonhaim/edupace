@@ -923,3 +923,36 @@ body.simulation-dark .summary-value {
 body.simulation-dark .brand {
     color: #e5e8ed;
 }
+.virtual-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.virtual-card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.virtual-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.virtual-input {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.virtual-input input[type='range'] {
+    flex: 1;
+}
+
+.virtual-value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    min-width: 90px;
+    text-align: right;
+}

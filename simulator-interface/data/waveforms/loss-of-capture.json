@@ -1,0 +1,16 @@
+{
+  "id": "loss-of-capture",
+  "label": "Loss of capture",
+  "durationMs": 1000,
+  "scale": 40,
+  "spike": {
+    "width": 0.01,
+    "amplitude": 1.8,
+    "position": 0.25
+  },
+  "points": [
+    { "time": 0.0, "value": 0 },
+    { "time": 0.5, "value": 0 },
+    { "time": 1.0, "value": 0 }
+  ]
+}

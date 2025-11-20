@@ -1,0 +1,22 @@
+{
+  "id": "paced-stable",
+  "label": "Lead II paced",
+  "durationMs": 1000,
+  "scale": 40,
+  "spike": {
+    "width": 0.01,
+    "amplitude": 2.2,
+    "position": 0.25
+  },
+  "points": [
+    { "time": 0.0, "value": 0 },
+    { "time": 0.1, "value": 0 },
+    { "time": 0.2, "value": 0 },
+    { "time": 0.25, "value": 1.4 },
+    { "time": 0.27, "value": -0.8 },
+    { "time": 0.35, "value": 0.4 },
+    { "time": 0.5, "value": 0.1 },
+    { "time": 0.65, "value": 0 },
+    { "time": 1.0, "value": 0 }
+  ]
+}

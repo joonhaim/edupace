@@ -24,9 +24,15 @@ const serialState = {
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+const parameterState = {
+    rate: null,
+    output: null,
+    sensitivity: null
+};
 
 function initHardwareIntegration() {
     const supported = 'serial' in navigator;
+    
 
     if (!supported) {
         updateConnectionStatus('UNSUPPORTED BROWSER', false, true);
@@ -156,17 +162,24 @@ async function readLoop() {
 
 function handleHardwareMessage(line) {
     const payload = parsePayload(line);
+    let parameterChanged = false;
 
     if (payload.rate !== undefined) {
         ui.rate.textContent = payload.rate;
+        parameterState.rate = payload.rate;
+        parameterChanged = true;
     }
 
     if (payload.output !== undefined) {
         ui.output.textContent = payload.output;
+        parameterState.output = payload.output;
+        parameterChanged = true;
     }
 
     if (payload.sensitivity !== undefined) {
         ui.sensitivity.textContent = payload.sensitivity;
+        parameterState.sensitivity = payload.sensitivity;
+        parameterChanged = true;
     }
 
     if (payload.power !== undefined) {
@@ -187,6 +200,14 @@ function handleHardwareMessage(line) {
 
     if (payload.senseLed) {
         flashLed(ui.senseLed);
+    }
+    
+    if (parameterChanged) {
+        window.dispatchEvent(
+            new CustomEvent('edupace-parameters', {
+                detail: { ...parameterState }
+            })
+        );
     }
 }
 
