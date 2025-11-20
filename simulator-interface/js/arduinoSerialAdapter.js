@@ -9,6 +9,8 @@ const ui = {
     paceMode: document.getElementById('paceMode'),
     paceLed: document.getElementById('paceLed'),
     senseLed: document.getElementById('senseLed'),
+    ledTestPace: document.getElementById('ledTestPace'),
+    ledTestSense: document.getElementById('ledTestSense'),
     inputModeRadios: document.querySelectorAll('input[name="inputMode"]')
 };
 
@@ -80,8 +82,8 @@ function initHardwareIntegration() {
         });
     });
 
-    ui.ledTestPace.addEventListener('click', () => triggerPaceFlash());
-    ui.ledTestSense.addEventListener('click', () => triggerSenseFlash());
+    ui.ledTestPace?.addEventListener('click', () => triggerPaceFlash());
+    ui.ledTestSense?.addEventListener('click', () => triggerSenseFlash());
 
     window.addEventListener('edupace-parameters', (event) => {
         const sensitivity = event.detail?.sensitivity;

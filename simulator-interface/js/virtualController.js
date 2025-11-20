@@ -18,6 +18,12 @@ function initVirtualController() {
         sensitivity: card.querySelector('[data-value="sensitivity"]')
     };
 
+    const inputs = {
+        rate: card.querySelector('[data-control="rate"]'),
+        output: card.querySelector('[data-control="output"]'),
+        sensitivity: card.querySelector('[data-control="sensitivity"]')
+    };
+
     const display = {
         rate: document.getElementById('rateValue'),
         output: document.getElementById('outputValue'),
@@ -83,8 +89,26 @@ function initVirtualController() {
 
     const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-    const adjustValue = (key, delta, min, max, step) => {
+    const adjustValue = (key, direction, min, max, step) => {
+        const presets = knobPresets[key] ?? [];
+
+        if (presets.length) {
+            const currentIndex = getPresetIndex(key, controllerState[key]);
+            const offset = direction === 'down' ? -1 : 1;
+            const nextIndex = clamp(currentIndex + offset, 0, presets.length - 1);
+            const nextValue = presets[nextIndex];
+
+            if (nextValue !== controllerState[key]) {
+                controllerState[key] = nextValue;
+                updateInputs();
+                updateLabels();
+                broadcastParameters();
+            }
+            return;
+        }
+
         const decimals = `${step}`.split('.')[1]?.length ?? 0;
+        const delta = direction === 'down' ? -step : step;
         const next = clamp(controllerState[key] + delta, min, max);
         const rounded = Number(next.toFixed(decimals));
         if (rounded !== controllerState[key]) {
@@ -108,8 +132,7 @@ function initVirtualController() {
         const increment = control.querySelector('[data-direction="up"]');
 
         const handleAdjust = (direction) => {
-            const delta = direction === 'down' ? -step : step;
-            adjustValue(key, delta, min, max, step);
+            adjustValue(key, direction, min, max, step);
         };
 
         decrement?.addEventListener('click', () => handleAdjust('down'));
