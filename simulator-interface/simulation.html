@@ -54,29 +54,7 @@
                         </div>
                     </div>
 
-                    <div class="sim-summary">
-                        <div class="summary-item">
-                            <span class="summary-label">Scenario</span>
-                            <span class="summary-value" id="summaryScenario">
-                                Training case · Junctional bradycardia
-                            </span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Location</span>
-                            <span class="summary-value">CCU</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Primary rhythm</span>
-                            <span class="summary-value" id="rhythmLabel">
-                                Junctional bradycardia
-                            </span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Monitoring</span>
-                            <span class="summary-value">25 mm/s · 10 s window</span>
-                        </div>
-                    </div>
-
+                    
                     <div class="sim-main">
                         <!-- Left: ECG + vitals -->
                         <section class="graph-column" aria-label="Telemetry">
@@ -204,7 +182,55 @@
                                     <button type="button" id="testPaceLed" class="btn btn-secondary btn-small">Test PACE</button>
                                     <button type="button" id="testSenseLed" class="btn btn-secondary btn-small">Test SENSE</button>
                                 </div>
+                                </div>
                             </div>
+                            <div class="card virtual-card" id="virtualControllerCard" hidden>
+                                <h3 class="card-title">Virtual controller</h3>
+                                <p>Use the sliders to emulate the three hardware knobs.</p>
+                                <div class="virtual-control">
+                                    <label for="virtualRate">Rate</label>
+                                    <div class="virtual-input">
+                                        <input
+                                            id="virtualRate"
+                                            type="range"
+                                            min="30"
+                                            max="120"
+                                            step="1"
+                                            data-control="rate"
+                                        >
+                                        <span class="virtual-value" data-value="rate">70 bpm</span>
+                                    </div>
+                                </div>
+                                <div class="virtual-control">
+                                    <label for="virtualOutput">Output</label>
+                                    <div class="virtual-input">
+                                        <input
+                                            id="virtualOutput"
+                                            type="range"
+                                            min="0"
+                                            max="10"
+                                            step="0.1"
+                                            data-control="output"
+                                        >
+                                        <span class="virtual-value" data-value="output">5.0 mA</span>
+                                    </div>
+                                </div>
+                                <div class="virtual-control">
+                                    <label for="virtualSensitivity">Sensitivity</label>
+                                    <div class="virtual-input">
+                                        <input
+                                            id="virtualSensitivity"
+                                            type="range"
+                                            min="0"
+                                            max="10"
+                                            step="0.1"
+                                            data-control="sensitivity"
+                                        >
+                                        <span class="virtual-value" data-value="sensitivity">2.5 mV</span>
+                                    </div>
+                                </div>
+
+
                             </div>
 
                             <div class="card performance-card">

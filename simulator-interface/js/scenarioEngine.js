@@ -1,73 +1,8 @@
 const ALARM_LEVELS = ['normal', 'warning', 'critical'];
 
-let currentScenario = null;
-
-const scenarios = [
-    {
-        id: 'UC-00',
-        title: 'UC-00: Normal Sinus Rhythm',
-        description:
-            'Maintain VVI standby pacing while observing intrinsic beats.',
-        summaryLabel: 'Normal sinus rhythm monitoring',
-        primaryRhythm: 'Normal sinus rhythm',
-        vitals: {
-            hr: 78,
-            bp: '118/64',
-            spo2: 99,
-            temp: 36.8
-        },
-        pacing: {
-            mode: 'VVI (standby)'
-        },
-        alarm: {
-            level: 'normal',
-            text: 'No active alarms'
-        },
-        objective: 'Confirm the pacemaker remains inhibited while the patient maintains an intrinsic sinus rate.',
-        feedback:
-            'No pacing spikes should be visible. If pacing occurs, lower the rate below the intrinsic rhythm or verify sensing leads.',
-        comingSoon: false
-    },
-    {
-        id: 'UC-01',
-        title: 'UC-01: Initial Setup for Bradycardia',
-        description: 'Stabilize a 35 bpm junctional rhythm by dialing in VVI pacing at 70 bpm with safe output.',
-        comingSoon: true
-    },
-    {
-        id: 'UC-02',
-        title: 'UC-02: Capture Threshold',
-        description: 'Lower output stepwise until capture is lost, then add a 2 mA safety margin.',
-        comingSoon: true
-    },
-    {
-        id: 'UC-03',
-        title: 'UC-03: Sensing Threshold & Undersensing',
-        description: 'Adjust sensitivity to properly detect intrinsic beats and avoid asynchronous pacing.',
-        comingSoon: true
-    },
-    {
-        id: 'UC-04',
-        title: 'UC-04: Oversensing',
-        description: 'Introduce electrical noise and recover pacing by reducing sensitivity.',
-        comingSoon: true
-    },
-
-    {
-        id: 'UC-05',
-        title: 'UC-05: Loss of Capture / Threshold Drift',
-        description: 'Respond to gradual threshold drift by re-evaluating capture and documenting the new baseline.',
-
-         comingSoon: true
-    }
-];
-
-
 const scenarioElements = {
     scenarioName: document.getElementById('scenarioName'),
     scenarioText: document.getElementById('scenarioText'),
-    summaryScenario: document.getElementById('summaryScenario'),
-    rhythmLabel: document.getElementById('rhythmLabel'),
     hrValue: document.getElementById('hrValue'),
     paceMode: document.getElementById('paceMode'),
     bpValue: document.getElementById('bpValue'),
@@ -76,14 +11,13 @@ const scenarioElements = {
     alarmBanner: document.getElementById('alarmBanner'),
     alarmText: document.getElementById('alarmText'),
     objectiveText: document.getElementById('objectiveText'),
-    feedbackText: document.getElementById('feedbackText')
+    feedbackText: document.getElementById('feedbackText'),
+    leadLabel: document.getElementById('leadLabel')
 };
 
 const textKeys = [
     'scenarioName',
     'scenarioText',
-    'summaryScenario',
-    'rhythmLabel',
     'hrValue',
     'paceMode',
     'bpValue',
@@ -98,6 +32,13 @@ const defaultTexts = textKeys.reduce((acc, key) => {
     acc[key] = scenarioElements[key]?.textContent ?? '';
     return acc;
 }, {});
+
+const scenarioState = {
+    scenarios: [],
+    activeScenario: null
+};
+
+
 
 function updateText(key, value) {
     const element = scenarioElements[key];
@@ -126,8 +67,39 @@ function updateAlarm(alarm = null) {
     setAlarmLevel(alarm?.level ?? 'normal');
 }
 
-function populateScenarioSelect(select) {
+async function loadScenarios() {
+    if (scenarioState.scenarios.length) {
+        return scenarioState.scenarios;
+    }
+
+    try {
+        const response = await fetch('data/scenarios.json', { cache: 'no-store' });
+        if (!response.ok) {
+            throw new Error(`Unable to load scenarios (${response.status})`);
+        }
+        const payload = await response.json();
+        const scenarios = Array.isArray(payload) ? payload : payload.scenarios;
+        scenarioState.scenarios = Array.isArray(scenarios) ? scenarios : [];
+    } catch (error) {
+        console.error(error);
+        scenarioState.scenarios = [];
+    }
+
+    return scenarioState.scenarios;
+}
+
+function populateScenarioSelect(select, scenarios) {
+    
     select.innerHTML = '';
+
+    if (!scenarios.length) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No scenarios found';
+        option.disabled = true;
+        select.appendChild(option);
+        return;
+    }
 
     const placeholder = document.createElement('option');
     placeholder.value = '';
@@ -147,42 +119,94 @@ function populateScenarioSelect(select) {
     });
 }
 
-function applyScenarioText(index) {
-    const scenario = scenarios[index];
-    if (!scenario) {
-        return;
-    }
-
+function applyScenarioText(scenario) {
     updateText('scenarioName', scenario.title);
     updateText('scenarioText', scenario.description);
-    updateText('summaryScenario', scenario.summaryLabel ?? scenario.title);
-    updateText('rhythmLabel', scenario.primaryRhythm ?? null);
     updateText('hrValue', scenario.vitals?.hr ?? null);
     updateText('paceMode', scenario.pacing?.mode ?? null);
     updateText('bpValue', scenario.vitals?.bp ?? null);
     updateText('spo2Value', scenario.vitals?.spo2 ?? null);
     updateText('tempValue', scenario.vitals?.temp ?? null);
     updateAlarm(scenario.alarm);
-}
-
-function startScenario(index) {
-    const scenario = scenarios[index];
-    if (!scenario) {
-        return;
-    }
-
-    currentScenario = index;
     updateText('objectiveText', scenario.objective ?? null);
     updateText('feedbackText', scenario.feedback ?? null);
 }
 
-function initScenarios() {
+function applyVitalsOverride(baseScenario, overrides) {
+    const vitals = {
+        hr: overrides?.hr ?? baseScenario.vitals?.hr,
+        bp: overrides?.bp ?? baseScenario.vitals?.bp,
+        spo2: overrides?.spo2 ?? baseScenario.vitals?.spo2,
+        temp: overrides?.temp ?? baseScenario.vitals?.temp
+    };
+
+    updateText('hrValue', vitals.hr ?? null);
+    updateText('bpValue', vitals.bp ?? null);
+    updateText('spo2Value', vitals.spo2 ?? null);
+    updateText('tempValue', vitals.temp ?? null);
+}
+
+function applyRuleEffects(effects) {
+    if (!scenarioState.activeScenario) {
+        return;
+    }
+
+    const currentScenario = scenarioState.activeScenario;
+    applyVitalsOverride(currentScenario, effects?.vitals ?? null);
+
+    if (effects?.alarm) {
+        updateAlarm(effects.alarm);
+    } else {
+        updateAlarm(currentScenario.alarm);
+    }
+
+    updateText('objectiveText', effects?.objective ?? currentScenario.objective ?? null);
+    updateText('feedbackText', effects?.feedback ?? currentScenario.feedback ?? null);
+
+    if (effects?.waveformId) {
+        window.dispatchEvent(
+            new CustomEvent('edupace-waveform-change', {
+                detail: { waveformId: effects.waveformId }
+            })
+        );
+    } else if (currentScenario.waveformId) {
+        window.dispatchEvent(
+            new CustomEvent('edupace-waveform-change', {
+                detail: { waveformId: currentScenario.waveformId }
+            })
+        );
+    }
+}
+
+function startScenario(index) {
+    const scenario = scenarioState.scenarios[index];
+    if (!scenario || scenario.comingSoon) {
+        return;
+    }
+
+  scenarioState.activeScenario = scenario;
+    applyScenarioText(scenario);
+
+    window.dispatchEvent(
+        new CustomEvent('edupace-scenario-change', {
+            detail: scenario
+        })
+    );
+}
+
+async function initScenarios() {
     const select = document.getElementById('scenarioSelect');
 
    if (!select) {
         return;
     }
-    populateScenarioSelect(select);
+
+    const scenarios = await loadScenarios();
+    populateScenarioSelect(select, scenarios);
+
+    window.addEventListener('edupace-rule-effects', (event) => {
+        applyRuleEffects(event.detail?.effects ?? {});
+    });
 
     select.addEventListener('change', (event) => {
         const value = Number(event.target.value);
@@ -190,14 +214,12 @@ function initScenarios() {
             return;
         }
 
-        applyScenarioText(value);
         startScenario(value);
     });
 
     const firstAvailableIndex = scenarios.findIndex((scenario) => !scenario.comingSoon);
     if (firstAvailableIndex >= 0) {
         select.value = String(firstAvailableIndex);
-        applyScenarioText(firstAvailableIndex);
         startScenario(firstAvailableIndex);
     }
 }
