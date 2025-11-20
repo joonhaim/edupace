@@ -5,6 +5,9 @@ const leadLabel = document.getElementById('leadLabel');
 const waveformCache = new Map();
 let waveformIndex = null;
 let activeWaveformId = null;
+let animationFrameId = null;
+let animationStart = null;
+let currentWaveform = null;
 
 async function initEcgEngine() {
     if (!canvas || !ctx) {
@@ -39,7 +42,7 @@ async function setWaveform(waveformId) {
     }
 
     activeWaveformId = waveformId;
-    renderWaveform(waveform);
+    startRenderingWaveform(waveform);
     if (leadLabel && waveform.label) {
         leadLabel.textContent = waveform.label;
     }
@@ -131,11 +134,36 @@ function drawGrid() {
     }
 }
 
-function renderWaveform(waveform) {
-    if (!ctx) return;
+function startRenderingWaveform(waveform) {
+    currentWaveform = waveform;
+    animationStart = null;
+
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
+
+    animationFrameId = requestAnimationFrame(drawFrame);
+}
+
+function drawFrame(timestamp) {
+    if (!ctx || !currentWaveform) return;
+
+    if (animationStart === null) {
+        animationStart = timestamp;
+    }
+
+    const durationMs = currentWaveform.durationMs ?? 1000;
+    const elapsed = timestamp - animationStart;
+    const phaseOffset = (elapsed % durationMs) / durationMs;
 
     drawGrid();
 
+    renderWaveform(currentWaveform, phaseOffset);
+
+    animationFrameId = requestAnimationFrame(drawFrame);
+}
+
+function renderWaveform(waveform, phaseOffset = 0) {
     const width = canvas.width;
     const height = canvas.height;
     const baseline = height / 2;
@@ -146,14 +174,31 @@ function renderWaveform(waveform) {
         return;
     }
 
-    ctx.strokeStyle = '#6af7b8';
     ctx.lineWidth = 2;
+    const gradient = ctx.createLinearGradient(0, 0, width, 0);
+    gradient.addColorStop(0, '#43e697');
+    gradient.addColorStop(1, '#a6ffd3');
+
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(106, 247, 184, 0.6)';
+    ctx.shadowBlur = 8;
+
     ctx.beginPath();
 
-    points.forEach((point, index) => {
-        const x = Math.min(width, Math.max(0, point.time * width));
+    const extendedPoints = points.concat(points.map((point) => ({ ...point, time: point.time + 1 })));
+    const windowStart = phaseOffset;
+    const windowEnd = phaseOffset + 1;
+
+    extendedPoints.forEach((point, index) => {
+        if (point.time < windowStart || point.time > windowEnd) {
+            return;
+        }
+
+        const x = ((point.time - windowStart) / (windowEnd - windowStart)) * width;
         const y = baseline - point.value * scale;
-        if (index === 0) {
+        if (index === 0 || extendedPoints[index - 1].time < windowStart) {
+
             ctx.moveTo(x, y);
         } else {
             ctx.lineTo(x, y);
@@ -163,25 +208,34 @@ function renderWaveform(waveform) {
     ctx.stroke();
 
     if (waveform.spike) {
-        drawPacingSpike(waveform.spike);
+        drawPacingSpike(waveform.spike,phaseOffset);
     }
 }
 
-function drawPacingSpike(spike) {
+function drawPacingSpike(spike,phaseOffset=0) {
     const width = canvas.width;
     const height = canvas.height;
     const baseline = height / 2;
-    const spikeX = spike.position * width;
-    const spikeWidth = spike.width * width;
-    const amplitude = spike.amplitude * 20;
+    const positions = [spike.position, spike.position + 1];
 
-    ctx.strokeStyle = '#f7e76a';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(spikeX - spikeWidth / 2, baseline);
-    ctx.lineTo(spikeX, baseline - amplitude);
-    ctx.lineTo(spikeX + spikeWidth / 2, baseline);
-    ctx.stroke();
+
+    positions.forEach((position) => {
+        if (position < phaseOffset || position > phaseOffset + 1) {
+            return;
+        }
+
+        const spikeX = ((position - phaseOffset) / 1) * width;
+        const spikeWidth = spike.width * width;
+        const amplitude = spike.amplitude * 20;
+
+        ctx.strokeStyle = '#f7e76a';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(spikeX - spikeWidth / 2, baseline);
+        ctx.lineTo(spikeX, baseline - amplitude);
+        ctx.lineTo(spikeX + spikeWidth / 2, baseline);
+        ctx.stroke();
+    });
 }
 
 export { initEcgEngine };

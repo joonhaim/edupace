@@ -3,8 +3,6 @@ const ALARM_LEVELS = ['normal', 'warning', 'critical'];
 const scenarioElements = {
     scenarioName: document.getElementById('scenarioName'),
     scenarioText: document.getElementById('scenarioText'),
-    summaryScenario: document.getElementById('summaryScenario'),
-    rhythmLabel: document.getElementById('rhythmLabel'),
     hrValue: document.getElementById('hrValue'),
     paceMode: document.getElementById('paceMode'),
     bpValue: document.getElementById('bpValue'),
@@ -20,8 +18,6 @@ const scenarioElements = {
 const textKeys = [
     'scenarioName',
     'scenarioText',
-    'summaryScenario',
-    'rhythmLabel',
     'hrValue',
     'paceMode',
     'bpValue',
@@ -126,8 +122,6 @@ function populateScenarioSelect(select, scenarios) {
 function applyScenarioText(scenario) {
     updateText('scenarioName', scenario.title);
     updateText('scenarioText', scenario.description);
-    updateText('summaryScenario', scenario.summaryLabel ?? scenario.title);
-    updateText('rhythmLabel', scenario.primaryRhythm ?? null);
     updateText('hrValue', scenario.vitals?.hr ?? null);
     updateText('paceMode', scenario.pacing?.mode ?? null);
     updateText('bpValue', scenario.vitals?.bp ?? null);
