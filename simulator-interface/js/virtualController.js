@@ -1,9 +1,9 @@
 import { knobPresets } from './knobPresets.js';
 
 const controllerState = {
-    rate: getNearestPreset('rate', 70),
-    output: getNearestPreset('output', 5),
-    sensitivity: getNearestPreset('sensitivity', 2.5)
+    rate: getNearestPreset('rate', 80),
+    output: getNearestPreset('output', 10),
+    sensitivity: getNearestPreset('sensitivity', 2.0)
 };
 
 function initVirtualController() {

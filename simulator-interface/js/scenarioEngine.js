@@ -44,6 +44,13 @@ function updateText(key, value) {
     const element = scenarioElements[key];
     if (!element) return;
 
+    if (key === 'paceMode') {
+        const baseValue = value === undefined || value === null || value === ''
+            ? defaultTexts[key]
+            : String(value);
+        element.dataset.baseMode = baseValue;
+    }
+
     if (value === undefined || value === null || value === '') {
         element.textContent = defaultTexts[key];
     } else {
