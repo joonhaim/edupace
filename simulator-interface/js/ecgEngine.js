@@ -13,9 +13,11 @@ let activeWaveformId = null;
 const engineState = {
     buffer: new Array(BUFFER_LENGTH).fill(0),
     spikes: new Array(BUFFER_LENGTH).fill(0),
-    sampleIndex: 0,
+    sweepPosition: 0,
+    samplesWritten: 0,
     beatStartSeconds: 0,
     beatDurationSeconds: null,
+    totalSamples:0,
     parameters: {
         rate: null,
         output: null,
@@ -82,9 +84,11 @@ async function setWaveform(waveformId) {
 
     activeWaveformId = waveformId;
     engineState.waveform = waveform;
-    engineState.sampleIndex = 0;
+    engineState.sweepPosition = 0;
+    engineState.samplesWritten = 0;
     engineState.beatDurationSeconds = null;
     engineState.beatStartSeconds = 0;
+    engineState.totalSamples = 0;
     engineState.buffer.fill(0);
     engineState.spikes.fill(0);
 
@@ -141,17 +145,19 @@ function step() {
 
     const { value, spike } = generateSample();
 
-    const idx = engineState.sampleIndex % BUFFER_LENGTH;
-    engineState.buffer[idx] = value;
-    engineState.spikes[idx] = spike;
-    engineState.sampleIndex = (engineState.sampleIndex + 1) % (BUFFER_LENGTH * 1000000);
+    engineState.buffer[engineState.sweepPosition] = value;
+    engineState.spikes[engineState.sweepPosition] = spike;
+
+    engineState.sweepPosition = (engineState.sweepPosition + 1) % BUFFER_LENGTH;
+    engineState.samplesWritten = Math.min(engineState.samplesWritten + 1, BUFFER_LENGTH);
+    engineState.totalSamples += 1;
 
     draw();
 }
 
 function generateSample() {
     const waveform = engineState.waveform ?? defaultWaveform;
-    const nowSeconds = engineState.sampleIndex / SAMPLES_PER_SECOND;
+    const nowSeconds = engineState.totalSamples / SAMPLES_PER_SECOND;
     const effective = resolveEffectiveConfig(waveform);
 
     const phase = computePhase(nowSeconds, effective);
@@ -318,39 +324,58 @@ function draw() {
     const mid = height / 2;
 
     const stepX = width / BUFFER_LENGTH;
-    const start = (engineState.sampleIndex - BUFFER_LENGTH + BUFFER_LENGTH) % BUFFER_LENGTH;
+    const samplesAvailable = Math.min(engineState.samplesWritten, BUFFER_LENGTH);
 
+    const segments = [];
+    if (samplesAvailable === BUFFER_LENGTH) {
+        const tailCount = BUFFER_LENGTH - engineState.sweepPosition;
+        if (tailCount > 0) {
+            segments.push({ start: engineState.sweepPosition, count: tailCount });
+        }
+        if (engineState.sweepPosition > 0) {
+            segments.push({ start: 0, count: engineState.sweepPosition });
+        }
+    } else if (engineState.sweepPosition > 0) {
+        segments.push({ start: 0, count: engineState.sweepPosition });
+    }
+
+    if (segments.length === 0) {
+        return;
+    }
+    
     ctx.lineWidth = 2;
     ctx.strokeStyle = color;
     ctx.shadowColor = color;
     ctx.shadowBlur = 8;
-    ctx.beginPath();
-
-    for (let i = 0; i < BUFFER_LENGTH; i++) {
-        const j = (start + i) % BUFFER_LENGTH;
-        const x = i * stepX;
-        const y = mid - engineState.buffer[j] * scale;
-        if (i === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
+    segments.forEach(({ start, count }) => {
+        ctx.beginPath();
+        for (let i = 0; i < count; i++) {
+            const x = (start + i) * stepX;
+            const y = mid - engineState.buffer[start + i] * scale;
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
         }
-    }
     ctx.stroke();
+    });
     ctx.shadowBlur = 0;
 
     ctx.strokeStyle = '#fbbf24';
     ctx.lineWidth = 1.5;
-    for (let i = 0; i < BUFFER_LENGTH; i++) {
-        const j = (start + i) % BUFFER_LENGTH;
-        if (engineState.spikes[j]) {
-            const x = i * stepX;
-            ctx.beginPath();
-            ctx.moveTo(x, mid - scale - 10);
-            ctx.lineTo(x, mid + scale + 10);
-            ctx.stroke();
+    segments.forEach(({ start, count }) => {
+        for (let i = 0; i < count; i++) {
+            const index = start + i;
+            if (engineState.spikes[index]) {
+                const x = index * stepX;
+                ctx.beginPath();
+                ctx.moveTo(x, mid - scale - 10);
+                ctx.lineTo(x, mid + scale + 10);
+                ctx.stroke();
+            }
         }
-    }
+    });
     ctx.shadowBlur = 0;
 }
 
