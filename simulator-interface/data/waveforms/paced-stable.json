@@ -1,22 +1,53 @@
 {
   "id": "paced-stable",
   "label": "Lead II paced",
-  "durationMs": 1000,
-  "scale": 40,
-  "spike": {
-    "width": 0.01,
-    "amplitude": 2.2,
-    "position": 0.25
+  "appearance": {
+    "scale": 90,
+    "color": "#c4b5fd"
   },
-  "points": [
-    { "time": 0.0, "value": 0 },
-    { "time": 0.1, "value": 0 },
-    { "time": 0.2, "value": 0 },
-    { "time": 0.25, "value": 1.4 },
-    { "time": 0.27, "value": -0.8 },
-    { "time": 0.35, "value": 0.4 },
-    { "time": 0.5, "value": 0.1 },
-    { "time": 0.65, "value": 0 },
-    { "time": 1.0, "value": 0 }
-  ]
+  "rhythm": {
+    "baseRate": 70,
+    "intrinsicRate": 35,
+    "rrJitter": 0.01
+  },
+  "baseline": {
+    "wanderAmplitude": 0.03,
+    "wanderFrequency": 0.2,
+    "noise": 0.018
+  },
+  "morphology": {
+    "pWave": null,
+    "qrs": {
+      "center": 0.3,
+      "width": 0.028,
+      "qAmplitude": -0.32,
+      "rAmplitude": 1.55,
+      "sAmplitude": -0.42
+    },
+    "pacedQrs": {
+      "center": 0.3,
+      "width": 0.03,
+      "qAmplitude": -0.36,
+      "rAmplitude": 1.65,
+      "sAmplitude": -0.48
+    },
+    "tWave": { "center": 0.6, "width": 0.12, "amplitude": 0.36 }
+  },
+  "pacing": {
+    "enabled": true,
+    "spikePhase": 0.26,
+    "spikeWidth": 0.0065,
+    "spikeAmplitude": 2.3,
+    "captureThreshold": 4.0,
+    "inhibitBelowSensitivity": 0.8,
+    "escapeMorphology": {
+      "qrs": {
+        "center": 0.32,
+        "width": 0.022,
+        "qAmplitude": -0.2,
+        "rAmplitude": 0.55,
+        "sAmplitude": -0.15
+      }
+    }
+  }
 }
