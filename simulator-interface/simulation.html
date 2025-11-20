@@ -140,7 +140,24 @@
                             </div>
 
                             <div class="card parameters-card">
-                                <h3 class="card-title">Pacemaker parameters</h3>
+                             <h3 class="card-title">Pacemaker parameters</h3>
+
+                                <div class="led-row">
+                                    <div class="led-group">
+                                        <div class="led led-pace" id="paceLed"></div>
+                                        <span>PACE</span>
+                                    </div>
+                                    <div class="led-group">
+                                        <div class="led led-sense" id="senseLed"></div>
+                                        <span>SENSE</span>
+                                    </div>
+                                    <div class="led-group led-test-group">
+                                        <button type="button" id="testPaceLed" class="btn btn-secondary btn-small">Test PACE</button>
+                                        <button type="button" id="testSenseLed" class="btn btn-secondary btn-small">Test SENSE</button>
+                                    </div>
+                                   
+                                </div>
+
                                 <div class="param-grid">
                                     <div class="param-tile">
                                         <div class="param-label">Rate</div>
@@ -163,25 +180,6 @@
                                             <span class="param-unit">mV</span>
                                         </div>
                                     </div>
-                                    <div class="param-tile">
-                                        <div class="param-label">Mode</div>
-                                        <div class="param-value">
-                                            <span id="modeValue">VVI</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="led-row">
-                                <div class="led-group">
-                                    <div class="led led-pace" id="paceLed"></div>
-                                    <span>PACE</span>
-                                <div class="led-group">
-                                    <div class="led led-sense" id="senseLed"></div>
-                                    <span>SENSE</span>
-                                </div>
-                                <div class="led-group led-test-group">
-                                    <button type="button" id="testPaceLed" class="btn btn-secondary btn-small">Test PACE</button>
-                                    <button type="button" id="testSenseLed" class="btn btn-secondary btn-small">Test SENSE</button>
-                                </div>
                                 </div>
                             </div>
                             <div class="card virtual-card" id="virtualControllerCard" hidden>
