@@ -18,6 +18,12 @@ function initVirtualController() {
         sensitivity: card.querySelector('[data-value="sensitivity"]')
     };
 
+    const inputs = {
+        rate: card.querySelector('[data-control="rate"]'),
+        output: card.querySelector('[data-control="output"]'),
+        sensitivity: card.querySelector('[data-control="sensitivity"]')
+    };
+
     const display = {
         rate: document.getElementById('rateValue'),
         output: document.getElementById('outputValue'),
