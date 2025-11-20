@@ -1,3 +1,7 @@
+const SAMPLES_PER_SECOND = 250;
+const SECONDS_VISIBLE = 10;
+const BUFFER_LENGTH = SAMPLES_PER_SECOND * SECONDS_VISIBLE;
+
 const canvas = document.getElementById('ecgCanvas');
 const ctx = canvas?.getContext('2d') ?? null;
 const leadLabel = document.getElementById('leadLabel');
@@ -5,16 +9,41 @@ const leadLabel = document.getElementById('leadLabel');
 const waveformCache = new Map();
 let waveformIndex = null;
 let activeWaveformId = null;
-let animationFrameId = null;
-let animationStart = null;
-let currentWaveform = null;
 
-async function initEcgEngine() {
+const engineState = {
+    buffer: new Array(BUFFER_LENGTH).fill(0),
+    spikes: new Array(BUFFER_LENGTH).fill(0),
+    sampleIndex: 0,
+    beatStartSeconds: 0,
+    beatDurationSeconds: null,
+    parameters: {
+        rate: null,
+        output: null,
+        sensitivity: null
+    },
+    waveform: null,
+    timerId: null
+};
+
+const defaultWaveform = {
+    id: 'fallback-normal',
+    label: 'Lead II',
+    appearance: { scale: 88, color: '#7dd3fc' },
+    rhythm: { baseRate: 72, intrinsicRate: 72, rrJitter: 0.02 },
+    baseline: { wanderAmplitude: 0.05, wanderFrequency: 0.25, noise: 0.02 },
+    morphology: {
+        pWave: { center: 0.18, width: 0.045, amplitude: 0.16 },
+        qrs: { center: 0.32, width: 0.018, qAmplitude: -0.3, rAmplitude: 1.2, sAmplitude: -0.35 },
+        tWave: { center: 0.58, width: 0.12, amplitude: 0.42 }
+    }
+};
+
+function initEcgEngine() {
     if (!canvas || !ctx) {
         return;
     }
 
-    drawGrid();
+    draw();
 
     window.addEventListener('edupace-scenario-change', (event) => {
         const waveformId = event.detail?.waveformId;
@@ -29,6 +58,16 @@ async function initEcgEngine() {
             setWaveform(waveformId);
         }
     });
+
+    window.addEventListener('edupace-parameters', (event) => {
+        Object.assign(engineState.parameters, event.detail ?? {});
+    });
+
+    if (engineState.timerId) {
+        clearInterval(engineState.timerId);
+    }
+
+    engineState.timerId = setInterval(step, 1000 / SAMPLES_PER_SECOND);
 }
 
 async function setWaveform(waveformId) {
@@ -42,7 +81,13 @@ async function setWaveform(waveformId) {
     }
 
     activeWaveformId = waveformId;
-    startRenderingWaveform(waveform);
+    engineState.waveform = waveform;
+    engineState.sampleIndex = 0;
+    engineState.beatDurationSeconds = null;
+    engineState.beatStartSeconds = 0;
+    engineState.buffer.fill(0);
+    engineState.spikes.fill(0);
+
     if (leadLabel && waveform.label) {
         leadLabel.textContent = waveform.label;
     }
@@ -91,151 +136,268 @@ async function loadWaveformIndex() {
     return waveformIndex;
 }
 
-function drawGrid() {
-    if (!ctx) return;
+function step() {
+    if (!ctx || !canvas) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
+    const { value, spike } = generateSample();
 
-    ctx.fillStyle = '#030812';
-    ctx.fillRect(0, 0, width, height);
+    const idx = engineState.sampleIndex % BUFFER_LENGTH;
+    engineState.buffer[idx] = value;
+    engineState.spikes[idx] = spike;
+    engineState.sampleIndex = (engineState.sampleIndex + 1) % (BUFFER_LENGTH * 1000000);
 
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    const smallSpacing = 25;
-
-    for (let x = 0; x <= width; x += smallSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-    }
-
-    for (let y = 0; y <= height; y += smallSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-    }
-
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-    const largeSpacing = smallSpacing * 5;
-    for (let x = 0; x <= width; x += largeSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= height; y += largeSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-    }
+    draw();
 }
 
-function startRenderingWaveform(waveform) {
-    currentWaveform = waveform;
-    animationStart = null;
+function generateSample() {
+    const waveform = engineState.waveform ?? defaultWaveform;
+    const nowSeconds = engineState.sampleIndex / SAMPLES_PER_SECOND;
+    const effective = resolveEffectiveConfig(waveform);
 
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-    }
+    const phase = computePhase(nowSeconds, effective);
 
-    animationFrameId = requestAnimationFrame(drawFrame);
+    let v = baselineWander(effective, nowSeconds);
+    v += renderPWave(effective, phase);
+    v += renderQrs(effective, phase);
+    v += renderTWave(effective, phase);
+    v += noise(effective);
+
+    const spike = shouldShowSpike(effective, phase) ? 1 : 0;
+
+    return { value: v, spike };
 }
 
-function drawFrame(timestamp) {
-    if (!ctx || !currentWaveform) return;
+function resolveEffectiveConfig(waveform) {
+    const appearance = waveform.appearance ?? {};
+    const rhythm = waveform.rhythm ?? {};
+    const morphology = waveform.morphology ?? {};
+    const pacing = waveform.pacing ?? {};
 
-    if (animationStart === null) {
-        animationStart = timestamp;
-    }
+    const baseRate = clamp(engineState.parameters.rate ?? rhythm.baseRate ?? rhythm.intrinsicRate ?? 70, 30, 180);
+    let rate = baseRate;
+    let capture = true;
+    let spikesVisible = Boolean(pacing.enabled);
 
-    const durationMs = currentWaveform.durationMs ?? 1000;
-    const elapsed = timestamp - animationStart;
-    const phaseOffset = (elapsed % durationMs) / durationMs;
+    const inhibited = pacing.enabled &&
+        typeof pacing.inhibitBelowSensitivity === 'number' &&
+        engineState.parameters.sensitivity !== null &&
+        engineState.parameters.sensitivity !== undefined &&
+        engineState.parameters.sensitivity < pacing.inhibitBelowSensitivity;
 
-    drawGrid();
+    if (pacing.enabled) {
+        const captureThreshold = pacing.captureThreshold ?? 0;
+        capture = Boolean(!pacing.forceNoCapture && (engineState.parameters.output ?? captureThreshold) >= captureThreshold);
 
-    renderWaveform(currentWaveform, phaseOffset);
-
-    animationFrameId = requestAnimationFrame(drawFrame);
-}
-
-function renderWaveform(waveform, phaseOffset = 0) {
-    const width = canvas.width;
-    const height = canvas.height;
-    const baseline = height / 2;
-    const scale = waveform.scale ?? 35;
-    const points = (waveform.points ?? []).slice().sort((a, b) => a.time - b.time);
-
-    if (!points.length) {
-        return;
-    }
-
-    ctx.lineWidth = 2;
-    const gradient = ctx.createLinearGradient(0, 0, width, 0);
-    gradient.addColorStop(0, '#43e697');
-    gradient.addColorStop(1, '#a6ffd3');
-
-    ctx.strokeStyle = gradient;
-    ctx.lineWidth = 2;
-    ctx.shadowColor = 'rgba(106, 247, 184, 0.6)';
-    ctx.shadowBlur = 8;
-
-    ctx.beginPath();
-
-    const extendedPoints = points.concat(points.map((point) => ({ ...point, time: point.time + 1 })));
-    const windowStart = phaseOffset;
-    const windowEnd = phaseOffset + 1;
-
-    extendedPoints.forEach((point, index) => {
-        if (point.time < windowStart || point.time > windowEnd) {
-            return;
+        if (pacing.forceNoCapture) {
+            capture = false;
         }
 
-        const x = ((point.time - windowStart) / (windowEnd - windowStart)) * width;
-        const y = baseline - point.value * scale;
-        if (index === 0 || extendedPoints[index - 1].time < windowStart) {
+        if (inhibited) {
+            capture = false;
+            spikesVisible = false;
+            rate = rhythm.intrinsicRate ?? rate;
+        }
+    } else {
+        capture = false;
+        rate = rhythm.intrinsicRate ?? rate;
+    }
 
+    const qrsMorphology = capture
+        ? morphology.pacedQrs ?? morphology.qrs
+        : pacing.escapeMorphology?.qrs ?? morphology.qrs;
+
+    return {
+        appearance: {
+            scale: appearance.scale ?? 88,
+            color: appearance.color ?? '#7dd3fc'
+        },
+        rhythm,
+        baseline: waveform.baseline ?? {},
+        morphology: {
+            pWave: morphology.pWave,
+            qrs: qrsMorphology,
+            tWave: morphology.tWave
+        },
+        pacing: {
+            enabled: Boolean(pacing.enabled),
+            spikesVisible,
+            spikePhase: pacing.spikePhase ?? (qrsMorphology?.center ?? 0.3) - 0.02,
+            spikeWidth: pacing.spikeWidth ?? 0.006,
+            spikeAmplitude: pacing.spikeAmplitude ?? 2.2
+        },
+        rate,
+        capture
+    };
+}
+
+function computePhase(nowSeconds, effective) {
+    const beatDuration = 60 / Math.max(effective.rate, 0.1);
+
+    if (engineState.beatDurationSeconds === null) {
+        engineState.beatDurationSeconds = beatDuration;
+        engineState.beatStartSeconds = nowSeconds;
+    }
+
+    const beatEnd = engineState.beatStartSeconds + engineState.beatDurationSeconds;
+    if (nowSeconds >= beatEnd) {
+        const jitter = effective.rhythm?.rrJitter ?? 0;
+        const jitterFactor = 1 + (Math.random() - 0.5) * 2 * jitter;
+        engineState.beatDurationSeconds = clamp(beatDuration * jitterFactor, beatDuration * 0.6, beatDuration * 1.4);
+        engineState.beatStartSeconds = beatEnd;
+    }
+
+    const elapsed = nowSeconds - engineState.beatStartSeconds;
+    return clamp(elapsed / engineState.beatDurationSeconds, 0, 1);
+}
+
+function baselineWander(effective, nowSeconds) {
+    const wanderAmplitude = effective.baseline?.wanderAmplitude ?? 0.05;
+    const wanderFrequency = effective.baseline?.wanderFrequency ?? 0.25;
+    return wanderAmplitude * Math.sin(2 * Math.PI * wanderFrequency * nowSeconds);
+}
+
+function renderPWave(effective, phase) {
+    const pWave = effective.morphology.pWave;
+    if (!pWave) return 0;
+    return gaussian(phase, pWave.center ?? 0.18, pWave.width ?? 0.04) * (pWave.amplitude ?? 0.15);
+}
+
+function renderQrs(effective, phase) {
+    const qrs = effective.morphology.qrs;
+    if (!qrs) return 0;
+
+    const center = qrs.center ?? 0.3;
+    const width = qrs.width ?? 0.02;
+    const qAmp = qrs.qAmplitude ?? -0.28;
+    const rAmp = qrs.rAmplitude ?? 1.2;
+    const sAmp = qrs.sAmplitude ?? -0.35;
+
+    let v = 0;
+    v += gaussian(phase, center - width * 0.55, width * 0.4) * qAmp;
+    v += gaussian(phase, center, width * 0.25) * rAmp;
+    v += gaussian(phase, center + width * 0.55, width * 0.35) * sAmp;
+    return v;
+}
+
+function renderTWave(effective, phase) {
+    const tWave = effective.morphology.tWave;
+    if (!tWave) return 0;
+    return gaussian(phase, tWave.center ?? 0.6, tWave.width ?? 0.12) * (tWave.amplitude ?? 0.3);
+}
+
+function noise(effective) {
+    const noiseAmplitude = effective.baseline?.noise ?? 0.02;
+    return (Math.random() - 0.5) * noiseAmplitude;
+}
+
+function shouldShowSpike(effective, phase) {
+    if (!effective.pacing.enabled || !effective.pacing.spikesVisible) {
+        return false;
+    }
+
+    const window = effective.pacing.spikeWidth ?? 0.006;
+    const distance = Math.abs(phase - effective.pacing.spikePhase);
+    return distance < window;
+}
+
+function draw() {
+    if (!ctx || !canvas) return;
+
+    const width = canvas.clientWidth || canvas.width || 1200;
+    const height = canvas.clientHeight || canvas.height || 350;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    drawGrid(width, height);
+
+    const active = engineState.waveform ?? defaultWaveform;
+    const appearance = active.appearance ?? {};
+    const scale = appearance.scale ?? 88;
+    const color = appearance.color ?? '#7dd3fc';
+    const mid = height / 2;
+
+    const stepX = width / BUFFER_LENGTH;
+    const start = (engineState.sampleIndex - BUFFER_LENGTH + BUFFER_LENGTH) % BUFFER_LENGTH;
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+
+    for (let i = 0; i < BUFFER_LENGTH; i++) {
+        const j = (start + i) % BUFFER_LENGTH;
+        const x = i * stepX;
+        const y = mid - engineState.buffer[j] * scale;
+        if (i === 0) {
             ctx.moveTo(x, y);
         } else {
             ctx.lineTo(x, y);
         }
-    });
-
+    }
     ctx.stroke();
+    ctx.shadowBlur = 0;
 
-    if (waveform.spike) {
-        drawPacingSpike(waveform.spike,phaseOffset);
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < BUFFER_LENGTH; i++) {
+        const j = (start + i) % BUFFER_LENGTH;
+        if (engineState.spikes[j]) {
+            const x = i * stepX;
+            ctx.beginPath();
+            ctx.moveTo(x, mid - scale - 10);
+            ctx.lineTo(x, mid + scale + 10);
+            ctx.stroke();
+        }
+    }
+    ctx.shadowBlur = 0;
+}
+
+function drawGrid(width, height) {
+    ctx.fillStyle = '#030a14';
+    ctx.fillRect(0, 0, width, height);
+
+    const small = 12;
+    ctx.lineWidth = 0.6;
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+    for (let x = 0; x <= width; x += small) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += small) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(226, 232, 240, 0.12)';
+    for (let x = 0; x <= width; x += small * 5) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += small * 5) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
     }
 }
 
-function drawPacingSpike(spike,phaseOffset=0) {
-    const width = canvas.width;
-    const height = canvas.height;
-    const baseline = height / 2;
-    const positions = [spike.position, spike.position + 1];
+function gaussian(x, center, width) {
+    const sigma = width || 0.01;
+    const z = (x - center) / sigma;
+    return Math.exp(-0.5 * z * z);
+}
 
-
-    positions.forEach((position) => {
-        if (position < phaseOffset || position > phaseOffset + 1) {
-            return;
-        }
-
-        const spikeX = ((position - phaseOffset) / 1) * width;
-        const spikeWidth = spike.width * width;
-        const amplitude = spike.amplitude * 20;
-
-        ctx.strokeStyle = '#f7e76a';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(spikeX - spikeWidth / 2, baseline);
-        ctx.lineTo(spikeX, baseline - amplitude);
-        ctx.lineTo(spikeX + spikeWidth / 2, baseline);
-        ctx.stroke();
-    });
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
 }
 
 export { initEcgEngine };
