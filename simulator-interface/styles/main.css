@@ -78,10 +78,9 @@ a {
 }
 
 .brand {
-    font-weight: 800;
-    font-size: 1.35rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    font-weight: 600;          
+    font-size: 1.35rem;        
+    letter-spacing: -0.02em;   
     color: var(--deep-navy);
     display: inline-flex;
     align-items: center;
