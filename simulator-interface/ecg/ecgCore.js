@@ -279,7 +279,7 @@ export function stitchBeatsNew(
   gap,          // base gap between beats
   regularity,   // 'Regular' or 'Irregular'
   sensitivity,  // mV
-  rate,         // bpm
+  rate,         // ppm
   output,       // mA
   asynchronous  // boolean
 ) {
