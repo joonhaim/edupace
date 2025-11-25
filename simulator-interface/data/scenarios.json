@@ -28,8 +28,14 @@
           "id": "uc00-loss-of-capture",
           "description": "Loss of capture when rate exceeds the intrinsic rhythm without adequate output",
           "condition": {
-            "rate": [80, 120],
-            "output": [0, 3]
+            "rate": [
+              80,
+              120
+            ],
+            "output": [
+              0,
+              3
+            ]
           },
           "effects": {
             "alarm": {
@@ -38,72 +44,6 @@
             },
             "feedback": "Increase the pacing output until capture returns, then add a 2 mA safety margin.",
             "waveformId": "loss-of-capture"
-          }
-        }
-      ]
-    },
-    {
-      "id": "UC-01",
-      "title": "UC-01 · Initial Setup for Bradycardia",
-      "description": "Stabilize a 35 bpm junctional rhythm by dialing in VVI pacing at 70 bpm with safe output.",
-      "summaryLabel": "Junctional bradycardia",
-      "primaryRhythm": "Junctional bradycardia",
-      "location": "CCU",
-      "waveformId": "junctional-bradycardia",
-      "vitals": {
-        "hr": 35,
-        "bp": "88/50",
-        "spo2": 94,
-        "temp": 36.5
-      },
-      "pacing": {
-        "mode": "VVI"
-      },
-      "alarm": {
-        "level": "critical",
-        "text": "Symptomatic bradycardia"
-      },
-      "objective": "Bring the patient to 70 bpm pacing with capture and a 2 mA safety margin.",
-      "feedback": "Increase the rate and then lower output to find threshold before adding safety margin.",
-      "rules": [
-        {
-          "id": "uc01-target-window",
-          "description": "Patient stabilizes when the three knobs are within the target window.",
-          "condition": {
-            "rate": [68, 74],
-            "output": [4, 8],
-            "sensitivity": [1, 5]
-          },
-          "effects": {
-            "alarm": {
-              "level": "normal",
-              "text": "Patient stable"
-            },
-            "objective": "Document the achieved settings and monitor for intrinsic beats.",
-            "feedback": "Great job – capture is reliable and the rate is on target.",
-            "vitals": {
-              "hr": 70,
-              "bp": "112/70",
-              "spo2": 98
-            },
-            "waveformId": "paced-stable"
-          }
-        },
-        {
-          "id": "uc01-oversensing",
-          "description": "Oversensing occurs when sensitivity is set too low.",
-          "condition": {
-            "rate": [65, 90],
-            "output": [4, 8],
-            "sensitivity": [0, 0.8]
-          },
-          "effects": {
-            "alarm": {
-              "level": "warning",
-              "text": "Oversensing – increase sensitivity value"
-            },
-            "feedback": "The pacemaker is oversensing noise. Reduce sensitivity (higher mV) to resume pacing.",
-            "waveformId": "oversensing"
           }
         }
       ]

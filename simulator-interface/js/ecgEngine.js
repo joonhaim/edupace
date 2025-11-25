@@ -1,434 +1,335 @@
-const SAMPLES_PER_SECOND = 250;
-const SECONDS_VISIBLE = 10;
-const BUFFER_LENGTH = SAMPLES_PER_SECOND * SECONDS_VISIBLE;
+import { ecgWave, heartRate, stitchBeatsNew } from '../ecg/ecgCore.js';
 
-const canvas = document.getElementById('ecgCanvas');
-const ctx = canvas?.getContext('2d') ?? null;
-const leadLabel = document.getElementById('leadLabel');
+const SECONDS_VISIBLE = 6;
+const SWEEP_SPEED_MM_PER_SEC = 25;
+const CALIPER_THRESHOLD = 4;
 
+const engineState = {
+    patientRate: 70,
+    pacingRate: 70,
+    output: 5,
+    sensitivity: 2.0,
+    regularity: 'Regular',
+    asynchronous: false,
+    baseSignal: 'Normal'
+};
+
+let canvas;
+let ctx;
+let gridCanvas;
+let gridCtx;
+let waveformPoints = [];
+let waveformDuration = 0;
+let maxWaveAmplitude = 1;
+let sweepX = 0;
+let sweepTime = 0;
+let lastFrameTime = null;
+let animationFrameId = null;
+let traceCanvas;
+let traceCtx;
+let gridDirty = true;
 let isPaused = false;
 let caliper = null;
 let pendingCaliper = null;
 let ignoreNextPointerUp = false;
 
-
-const waveformCache = new Map();
-let waveformIndex = null;
-let activeWaveformId = null;
-
-const engineState = {
-    buffer: new Array(BUFFER_LENGTH).fill(0),
-    spikes: new Array(BUFFER_LENGTH).fill(0),
-    sweepPosition: 0,
-    samplesWritten: 0,
-    beatStartSeconds: 0,
-    beatDurationSeconds: null,
-    totalSamples:0,
-    parameters: {
-        rate: null,
-        output: null,
-        sensitivity: null
-    },
-    waveform: null,
-    timerId: null
-};
-
-const defaultWaveform = {
-    id: 'fallback-normal',
-    label: 'Lead II',
-    appearance: { scale: 88, color: '#7dd3fc' },
-    rhythm: { baseRate: 72, intrinsicRate: 72, rrJitter: 0.02 },
-    baseline: { wanderAmplitude: 0.05, wanderFrequency: 0.25, noise: 0.02 },
-    morphology: {
-        pWave: { center: 0.18, width: 0.045, amplitude: 0.16 },
-        qrs: { center: 0.32, width: 0.018, qAmplitude: -0.3, rAmplitude: 1.2, sAmplitude: -0.35 },
-        tWave: { center: 0.58, width: 0.12, amplitude: 0.42 }
-    }
-};
-
 function initEcgEngine() {
-    if (!canvas || !ctx) {
-        return;
-    }
+    canvas = document.getElementById('ecgCanvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+
+    gridCanvas = document.createElement('canvas');
+    gridCtx = gridCanvas.getContext('2d');
+
+    traceCanvas = document.createElement('canvas');
+    traceCtx = traceCanvas.getContext('2d');
+    syncCanvasSize();
+    configureTraceStyle();
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
     canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointercancel', handlePointerUp);
     canvas.addEventListener('pointerleave', handlePointerUp);
 
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('edupace-parameters', handleParameterChange);
+    window.addEventListener('edupace-scenario-change', handleScenarioChange);
+    window.addEventListener('edupace-rule-effects', handleRuleEffects);
+    window.addEventListener('edupace-waveform-change', handleWaveformChange);
 
-    draw();
-
-    window.addEventListener('edupace-scenario-change', (event) => {
-        const waveformId = event.detail?.waveformId;
-        if (waveformId) {
-            setWaveform(waveformId);
-        }
-    });
-
-    window.addEventListener('edupace-waveform-change', (event) => {
-        const waveformId = event.detail?.waveformId;
-        if (waveformId) {
-            setWaveform(waveformId);
-        }
-    });
-
-    window.addEventListener('edupace-parameters', (event) => {
-        Object.assign(engineState.parameters, event.detail ?? {});
-    });
-
-    if (engineState.timerId) {
-        clearInterval(engineState.timerId);
-    }
-
-    engineState.timerId = setInterval(step, 1000 / SAMPLES_PER_SECOND);
+    regenerateWaveform();
+    startAnimationLoop();
 }
 
-async function setWaveform(waveformId) {
-    if (!waveformId || waveformId === activeWaveformId) {
-        return;
+function handleParameterChange(event) {
+    const { rate, output, sensitivity } = event.detail ?? {};
+    if (Number.isFinite(rate)) engineState.pacingRate = rate;
+    if (Number.isFinite(output)) engineState.output = output;
+    if (Number.isFinite(sensitivity)) engineState.sensitivity = sensitivity;
+    regenerateWaveform({ keepSweep: true });
+}
+
+function handleScenarioChange(event) {
+    const previousBaseSignal = engineState.baseSignal;
+    const hr = event.detail?.vitals?.hr;
+    if (Number.isFinite(hr)) engineState.patientRate = hr;
+    if (event.detail?.waveformId) {
+        engineState.baseSignal = mapWaveformId(event.detail.waveformId);
     }
+    const waveformChanged = engineState.baseSignal !== previousBaseSignal;
+    regenerateWaveform({ keepSweep: !waveformChanged });
+}
 
-    const waveform = await loadWaveform(waveformId);
-    if (!waveform) {
-        return;
+function handleRuleEffects(event) {
+    const previousBaseSignal = engineState.baseSignal;
+    const hr = event.detail?.effects?.vitals?.hr;
+    if (Number.isFinite(hr)) engineState.patientRate = hr;
+    if (event.detail?.effects?.waveformId) {
+        engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
     }
+    const waveformChanged = engineState.baseSignal !== previousBaseSignal;
+    regenerateWaveform({ keepSweep: !waveformChanged });
+}
 
-    activeWaveformId = waveformId;
-    engineState.waveform = waveform;
-    engineState.sweepPosition = 0;
-    engineState.samplesWritten = 0;
-    engineState.beatDurationSeconds = null;
-    engineState.beatStartSeconds = 0;
-    engineState.totalSamples = 0;
-    engineState.buffer.fill(0);
-    engineState.spikes.fill(0);
-
-    if (leadLabel && waveform.label) {
-        leadLabel.textContent = waveform.label;
+function handleWaveformChange(event) {
+    const waveformId = event.detail?.waveformId;
+    if (waveformId) {
+        engineState.baseSignal = mapWaveformId(waveformId);
+        regenerateWaveform();
     }
 }
 
-async function loadWaveform(waveformId) {
-    if (waveformCache.has(waveformId)) {
-        return waveformCache.get(waveformId);
-    }
-
-    const index = await loadWaveformIndex();
-    const entry = index.get(waveformId);
-    if (!entry) {
-        console.warn(`Waveform ${waveformId} not found in index`);
-        return null;
-    }
-
-    const response = await fetch(`data/waveforms/${entry.file}`, { cache: 'no-store' });
-    if (!response.ok) {
-        console.error(`Unable to load waveform ${waveformId}`);
-        return null;
-    }
-
-    const waveform = await response.json();
-    waveformCache.set(waveformId, waveform);
-    return waveform;
+function configureTraceStyle() {
+    if (!traceCtx) return;
+    traceCtx.lineWidth = 2;
+    traceCtx.strokeStyle = '#00ff63';
+    traceCtx.lineJoin = 'round';
+    traceCtx.lineCap = 'round';
 }
 
-async function loadWaveformIndex() {
-    if (waveformIndex) {
-        return waveformIndex;
+function mapWaveformId(waveformId) {
+    switch (waveformId) {
+        case 'loss-of-capture':
+            return 'Ventricular pacing';
+        case 'normal-sinus':
+        default:
+            return 'Normal';
     }
-
-    try {
-        const response = await fetch('data/waveforms/index.json', { cache: 'no-store' });
-        const payload = await response.json();
-        waveformIndex = new Map();
-        (payload.waveforms ?? []).forEach((wf) => {
-            waveformIndex.set(wf.id, wf);
-        });
-    } catch (error) {
-        console.error('Unable to load waveform index', error);
-        waveformIndex = new Map();
-    }
-
-    return waveformIndex;
 }
 
-function step() {
-    if (!ctx || !canvas) return;
-    if (isPaused) return;
+function syncCanvasSize() {
+    if (!canvas || !traceCanvas || !gridCanvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const newWidth = Math.max(Math.round(rect.width || canvas.width || 1), 1);
+    const newHeight = Math.max(Math.round(rect.height || canvas.height || 1), 1);
 
-    const { value, spike } = generateSample();
-
-    engineState.buffer[engineState.sweepPosition] = value;
-    engineState.spikes[engineState.sweepPosition] = spike;
-
-    engineState.sweepPosition = (engineState.sweepPosition + 1) % BUFFER_LENGTH;
-    engineState.samplesWritten = Math.min(engineState.samplesWritten + 1, BUFFER_LENGTH);
-    engineState.totalSamples += 1;
-
-    draw();
-}
-
-function generateSample() {
-    const waveform = engineState.waveform ?? defaultWaveform;
-    const nowSeconds = engineState.totalSamples / SAMPLES_PER_SECOND;
-    const effective = resolveEffectiveConfig(waveform);
-
-    const phase = computePhase(nowSeconds, effective);
-
-    let v = baselineWander(effective, nowSeconds);
-    v += renderPWave(effective, phase);
-    v += renderQrs(effective, phase);
-    v += renderTWave(effective, phase);
-    v += noise(effective);
-
-    const spike = shouldShowSpike(effective, phase) ? 1 : 0;
-
-    return { value: v, spike };
-}
-
-function resolveEffectiveConfig(waveform) {
-    const appearance = waveform.appearance ?? {};
-    const rhythm = waveform.rhythm ?? {};
-    const morphology = waveform.morphology ?? {};
-    const pacing = waveform.pacing ?? {};
-
-    const baseRate = clamp(engineState.parameters.rate ?? rhythm.baseRate ?? rhythm.intrinsicRate ?? 70, 30, 180);
-    let rate = baseRate;
-    let capture = true;
-    let spikesVisible = Boolean(pacing.enabled);
-
-    const inhibited = pacing.enabled &&
-        typeof pacing.inhibitBelowSensitivity === 'number' &&
-        engineState.parameters.sensitivity !== null &&
-        engineState.parameters.sensitivity !== undefined &&
-        engineState.parameters.sensitivity < pacing.inhibitBelowSensitivity;
-
-    if (pacing.enabled) {
-        const captureThreshold = pacing.captureThreshold ?? 0;
-        capture = Boolean(!pacing.forceNoCapture && (engineState.parameters.output ?? captureThreshold) >= captureThreshold);
-
-        if (pacing.forceNoCapture) {
-            capture = false;
-        }
-
-        if (inhibited) {
-            capture = false;
-            spikesVisible = false;
-            rate = rhythm.intrinsicRate ?? rate;
-        }
-    } else {
-        capture = false;
-        rate = rhythm.intrinsicRate ?? rate;
+    if (canvas.width !== newWidth || canvas.height !== newHeight) {
+        canvas.width = newWidth;
+        canvas.height = newHeight;
     }
 
-    const qrsMorphology = capture
-        ? morphology.pacedQrs ?? morphology.qrs
-        : pacing.escapeMorphology?.qrs ?? morphology.qrs;
+    if (traceCanvas.width !== newWidth || traceCanvas.height !== newHeight) {
+        traceCanvas.width = newWidth;
+        traceCanvas.height = newHeight;
+        configureTraceStyle();
+    }
 
-    return {
-        appearance: {
-            scale: appearance.scale ?? 88,
-            color: appearance.color ?? '#7dd3fc'
-        },
-        rhythm,
-        baseline: waveform.baseline ?? {},
-        morphology: {
-            pWave: morphology.pWave,
-            qrs: qrsMorphology,
-            tWave: morphology.tWave
-        },
-        pacing: {
-            enabled: Boolean(pacing.enabled),
-            spikesVisible,
-            spikePhase: pacing.spikePhase ?? (qrsMorphology?.center ?? 0.3) - 0.02,
-            spikeWidth: pacing.spikeWidth ?? 0.006,
-            spikeAmplitude: pacing.spikeAmplitude ?? 2.2
-        },
-        rate,
-        capture
+    if (gridCanvas.width !== newWidth || gridCanvas.height !== newHeight) {
+        gridCanvas.width = newWidth;
+        gridCanvas.height = newHeight;
+    }
+
+    gridDirty = true;
+}
+
+function handleResize() {
+    syncCanvasSize();
+    resetSweep();
+}
+
+function regenerateWaveform(options = {}) {
+    const { keepSweep = false } = options;
+    const gap = heartRate(engineState.patientRate);
+    const ecgFunc = (type) => {
+        const resolvedType = type === 'Normal' ? engineState.baseSignal : type;
+        return ecgWave(resolvedType);
     };
-}
 
-function computePhase(nowSeconds, effective) {
-    const beatDuration = 60 / Math.max(effective.rate, 0.1);
+    const { x, y } = stitchBeatsNew(
+        ecgFunc,
+        gap,
+        engineState.regularity,
+        engineState.sensitivity,
+        engineState.pacingRate,
+        engineState.output,
+        engineState.asynchronous
+    );
 
-    if (engineState.beatDurationSeconds === null) {
-        engineState.beatDurationSeconds = beatDuration;
-        engineState.beatStartSeconds = nowSeconds;
+    waveformDuration = Math.max(...x, 0);
+    waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
+    maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
+
+    if (keepSweep) {
+        sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
+        return;
     }
 
-    const beatEnd = engineState.beatStartSeconds + engineState.beatDurationSeconds;
-    if (nowSeconds >= beatEnd) {
-        const jitter = effective.rhythm?.rrJitter ?? 0;
-        const jitterFactor = 1 + (Math.random() - 0.5) * 2 * jitter;
-        engineState.beatDurationSeconds = clamp(beatDuration * jitterFactor, beatDuration * 0.6, beatDuration * 1.4);
-        engineState.beatStartSeconds = beatEnd;
+    resetSweep();
+}
+
+function resetSweep() {
+    sweepX = 0;
+    sweepTime = 0;
+    lastFrameTime = null;
+    if (traceCtx && traceCanvas) {
+        traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
+        configureTraceStyle();
+    }
+    draw();
+}
+
+function startAnimationLoop() {
+    if (animationFrameId !== null) return;
+    animationFrameId = requestAnimationFrame(stepFrame);
+}
+
+function stepFrame(timestamp) {
+    if (!canvas) return;
+
+    if (lastFrameTime === null) {
+        lastFrameTime = timestamp;
     }
 
-    const elapsed = nowSeconds - engineState.beatStartSeconds;
-    return clamp(elapsed / engineState.beatDurationSeconds, 0, 1);
-}
+    const deltaSeconds = (timestamp - lastFrameTime) / 1000;
+    lastFrameTime = timestamp;
 
-function baselineWander(effective, nowSeconds) {
-    const wanderAmplitude = effective.baseline?.wanderAmplitude ?? 0.05;
-    const wanderFrequency = effective.baseline?.wanderFrequency ?? 0.25;
-    return wanderAmplitude * Math.sin(2 * Math.PI * wanderFrequency * nowSeconds);
-}
-
-function renderPWave(effective, phase) {
-    const pWave = effective.morphology.pWave;
-    if (!pWave) return 0;
-    return gaussian(phase, pWave.center ?? 0.18, pWave.width ?? 0.04) * (pWave.amplitude ?? 0.15);
-}
-
-function renderQrs(effective, phase) {
-    const qrs = effective.morphology.qrs;
-    if (!qrs) return 0;
-
-    const center = qrs.center ?? 0.3;
-    const width = qrs.width ?? 0.02;
-    const qAmp = qrs.qAmplitude ?? -0.28;
-    const rAmp = qrs.rAmplitude ?? 1.2;
-    const sAmp = qrs.sAmplitude ?? -0.35;
-
-    let v = 0;
-    v += gaussian(phase, center - width * 0.55, width * 0.4) * qAmp;
-    v += gaussian(phase, center, width * 0.25) * rAmp;
-    v += gaussian(phase, center + width * 0.55, width * 0.35) * sAmp;
-    return v;
-}
-
-function renderTWave(effective, phase) {
-    const tWave = effective.morphology.tWave;
-    if (!tWave) return 0;
-    return gaussian(phase, tWave.center ?? 0.6, tWave.width ?? 0.12) * (tWave.amplitude ?? 0.3);
-}
-
-function noise(effective) {
-    const noiseAmplitude = effective.baseline?.noise ?? 0.02;
-    return (Math.random() - 0.5) * noiseAmplitude;
-}
-
-function shouldShowSpike(effective, phase) {
-    if (!effective.pacing.enabled || !effective.pacing.spikesVisible) {
-        return false;
+    if (!isPaused && deltaSeconds > 0) {
+        advanceSweep(deltaSeconds);
     }
 
-    const window = effective.pacing.spikeWidth ?? 0.006;
-    const distance = Math.abs(phase - effective.pacing.spikePhase);
-    return distance < window;
+    draw();
+    animationFrameId = requestAnimationFrame(stepFrame);
 }
 
 function draw() {
     if (!ctx || !canvas) return;
 
-    const width = canvas.clientWidth || canvas.width || 1200;
-    const height = canvas.clientHeight || canvas.height || 350;
+    const { width, height } = canvas;
+    const pixelsPerSecond = width / SECONDS_VISIBLE;
+    const pixelsPerMm = pixelsPerSecond / SWEEP_SPEED_MM_PER_SEC;
 
-    canvas.width = width;
-    canvas.height = height;
-
-    drawGrid(width, height);
-
-    const active = engineState.waveform ?? defaultWaveform;
-    const appearance = active.appearance ?? {};
-    const scale = appearance.scale ?? 88;
-    const color = appearance.color ?? '#7dd3fc';
-    const mid = height / 2;
-
-    const stepX = width / BUFFER_LENGTH;
-    const samplesAvailable = Math.min(engineState.samplesWritten, BUFFER_LENGTH);
-
-    const segments = [];
-    if (samplesAvailable === BUFFER_LENGTH) {
-        const tailCount = BUFFER_LENGTH - engineState.sweepPosition;
-        if (tailCount > 0) {
-            segments.push({ start: engineState.sweepPosition, count: tailCount });
-        }
-        if (engineState.sweepPosition > 0) {
-            segments.push({ start: 0, count: engineState.sweepPosition });
-        }
-    } else if (engineState.sweepPosition > 0) {
-        segments.push({ start: 0, count: engineState.sweepPosition });
-    }
-
-    if (segments.length === 0) {
-        return;
-    }
-    
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 8;
-    segments.forEach(({ start, count }) => {
-        ctx.beginPath();
-        for (let i = 0; i < count; i++) {
-            const x = (start + i) * stepX;
-            const y = mid - engineState.buffer[start + i] * scale;
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-    ctx.stroke();
-    });
-    ctx.shadowBlur = 0;
-
-    ctx.strokeStyle = '#fbbf24';
-    ctx.lineWidth = 1.5;
-    segments.forEach(({ start, count }) => {
-        for (let i = 0; i < count; i++) {
-            const index = start + i;
-            if (engineState.spikes[index]) {
-                const x = index * stepX;
-                ctx.beginPath();
-                ctx.moveTo(x, mid - scale - 10);
-                ctx.lineTo(x, mid + scale + 10);
-                ctx.stroke();
-            }
-        }
-    });
-    ctx.shadowBlur = 0;
+    drawGrid(width, height, pixelsPerMm);
+    drawWaveform(width, height);
     drawCaliper(width, height);
     drawPauseOverlay(width, height);
 }
 
-function drawGrid(width, height) {
-    ctx.fillStyle = '#030a14';
-    ctx.fillRect(0, 0, width, height);
+function drawGrid(width, height, pixelsPerMm) {
+    if (!pixelsPerMm || !gridCtx || !gridCanvas) return;
 
-    const small = 12;
-    ctx.lineWidth = 0.6;
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
-    for (let x = 0; x <= width; x += small) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= height; y += small) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
+    if (gridDirty) {
+        gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+        gridCtx.save();
+        gridCtx.fillStyle = '#000';
+        gridCtx.fillRect(0, 0, gridCanvas.width, gridCanvas.height);
+        gridCtx.restore();
+        gridDirty = false;
     }
 
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(226, 232, 240, 0.12)';
-    for (let x = 0; x <= width; x += small * 5) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= height; y += small * 5) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(gridCanvas, 0, 0, width, height);
+}
+
+function drawWaveform(width, height) {
+    if (!traceCanvas || !ctx) return;
+    ctx.drawImage(traceCanvas, 0, 0, width, height);
+}
+
+function advanceSweep(deltaSeconds) {
+    if (!traceCtx || !traceCanvas || !waveformPoints.length || waveformDuration <= 0) return;
+
+    const width = traceCanvas.width;
+    const height = traceCanvas.height;
+    const pixelsPerSecond = width / SECONDS_VISIBLE;
+    const amplitude = height * 0.18;
+    const scaleY = amplitude / maxWaveAmplitude;
+    const midY = height * 0.55;
+
+    let remainingPixels = deltaSeconds * pixelsPerSecond;
+
+    while (remainingPixels > 0) {
+        const availablePixels = width - sweepX;
+        const stepPixels = Math.min(remainingPixels, availablePixels);
+        const startTime = sweepTime;
+        const endTime = sweepTime + stepPixels / pixelsPerSecond;
+        const startX = sweepX;
+        const endX = sweepX + stepPixels;
+
+        drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height);
+
+        sweepX = endX >= width ? 0 : endX;
+        sweepTime = endTime;
+        remainingPixels -= stepPixels;
     }
 }
+
+function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height) {
+    if (!traceCtx) return;
+    const clearStart = Math.max(0, Math.min(startX, endX) - traceCtx.lineWidth);
+    const clearWidth = Math.abs(endX - startX) + traceCtx.lineWidth * 2;
+    traceCtx.clearRect(clearStart, 0, clearWidth, height);
+
+    const distance = Math.max(1, Math.abs(endX - startX));
+    const timeSpan = endTime - startTime;
+    const step = Math.max(1, Math.floor(distance / 6));
+
+    traceCtx.beginPath();
+    for (let offset = 0; offset <= distance; offset += step) {
+        const ratio = offset / distance;
+        const x = startX + ratio * (endX - startX);
+        const time = startTime + ratio * timeSpan;
+        const y = valueToY(sampleWaveform(time), midY, scaleY);
+        if (offset === 0) {
+            traceCtx.moveTo(x, y);
+        } else {
+            traceCtx.lineTo(x, y);
+        }
+    }
+    const finalY = valueToY(sampleWaveform(endTime), midY, scaleY);
+    traceCtx.lineTo(endX, finalY);
+    traceCtx.stroke();
+}
+
+function valueToY(value, midY, scaleY) {
+    return midY - value * scaleY;
+}
+
+function sampleWaveform(timeSeconds) {
+    if (!waveformDuration || !waveformPoints.length) return 0;
+
+    const wrappedTime = ((timeSeconds % waveformDuration) + waveformDuration) % waveformDuration;
+    let left = 0;
+    let right = waveformPoints.length - 1;
+
+    while (right - left > 1) {
+        const mid = Math.floor((left + right) / 2);
+        if (waveformPoints[mid].time <= wrappedTime) {
+            left = mid;
+        } else {
+            right = mid;
+        }
+    }
+
+    const leftPoint = waveformPoints[left];
+    const rightPoint = waveformPoints[Math.min(left + 1, waveformPoints.length - 1)];
+
+    if (rightPoint.time === leftPoint.time) return leftPoint.value;
+
+    const ratio = (wrappedTime - leftPoint.time) / (rightPoint.time - leftPoint.time);
+    return leftPoint.value + ratio * (rightPoint.value - leftPoint.value);
+}
+
 
 function handlePointerDown(event) {
     if (!canvas) return;
@@ -457,7 +358,7 @@ function handlePointerMove(event) {
     event.preventDefault();
     const { x } = getPointerPosition(event);
     if (!pendingCaliper.active) {
-        pendingCaliper.active = Math.abs(x - pendingCaliper.startX) > 4;
+        pendingCaliper.active = Math.abs(x - pendingCaliper.startX) > CALIPER_THRESHOLD;
     }
     if (pendingCaliper.active) {
         const maxWidth = canvas?.width || canvas?.clientWidth || 0;
@@ -554,11 +455,6 @@ function drawPauseOverlay(width, height) {
     ctx.restore();
 }
 
-function gaussian(x, center, width) {
-    const sigma = width || 0.01;
-    const z = (x - center) / sigma;
-    return Math.exp(-0.5 * z * z);
-}
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
