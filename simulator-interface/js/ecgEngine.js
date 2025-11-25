@@ -1,8 +1,7 @@
 import { ecgWave, heartRate, stitchBeatsNew } from '../ecg/ecgCore.js';
 
-const SECONDS_VISIBLE = 10;
-const GRID_LARGE_SPACING = 50;
-const GRID_SMALL_SPACING = 10;
+const SECONDS_VISIBLE = 6;
+const SWEEP_SPEED_MM_PER_SEC = 25;
 const CALIPER_THRESHOLD = 4;
 
 const engineState = {
@@ -17,7 +16,18 @@ const engineState = {
 
 let canvas;
 let ctx;
-let ecgPoints = [];
+let gridCanvas;
+let gridCtx;
+let waveformPoints = [];
+let waveformDuration = 0;
+let maxWaveAmplitude = 1;
+let sweepX = 0;
+let sweepTime = 0;
+let lastFrameTime = null;
+let animationFrameId = null;
+let traceCanvas;
+let traceCtx;
+let gridDirty = true;
 let isPaused = false;
 let caliper = null;
 let pendingCaliper = null;
@@ -28,20 +38,27 @@ function initEcgEngine() {
     if (!canvas) return;
     ctx = canvas.getContext('2d');
 
+    gridCanvas = document.createElement('canvas');
+    gridCtx = gridCanvas.getContext('2d');
+
+    traceCanvas = document.createElement('canvas');
+    traceCtx = traceCanvas.getContext('2d');
+    syncCanvasSize();
+
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
     canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointercancel', handlePointerUp);
     canvas.addEventListener('pointerleave', handlePointerUp);
 
-    window.addEventListener('resize', draw);
+    window.addEventListener('resize', handleResize);
     window.addEventListener('edupace-parameters', handleParameterChange);
     window.addEventListener('edupace-scenario-change', handleScenarioChange);
     window.addEventListener('edupace-rule-effects', handleRuleEffects);
     window.addEventListener('edupace-waveform-change', handleWaveformChange);
 
     regenerateWaveform();
-    draw();
+    startAnimationLoop();
 }
 
 function handleParameterChange(event) {
@@ -88,6 +105,35 @@ function mapWaveformId(waveformId) {
     }
 }
 
+function syncCanvasSize() {
+    if (!canvas || !traceCanvas || !gridCanvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const newWidth = Math.max(Math.round(rect.width || canvas.width || 1), 1);
+    const newHeight = Math.max(Math.round(rect.height || canvas.height || 1), 1);
+
+    if (canvas.width !== newWidth || canvas.height !== newHeight) {
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+    }
+
+    if (traceCanvas.width !== newWidth || traceCanvas.height !== newHeight) {
+        traceCanvas.width = newWidth;
+        traceCanvas.height = newHeight;
+    }
+
+    if (gridCanvas.width !== newWidth || gridCanvas.height !== newHeight) {
+        gridCanvas.width = newWidth;
+        gridCanvas.height = newHeight;
+    }
+
+    gridDirty = true;
+}
+
+function handleResize() {
+    syncCanvasSize();
+    resetSweep();
+}
+
 function regenerateWaveform() {
     const gap = heartRate(engineState.patientRate);
     const ecgFunc = (type) => {
@@ -105,86 +151,189 @@ function regenerateWaveform() {
         engineState.asynchronous
     );
 
-    const maxTime = Math.max(...x, 1);
-    const timeScale = SECONDS_VISIBLE / maxTime;
-    ecgPoints = x.map((time, index) => ({ x: time * timeScale, y: y[index] }));
+    waveformDuration = Math.max(...x, 0);
+    waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
+    maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
+    resetSweep();
+}
+
+function resetSweep() {
+    sweepX = 0;
+    sweepTime = 0;
+    lastFrameTime = null;
+    if (traceCtx && traceCanvas) {
+        traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
+        traceCtx.lineWidth = 2;
+        traceCtx.strokeStyle = '#22c55e';
+        traceCtx.lineJoin = 'round';
+        traceCtx.lineCap = 'round';
+        traceCtx.shadowColor = 'rgba(34, 197, 94, 0.7)';
+        traceCtx.shadowBlur = 4;
+    }
     draw();
+}
+
+function startAnimationLoop() {
+    if (animationFrameId !== null) return;
+    animationFrameId = requestAnimationFrame(stepFrame);
+}
+
+function stepFrame(timestamp) {
+    if (!canvas) return;
+
+    if (lastFrameTime === null) {
+        lastFrameTime = timestamp;
+    }
+
+    const deltaSeconds = (timestamp - lastFrameTime) / 1000;
+    lastFrameTime = timestamp;
+
+    if (!isPaused && deltaSeconds > 0) {
+        advanceSweep(deltaSeconds);
+    }
+
+    draw();
+    animationFrameId = requestAnimationFrame(stepFrame);
 }
 
 function draw() {
     if (!ctx || !canvas) return;
 
     const { width, height } = canvas;
-    ctx.clearRect(0, 0, width, height);
+    const pixelsPerSecond = width / SECONDS_VISIBLE;
+    const pixelsPerMm = pixelsPerSecond / SWEEP_SPEED_MM_PER_SEC;
 
-    drawGrid(width, height);
+    drawGrid(width, height, pixelsPerMm);
     drawWaveform(width, height);
     drawCaliper(width, height);
     drawPauseOverlay(width, height);
 }
 
-function drawGrid(width, height) {
-    ctx.save();
-    ctx.fillStyle = '#020617';
-    ctx.fillRect(0, 0, width, height);
+function drawGrid(width, height, pixelsPerMm) {
+    if (!pixelsPerMm || !gridCtx || !gridCanvas) return;
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.lineWidth = 1;
+    if (gridDirty) {
+        gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+        gridCtx.save();
+        gridCtx.fillStyle = '#020617';
+        gridCtx.fillRect(0, 0, gridCanvas.width, gridCanvas.height);
 
-    for (let x = 0; x <= width; x += GRID_LARGE_SPACING) {
-        ctx.beginPath();
-        ctx.moveTo(x + 0.5, 0);
-        ctx.lineTo(x + 0.5, height);
-        ctx.stroke();
+        const largeSpacing = pixelsPerMm * 5;
+        const smallSpacing = pixelsPerMm;
+
+        gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        gridCtx.lineWidth = 1;
+
+        for (let x = 0; x <= gridCanvas.width; x += largeSpacing) {
+            gridCtx.beginPath();
+            gridCtx.moveTo(x + 0.5, 0);
+            gridCtx.lineTo(x + 0.5, gridCanvas.height);
+            gridCtx.stroke();
+        }
+
+        for (let y = 0; y <= gridCanvas.height; y += largeSpacing) {
+            gridCtx.beginPath();
+            gridCtx.moveTo(0, y + 0.5);
+            gridCtx.lineTo(gridCanvas.width, y + 0.5);
+            gridCtx.stroke();
+        }
+
+        gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        for (let x = 0; x <= gridCanvas.width; x += smallSpacing) {
+            gridCtx.beginPath();
+            gridCtx.moveTo(x + 0.5, 0);
+            gridCtx.lineTo(x + 0.5, gridCanvas.height);
+            gridCtx.stroke();
+        }
+        for (let y = 0; y <= gridCanvas.height; y += smallSpacing) {
+            gridCtx.beginPath();
+            gridCtx.moveTo(0, y + 0.5);
+            gridCtx.lineTo(gridCanvas.width, y + 0.5);
+            gridCtx.stroke();
+        }
+        gridCtx.restore();
+        gridDirty = false;
     }
 
-    for (let y = 0; y <= height; y += GRID_LARGE_SPACING) {
-        ctx.beginPath();
-        ctx.moveTo(0, y + 0.5);
-        ctx.lineTo(width, y + 0.5);
-        ctx.stroke();
-    }
-
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-    for (let x = 0; x <= width; x += GRID_SMALL_SPACING) {
-        ctx.beginPath();
-        ctx.moveTo(x + 0.5, 0);
-        ctx.lineTo(x + 0.5, height);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= height; y += GRID_SMALL_SPACING) {
-        ctx.beginPath();
-        ctx.moveTo(0, y + 0.5);
-        ctx.lineTo(width, y + 0.5);
-        ctx.stroke();
-    }
-    ctx.restore();
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(gridCanvas, 0, 0, width, height);
 }
 
 function drawWaveform(width, height) {
-    if (!ecgPoints.length || !ctx) return;
-    const midY = height * 0.55;
+    if (!traceCanvas || !ctx) return;
+    ctx.drawImage(traceCanvas, 0, 0, width, height);
+}
+
+function advanceSweep(deltaSeconds) {
+    if (!traceCtx || !traceCanvas || !waveformPoints.length || waveformDuration <= 0) return;
+
+    const width = traceCanvas.width;
+    const height = traceCanvas.height;
+    const pixelsPerSecond = width / SECONDS_VISIBLE;
     const amplitude = height * 0.18;
-    const maxAbs = Math.max(...ecgPoints.map((point) => Math.abs(point.y)), 1);
-    const scaleY = amplitude / maxAbs;
+    const scaleY = amplitude / maxWaveAmplitude;
+    const midY = height * 0.55;
 
-    ctx.save();
-    ctx.strokeStyle = '#22d3ee';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
+    let remainingPixels = deltaSeconds * pixelsPerSecond;
 
-    ecgPoints.forEach((point, index) => {
-        const x = (point.x / SECONDS_VISIBLE) * width;
-        const y = midY - point.y * scaleY;
-        if (index === 0) {
-            ctx.moveTo(x, y);
+    while (remainingPixels > 0) {
+        const availablePixels = width - sweepX;
+        const stepPixels = Math.min(remainingPixels, availablePixels);
+        const startTime = sweepTime;
+        const endTime = sweepTime + stepPixels / pixelsPerSecond;
+        const startX = sweepX;
+        const endX = sweepX + stepPixels;
+
+        drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height);
+
+        sweepX = endX >= width ? 0 : endX;
+        sweepTime = endTime;
+        remainingPixels -= stepPixels;
+    }
+}
+
+function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height) {
+    if (!traceCtx) return;
+    const clearStart = Math.min(startX, endX) - traceCtx.lineWidth;
+    const clearWidth = Math.abs(endX - startX) + traceCtx.lineWidth * 2;
+    traceCtx.clearRect(clearStart, 0, clearWidth, height);
+
+    const startY = valueToY(sampleWaveform(startTime), midY, scaleY);
+    const endY = valueToY(sampleWaveform(endTime), midY, scaleY);
+
+    traceCtx.beginPath();
+    traceCtx.moveTo(startX, startY);
+    traceCtx.lineTo(endX, endY);
+    traceCtx.stroke();
+}
+
+function valueToY(value, midY, scaleY) {
+    return midY - value * scaleY;
+}
+
+function sampleWaveform(timeSeconds) {
+    if (!waveformDuration || !waveformPoints.length) return 0;
+
+    const wrappedTime = ((timeSeconds % waveformDuration) + waveformDuration) % waveformDuration;
+    let left = 0;
+    let right = waveformPoints.length - 1;
+
+    while (right - left > 1) {
+        const mid = Math.floor((left + right) / 2);
+        if (waveformPoints[mid].time <= wrappedTime) {
+            left = mid;
         } else {
-            ctx.lineTo(x, y);
+            right = mid;
         }
-    });
+    }
 
-    ctx.stroke();
-    ctx.restore();
+    const leftPoint = waveformPoints[left];
+    const rightPoint = waveformPoints[Math.min(left + 1, waveformPoints.length - 1)];
+
+    if (rightPoint.time === leftPoint.time) return leftPoint.value;
+
+    const ratio = (wrappedTime - leftPoint.time) / (rightPoint.time - leftPoint.time);
+    return leftPoint.value + ratio * (rightPoint.value - leftPoint.value);
 }
 
 
@@ -215,7 +364,8 @@ function handlePointerMove(event) {
     event.preventDefault();
     const { x } = getPointerPosition(event);
     if (!pendingCaliper.active) {
-        pendingCaliper.active = Math.abs(x - pendingCaliper.startX) > CALIPER_THRESHOLD;    }
+        pendingCaliper.active = Math.abs(x - pendingCaliper.startX) > CALIPER_THRESHOLD;
+    }
     if (pendingCaliper.active) {
         const maxWidth = canvas?.width || canvas?.clientWidth || 0;
         pendingCaliper.endX = clamp(x, 0, maxWidth);
