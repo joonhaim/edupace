@@ -6,7 +6,7 @@
     --frost: #f5f7fa;
     --frost-strong: #e6ecf5;
     --grid-line: rgba(23, 42, 69, 0.08);
-    --grid-line-dark: rgba(255, 255, 255, 0.035);
+    --grid-line-dark: rgba(255, 255, 255, 0.055);
     --muted: #5f7088;
     --card: #ffffff;
     --border: #d7deea;
@@ -911,16 +911,16 @@ h1, h2, h3 {
 /* Dark mode */
 
 body.simulation-dark {
-background-color: #0a0d12;
+background-color: #0f1623;
     background-image:
         linear-gradient(90deg, var(--grid-line-dark) 1px, transparent 1px),
         linear-gradient(0deg, var(--grid-line-dark) 1px, transparent 1px);
-    background-size: 28px 28px;    color: #e5e8ed;
+    background-size: 28px 28px;    color: #e9edf4;
 }
 
 body.simulation-dark .global-nav {
-    background: #10141a;
-    border-bottom-color: #1d232d;
+    background: #161d29;
+    border-bottom-color: #242e3c;
 }
 
 body.simulation-dark .nav-btn {
@@ -937,8 +937,8 @@ body.simulation-dark .card,
 body.simulation-dark .param-tile,
 body.simulation-dark .ecg-frame,
 body.simulation-dark .scenario-banner {
-    background: #131821;
-    border-color: #1f242e;
+    background: #171f2c;
+    border-color: #252f3d;
 }
 
 body.simulation-dark .btn-primary {
@@ -946,8 +946,8 @@ body.simulation-dark .btn-primary {
 }
 
 body.simulation-dark .btn-ghost {
-    background: #1d2330;
-    color: #d7dce5;
+    background: #222b3a;
+    color: #dce2ec;
 }
 
 body.simulation-dark .led {
@@ -970,8 +970,8 @@ body.simulation-dark .chip-connected {
 
 body.simulation-dark .telemetry-item,
 body.simulation-dark .sim-summary {
-    background: #131821;
-    border-color: #1f242e;
+    background: #171f2c;
+    border-color: #252f3d;
 }
 
 body.simulation-dark .nav-btn,
@@ -980,7 +980,7 @@ body.simulation-dark .scenario-text,
 body.simulation-dark .telemetry-unit,
 body.simulation-dark .calibration-note,
 body.simulation-dark .card-heading p{
-    color: #c2c7d3;
+    color: #c9d1dc;
 }
 
 body.simulation-dark .brand {

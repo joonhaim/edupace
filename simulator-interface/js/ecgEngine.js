@@ -40,7 +40,7 @@ const engineState = {
 const defaultWaveform = {
     id: 'fallback-normal',
     label: 'Lead II',
-    appearance: { scale: 88, color: '#7dd3fc' },
+    appearance: { scale: 88, color: '#22c55e' },
     rhythm: { baseRate: 72, intrinsicRate: 72, rrJitter: 0.02 },
     baseline: { wanderAmplitude: 0.05, wanderFrequency: 0.25, noise: 0.02 },
     morphology: {
@@ -313,8 +313,8 @@ function draw() {
     
     ctx.lineWidth = 2;
     ctx.strokeStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
     segments.forEach(({ start, count }) => {
         ctx.beginPath();
         for (let i = 0; i < count; i++) {
@@ -350,12 +350,12 @@ function draw() {
 }
 
 function drawGrid(width, height) {
-    ctx.fillStyle = '#030a14';
+    ctx.fillStyle = '#0a1020';
     ctx.fillRect(0, 0, width, height);
 
     const small = 12;
     ctx.lineWidth = 0.6;
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
     for (let x = 0; x <= width; x += small) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -370,7 +370,7 @@ function drawGrid(width, height) {
     }
 
     ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(226, 232, 240, 0.12)';
+    ctx.strokeStyle = 'rgba(226, 232, 240, 0.18)';
     for (let x = 0; x <= width; x += small * 5) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
