@@ -103,7 +103,7 @@ function handleWaveformChange(event) {
 function configureTraceStyle() {
     if (!traceCtx) return;
     traceCtx.lineWidth = 2;
-    traceCtx.strokeStyle = '#00ff63';
+    traceCtx.strokeStyle = '#00E000';
     traceCtx.lineJoin = 'round';
     traceCtx.lineCap = 'round';
 }
