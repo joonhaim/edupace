@@ -932,29 +932,38 @@ h1, h2, h3 {
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #333;
-    opacity: 0.7;
+    background: #9ca3af;
+    opacity: 0.75;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .led-pace {
-    background: #22c55e;
+    --led-on-color: #22c55e;
 }
 
 .led-sense {
-    background: #2563eb;
+    --led-on-color: #2563eb;
 }
 
 .led-on {
-    box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.25);
+    background: var(--led-on-color);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.3),
+        0 0 10px 2px color-mix(in srgb, var(--led-on-color) 70%, transparent);
     opacity: 1;
 }
 
 .led-pace.led-on {
-    box-shadow: 0 0 12px 3px rgba(34, 197, 94, 0.7);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.3),
+        0 0 12px 3px rgba(34, 197, 94, 0.9);
 }
 
 .led-sense.led-on {
-    box-shadow: 0 0 12px 3px rgba(37, 99, 235, 0.7);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.3),
+        0 0 12px 3px rgba(37, 99, 235, 0.9);
 }
 
 .led-test-group {
@@ -1067,11 +1076,11 @@ body.simulation-dark .btn-ghost {
 }
 
 body.simulation-dark .led-pace {
-    background: #22c55e;
+    background: #4b5563;
 }
 
 body.simulation-dark .led-sense {
-    background: #60a5fa;
+    background: #4b5563;
 }
 
 body.simulation-dark .led-pace.led-on {
