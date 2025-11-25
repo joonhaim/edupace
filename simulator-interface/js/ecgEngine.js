@@ -1,3 +1,191 @@
+import { ecgWave, heartRate, stitchBeatsNew } from '../ecg/ecgCore.js';
+
+const SECONDS_VISIBLE = 10;
+const GRID_LARGE_SPACING = 50;
+const GRID_SMALL_SPACING = 10;
+const CALIPER_THRESHOLD = 4;
+
+const engineState = {
+    patientRate: 70,
+    pacingRate: 70,
+    output: 5,
+    sensitivity: 2.0,
+    regularity: 'Regular',
+    asynchronous: false,
+    baseSignal: 'Normal'
+};
+
+let canvas;
+let ctx;
+let ecgPoints = [];
+let isPaused = false;
+let caliper = null;
+let pendingCaliper = null;
+let ignoreNextPointerUp = false;
+
+function initEcgEngine() {
+    canvas = document.getElementById('ecgCanvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('pointerup', handlePointerUp);
+    canvas.addEventListener('pointercancel', handlePointerUp);
+    canvas.addEventListener('pointerleave', handlePointerUp);
+
+    window.addEventListener('resize', draw);
+    window.addEventListener('edupace-parameters', handleParameterChange);
+    window.addEventListener('edupace-scenario-change', handleScenarioChange);
+    window.addEventListener('edupace-rule-effects', handleRuleEffects);
+    window.addEventListener('edupace-waveform-change', handleWaveformChange);
+
+    regenerateWaveform();
+    draw();
+}
+
+function handleParameterChange(event) {
+    const { rate, output, sensitivity } = event.detail ?? {};
+    if (Number.isFinite(rate)) engineState.pacingRate = rate;
+    if (Number.isFinite(output)) engineState.output = output;
+    if (Number.isFinite(sensitivity)) engineState.sensitivity = sensitivity;
+    regenerateWaveform();
+}
+
+function handleScenarioChange(event) {
+    const hr = event.detail?.vitals?.hr;
+    if (Number.isFinite(hr)) engineState.patientRate = hr;
+    if (event.detail?.waveformId) {
+        engineState.baseSignal = mapWaveformId(event.detail.waveformId);
+    }
+    regenerateWaveform();
+}
+
+function handleRuleEffects(event) {
+    const hr = event.detail?.effects?.vitals?.hr;
+    if (Number.isFinite(hr)) engineState.patientRate = hr;
+    if (event.detail?.effects?.waveformId) {
+        engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
+    }
+    regenerateWaveform();
+}
+
+function handleWaveformChange(event) {
+    const waveformId = event.detail?.waveformId;
+    if (waveformId) {
+        engineState.baseSignal = mapWaveformId(waveformId);
+        regenerateWaveform();
+    }
+}
+
+function mapWaveformId(waveformId) {
+    switch (waveformId) {
+        case 'loss-of-capture':
+            return 'Ventricular pacing';
+        case 'normal-sinus':
+        default:
+            return 'Normal';
+    }
+}
+
+function regenerateWaveform() {
+    const gap = heartRate(engineState.patientRate);
+    const ecgFunc = (type) => {
+        const resolvedType = type === 'Normal' ? engineState.baseSignal : type;
+        return ecgWave(resolvedType);
+    };
+
+    const { x, y } = stitchBeatsNew(
+        ecgFunc,
+        gap,
+        engineState.regularity,
+        engineState.sensitivity,
+        engineState.pacingRate,
+        engineState.output,
+        engineState.asynchronous
+    );
+
+    const maxTime = Math.max(...x, 1);
+    const timeScale = SECONDS_VISIBLE / maxTime;
+    ecgPoints = x.map((time, index) => ({ x: time * timeScale, y: y[index] }));
+    draw();
+}
+
+function draw() {
+    if (!ctx || !canvas) return;
+
+    const { width, height } = canvas;
+    ctx.clearRect(0, 0, width, height);
+
+    drawGrid(width, height);
+    drawWaveform(width, height);
+    drawCaliper(width, height);
+    drawPauseOverlay(width, height);
+}
+
+function drawGrid(width, height) {
+    ctx.save();
+    ctx.fillStyle = '#020617';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x <= width; x += GRID_LARGE_SPACING) {
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, height);
+        ctx.stroke();
+    }
+
+    for (let y = 0; y <= height; y += GRID_LARGE_SPACING) {
+        ctx.beginPath();
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
+        ctx.stroke();
+    }
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    for (let x = 0; x <= width; x += GRID_SMALL_SPACING) {
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, height);
+        ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += GRID_SMALL_SPACING) {
+        ctx.beginPath();
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(width, y + 0.5);
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function drawWaveform(width, height) {
+    if (!ecgPoints.length || !ctx) return;
+    const midY = height * 0.55;
+    const amplitude = height * 0.18;
+    const maxAbs = Math.max(...ecgPoints.map((point) => Math.abs(point.y)), 1);
+    const scaleY = amplitude / maxAbs;
+
+    ctx.save();
+    ctx.strokeStyle = '#22d3ee';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    ecgPoints.forEach((point, index) => {
+        const x = (point.x / SECONDS_VISIBLE) * width;
+        const y = midY - point.y * scaleY;
+        if (index === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    });
+
+    ctx.stroke();
+    ctx.restore();
+}
 
 
 function handlePointerDown(event) {
@@ -27,8 +215,7 @@ function handlePointerMove(event) {
     event.preventDefault();
     const { x } = getPointerPosition(event);
     if (!pendingCaliper.active) {
-        pendingCaliper.active = Math.abs(x - pendingCaliper.startX) > 4;
-    }
+        pendingCaliper.active = Math.abs(x - pendingCaliper.startX) > CALIPER_THRESHOLD;    }
     if (pendingCaliper.active) {
         const maxWidth = canvas?.width || canvas?.clientWidth || 0;
         pendingCaliper.endX = clamp(x, 0, maxWidth);
@@ -124,11 +311,6 @@ function drawPauseOverlay(width, height) {
     ctx.restore();
 }
 
-function gaussian(x, center, width) {
-    const sigma = width || 0.01;
-    const z = (x - center) / sigma;
-    return Math.exp(-0.5 * z * z);
-}
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
