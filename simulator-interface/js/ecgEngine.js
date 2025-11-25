@@ -13,7 +13,7 @@ const engineState = {
     regularity: 'Regular',
     asynchronous: false,
     baseSignal: 'Normal',
-    poweredOn: true
+    poweredOn: false
 };
 
 let canvas;
@@ -83,7 +83,7 @@ function handleScenarioChange(event) {
     if (typeof event.detail?.pacing?.poweredOn === 'boolean') {
         engineState.poweredOn = event.detail.pacing.poweredOn;
     } else {
-        engineState.poweredOn = true;
+        engineState.poweredOn = false;
     }
     if (event.detail?.waveformId) {
         engineState.baseSignal = mapWaveformId(event.detail.waveformId);

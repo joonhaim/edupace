@@ -842,6 +842,10 @@ h1, h2, h3 {
     box-shadow: 0 14px 36px rgba(6, 15, 31, 0.08);
 }
 
+.parameters-card {
+    position: relative;
+}
+
 .card-title {
     margin-bottom: 0.8rem;
     font-size: 1rem;
@@ -856,6 +860,38 @@ h1, h2, h3 {
 .card-heading p {
     color: #6b7a92;
     line-height: 1.6;
+}
+
+.power-hold-hint {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    padding: 0.85rem 1rem;
+    background: linear-gradient(180deg, rgba(5, 13, 28, 0.92), rgba(5, 13, 28, 0.82));
+    color: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(5, 13, 28, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    max-width: 240px;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.power-hold-hint::before {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    right: 22px;
+    border: 8px solid transparent;
+    border-top-color: rgba(5, 13, 28, 0.88);
+}
+
+.power-hold-hint.is-visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .mode-card,
