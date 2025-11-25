@@ -1,4 +1,3 @@
-import { shouldUseAsyncMode } from './pacingUtils.js';
 const ui = {
     connectionStatus: document.getElementById('connectionStatus'),
     powerStatus: document.getElementById('powerStatus'),
