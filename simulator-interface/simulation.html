@@ -84,30 +84,6 @@
                                 </div>
                             </div>
 
-                            <div class="telemetry-grid" aria-label="Supplemental vitals">
-                                <div class="telemetry-item">
-                                    <span class="telemetry-label">ART BP</span>
-                                    <div>
-                                        <span id="bpValue" class="telemetry-value">118/64</span>
-                                        <span class="telemetry-unit">mmHg</span>
-                                    </div>
-                                </div>
-                                <div class="telemetry-item">
-                                    <span class="telemetry-label">SpO₂</span>
-                                    <div>
-                                        <span id="spo2Value" class="telemetry-value">98</span>
-                                        <span class="telemetry-unit">%</span>
-                                    </div>
-                                </div>
-                                <div class="telemetry-item">
-                                    <span class="telemetry-label">Temp</span>
-                                    <div>
-                                        <span id="tempValue" class="telemetry-value">36.7</span>
-                                        <span class="telemetry-unit">°C</span>
-                                    </div>
-                                </div>
-                            </div>
-
                             <div class="calibration-note">
                                 <span class="calibration-label">Calibration</span>
                                 <span class="calibration-value">
@@ -119,7 +95,7 @@
                         <!-- Right: controls -->
                         <aside class="control-column" aria-label="Controls">
                             <div class="card parameters-card">
-                                <h3 class="card-title">Pacemaker parameters</h3>
+                                <h3 class="card-title" id="pacemakerTitle">Pacemaker parameters</h3>
 
                                 <div class="led-row">
                                     <div class="led-group">
@@ -135,26 +111,86 @@
 
                                 <div class="param-grid">
                                     <div class="param-tile">
-                                        <div class="param-label">Rate</div>
-                                        <div class="param-value">
-                                            <span id="rateValue">--</span>
-                                            <span class="param-unit">bpm</span>
+                                        <div class="param-meta">
+                                            <div class="param-label">Rate</div>
+                                            <div class="param-value">
+                                                <span id="rateValue">--</span>
+                                                <span class="param-unit">bpm</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="rate"
+                                            data-min="30"
+                                            data-max="120"
+                                            data-step="1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease rate">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase rate">→</button>
                                         </div>
                                     </div>
                                     <div class="param-tile">
-                                        <div class="param-label">Output</div>
-                                        <div class="param-value">
-                                            <span id="outputValue">--</span>
-                                            <span class="param-unit">mA</span>
+                                        <div class="param-meta">
+                                            <div class="param-label">Output</div>
+                                            <div class="param-value">
+                                                <span id="outputValue">--</span>
+                                                <span class="param-unit">mA</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="output"
+                                            data-min="0"
+                                            data-max="10"
+                                            data-step="0.1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease output">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase output">→</button>
                                         </div>
                                     </div>
                                     <div class="param-tile">
-                                        <div class="param-label">Sensitivity</div>
-                                        <div class="param-value">
-                                            <span id="sensValue">--</span>
-                                            <span class="param-unit">mV</span>
+                                        <div class="param-meta">
+                                            <div class="param-label">Sensitivity</div>
+                                            <div class="param-value">
+                                                <span id="sensValue">--</span>
+                                                <span class="param-unit">mV</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="sensitivity"
+                                            data-min="0"
+                                            data-max="10"
+                                            data-step="0.1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease sensitivity">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase sensitivity">→</button>
                                         </div>
                                     </div>
+                                </div>
+
+                                <div class="virtual-actions" aria-label="Power and lock controls" aria-hidden="true">
+                                    <button
+                                        type="button"
+                                        class="virtual-action-btn"
+                                        data-virtual-action="power"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="action-label">Power</span>
+                                        <span class="action-state" data-action-state>Off</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="virtual-action-btn"
+                                        data-virtual-action="lock"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="action-label">Lock</span>
+                                        <span class="action-state" data-action-state>Unlocked</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -172,40 +208,6 @@
                                         <input type="radio" name="inputMode" value="virtual">
                                         <span>Virtual</span>
                                     </label>
-                                </div>
-                            </div>
-
-                            <div class="card virtual-card" id="virtualControllerCard" aria-hidden="true">
-                                <div class="virtual-card-header">
-                                    <div>
-                                        <h3 class="card-title">Virtual controller</h3>
-                                        <p>Use the arrows to match the three hardware knobs.</p>
-                                    </div>
-                                    <span class="virtual-hint">Left/Right arrows adjust values</span>
-                                </div>
-                                <div class="virtual-control" data-control="rate" data-min="30" data-max="120" data-step="1" tabindex="0">
-                                    <div class="virtual-label">Rate</div>
-                                    <div class="virtual-input">
-                                        <button type="button" class="step-btn" data-direction="down" aria-label="Decrease rate">←</button>
-                                        <span class="virtual-value" data-value="rate" aria-live="polite">70 bpm</span>
-                                        <button type="button" class="step-btn" data-direction="up" aria-label="Increase rate">→</button>
-                                    </div>
-                                </div>
-                                <div class="virtual-control" data-control="output" data-min="0" data-max="10" data-step="0.1" tabindex="0">
-                                    <div class="virtual-label">Output</div>
-                                    <div class="virtual-input">
-                                        <button type="button" class="step-btn" data-direction="down" aria-label="Decrease output">←</button>
-                                        <span class="virtual-value" data-value="output" aria-live="polite">5.0 mA</span>
-                                        <button type="button" class="step-btn" data-direction="up" aria-label="Increase output">→</button>
-                                    </div>
-                                </div>
-                                <div class="virtual-control" data-control="sensitivity" data-min="0" data-max="10" data-step="0.1" tabindex="0">
-                                    <div class="virtual-label">Sensitivity</div>
-                                    <div class="virtual-input">
-                                        <button type="button" class="step-btn" data-direction="down" aria-label="Decrease sensitivity">←</button>
-                                        <span class="virtual-value" data-value="sensitivity" aria-live="polite">2.5 mV</span>
-                                        <button type="button" class="step-btn" data-direction="up" aria-label="Increase sensitivity">→</button>
-                                    </div>
                                 </div>
                             </div>
 

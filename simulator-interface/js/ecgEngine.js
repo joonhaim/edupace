@@ -1,4 +1,5 @@
 import { ecgWave, heartRate, stitchBeatsNew } from '../ecg/ecgCore.js';
+import { createHeartRateEngine } from './heartRateEngine.js';
 
 const SECONDS_VISIBLE = 6;
 const SWEEP_SPEED_MM_PER_SEC = 25;
@@ -11,7 +12,8 @@ const engineState = {
     sensitivity: 2.0,
     regularity: 'Regular',
     asynchronous: false,
-    baseSignal: 'Normal'
+    baseSignal: 'Normal',
+    poweredOn: false
 };
 
 let canvas;
@@ -32,6 +34,13 @@ let isPaused = false;
 let caliper = null;
 let pendingCaliper = null;
 let ignoreNextPointerUp = false;
+let heartRateEngine = null;
+let waveformEvents = [];
+
+const ledElements = {
+    pace: document.getElementById('paceLed'),
+    sense: document.getElementById('senseLed')
+};
 
 function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
@@ -45,6 +54,8 @@ function initEcgEngine() {
     traceCtx = traceCanvas.getContext('2d');
     syncCanvasSize();
     configureTraceStyle();
+
+    heartRateEngine = createHeartRateEngine(document.getElementById('hrValue'));
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -63,33 +74,35 @@ function initEcgEngine() {
 }
 
 function handleParameterChange(event) {
-    const { rate, output, sensitivity } = event.detail ?? {};
+    const { rate, output, sensitivity, power } = event.detail ?? {};
     if (Number.isFinite(rate)) engineState.pacingRate = rate;
     if (Number.isFinite(output)) engineState.output = output;
     if (Number.isFinite(sensitivity)) engineState.sensitivity = sensitivity;
-    regenerateWaveform({ keepSweep: true });
+    if (typeof power === 'boolean') engineState.poweredOn = power;
+    regenerateWaveform();
 }
 
 function handleScenarioChange(event) {
-    const previousBaseSignal = engineState.baseSignal;
     const hr = event.detail?.vitals?.hr;
     if (Number.isFinite(hr)) engineState.patientRate = hr;
+    if (typeof event.detail?.pacing?.poweredOn === 'boolean') {
+        engineState.poweredOn = event.detail.pacing.poweredOn;
+    } else {
+        engineState.poweredOn = false;
+    }
     if (event.detail?.waveformId) {
         engineState.baseSignal = mapWaveformId(event.detail.waveformId);
     }
-    const waveformChanged = engineState.baseSignal !== previousBaseSignal;
-    regenerateWaveform({ keepSweep: !waveformChanged });
+    regenerateWaveform();
 }
 
 function handleRuleEffects(event) {
-    const previousBaseSignal = engineState.baseSignal;
     const hr = event.detail?.effects?.vitals?.hr;
     if (Number.isFinite(hr)) engineState.patientRate = hr;
     if (event.detail?.effects?.waveformId) {
         engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
     }
-    const waveformChanged = engineState.baseSignal !== previousBaseSignal;
-    regenerateWaveform({ keepSweep: !waveformChanged });
+    regenerateWaveform();
 }
 
 function handleWaveformChange(event) {
@@ -112,10 +125,38 @@ function mapWaveformId(waveformId) {
     switch (waveformId) {
         case 'loss-of-capture':
             return 'Ventricular pacing';
+        case 'ventricular-paced':
+            return 'Ventricular pacing';
         case 'normal-sinus':
         default:
             return 'Normal';
     }
+}
+
+function flashLed(element) {
+    if (!element) return;
+
+    element.classList.add('led-on');
+    setTimeout(() => element.classList.remove('led-on'), 180);
+}
+
+function processLedEvents(windowStart, windowEnd) {
+    if (!engineState.poweredOn || !waveformDuration || !waveformEvents.length) return;
+
+    waveformEvents.forEach((event) => {
+        if (!event || typeof event.time !== 'number') return;
+
+        const cyclesOffset = Math.max(0, Math.ceil((windowStart - event.time) / waveformDuration));
+        const occurrence = event.time + cyclesOffset * waveformDuration;
+
+        if (occurrence >= windowStart && occurrence <= windowEnd) {
+            if (event.type === 'pace') {
+                flashLed(ledElements.pace);
+            } else if (event.type === 'sense') {
+                flashLed(ledElements.sense);
+            }
+        }
+    });
 }
 
 function syncCanvasSize() {
@@ -148,40 +189,45 @@ function handleResize() {
     resetSweep();
 }
 
-function regenerateWaveform(options = {}) {
-    const { keepSweep = false } = options;
+function regenerateWaveform() {
     const gap = heartRate(engineState.patientRate);
     const ecgFunc = (type) => {
         const resolvedType = type === 'Normal' ? engineState.baseSignal : type;
         return ecgWave(resolvedType);
     };
 
-    const { x, y } = stitchBeatsNew(
+    const pacingEnabled = engineState.poweredOn;
+    const pacingRate = pacingEnabled ? engineState.pacingRate : engineState.patientRate;
+    const pacingOutput = pacingEnabled ? engineState.output : 0;
+    const pacingAsync = pacingEnabled ? engineState.asynchronous : false;
+
+    const { x, y, events } = stitchBeatsNew(
         ecgFunc,
         gap,
         engineState.regularity,
         engineState.sensitivity,
-        engineState.pacingRate,
-        engineState.output,
-        engineState.asynchronous
+        pacingRate,
+        pacingOutput,
+        pacingAsync
     );
 
     waveformDuration = Math.max(...x, 0);
     waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
+    waveformEvents = Array.isArray(events) ? events : [];
     maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
+    heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
+    heartRateEngine?.reset();
 
-    if (keepSweep) {
+    if (waveformDuration > 0) {
         sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
-        return;
     }
-
-    resetSweep();
 }
 
 function resetSweep() {
     sweepX = 0;
     sweepTime = 0;
     lastFrameTime = null;
+    heartRateEngine?.reset();
     if (traceCtx && traceCanvas) {
         traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
         configureTraceStyle();
@@ -266,6 +312,7 @@ function advanceSweep(deltaSeconds) {
         const startX = sweepX;
         const endX = sweepX + stepPixels;
 
+        processLedEvents(startTime, endTime);
         drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height);
 
         sweepX = endX >= width ? 0 : endX;
@@ -289,14 +336,18 @@ function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height
         const ratio = offset / distance;
         const x = startX + ratio * (endX - startX);
         const time = startTime + ratio * timeSpan;
-        const y = valueToY(sampleWaveform(time), midY, scaleY);
+        const value = sampleWaveform(time);
+        const y = valueToY(value, midY, scaleY);
+        heartRateEngine?.processSample(time, value);
         if (offset === 0) {
             traceCtx.moveTo(x, y);
         } else {
             traceCtx.lineTo(x, y);
         }
     }
-    const finalY = valueToY(sampleWaveform(endTime), midY, scaleY);
+    const finalValue = sampleWaveform(endTime);
+    heartRateEngine?.processSample(endTime, finalValue);
+    const finalY = valueToY(finalValue, midY, scaleY);
     traceCtx.lineTo(endX, finalY);
     traceCtx.stroke();
 }
