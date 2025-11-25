@@ -48,6 +48,110 @@
           }
         }
       ]
+    },
+    {
+      "id": "UC-01",
+      "title": "UC-01 · Symptomatic Ventricular Bradycardia (VVI Setup)",
+      "description": "Patient with symptomatic ventricular bradycardia requiring VVI demand pacing.",
+      "summaryLabel": "Bradycardia requiring VVI pacing",
+      "primaryRhythm": "Symptomatic ventricular bradycardia",
+      "location": "ICU",
+      "waveformId": "normal-sinus",
+      "vitals": {
+        "hr": 36,
+        "bp": "88/52",
+        "spo2": 96,
+        "temp": 36.7
+      },
+      "pacing": {
+        "mode": "VVI (demand)",
+        "poweredOn": false
+      },
+      "alarm": {
+        "level": "warning",
+        "text": "Symptomatic bradycardia – initiate pacing"
+      },
+      "objective": "Increase the VVI pacing rate above the intrinsic 34–38 bpm rhythm with adequate output and sensitivity to achieve consistent ventricular capture.",
+      "feedback": "Start VVI pacing, set the rate to 60–70 bpm, output to 5–10 mA, and sensitivity around 2 mV to obtain paced QRS complexes.",
+      "rules": [
+        {
+          "id": "uc01-loss-of-capture",
+          "description": "Loss of capture when pacing output is inadequate despite the higher rate",
+          "condition": {
+            "rate": [
+              55,
+              80
+            ],
+            "output": [
+              0,
+              4.9
+            ]
+          },
+          "effects": {
+            "alarm": {
+              "level": "warning",
+              "text": "Loss of capture – increase output"
+            },
+            "feedback": "Raise the output to at least 5 mA and reassess capture at the paced rate.",
+            "waveformId": "loss-of-capture"
+          }
+        },
+        {
+          "id": "uc01-oversensing",
+          "description": "Oversensing inhibits pacing when sensitivity is set too low",
+          "condition": {
+            "rate": [
+              60,
+              80
+            ],
+            "output": [
+              5,
+              12
+            ],
+            "sensitivity": [
+              0,
+              1.4
+            ]
+          },
+          "effects": {
+            "alarm": {
+              "level": "warning",
+              "text": "Oversensing – decrease sensitivity (raise mV)"
+            },
+            "feedback": "Reduce sensitivity toward 2 mV so intrinsic signals do not inhibit pacing.",
+            "waveformId": "normal-sinus"
+          }
+        },
+        {
+          "id": "uc01-vvi-capture",
+          "description": "Stable ventricular capture once rate, output, and sensitivity are set appropriately",
+          "condition": {
+            "rate": [
+              60,
+              70
+            ],
+            "output": [
+              5,
+              10
+            ],
+            "sensitivity": [
+              1.5,
+              3
+            ]
+          },
+          "effects": {
+            "alarm": {
+              "level": "normal",
+              "text": "Capture achieved – maintain VVI pacing"
+            },
+            "feedback": "Paced rhythm should be stable at the selected rate with each spike followed by a QRS complex.",
+            "vitals": {
+              "hr": 64
+            },
+            "waveformId": "ventricular-paced"
+          }
+        }
+      ]
     }
   ]
 }

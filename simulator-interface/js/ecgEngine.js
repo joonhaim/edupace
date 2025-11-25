@@ -79,11 +79,10 @@ function handleParameterChange(event) {
     if (Number.isFinite(output)) engineState.output = output;
     if (Number.isFinite(sensitivity)) engineState.sensitivity = sensitivity;
     if (typeof power === 'boolean') engineState.poweredOn = power;
-    regenerateWaveform({ keepSweep: true });
+    regenerateWaveform();
 }
 
 function handleScenarioChange(event) {
-    const previousBaseSignal = engineState.baseSignal;
     const hr = event.detail?.vitals?.hr;
     if (Number.isFinite(hr)) engineState.patientRate = hr;
     if (typeof event.detail?.pacing?.poweredOn === 'boolean') {
@@ -94,19 +93,16 @@ function handleScenarioChange(event) {
     if (event.detail?.waveformId) {
         engineState.baseSignal = mapWaveformId(event.detail.waveformId);
     }
-    const waveformChanged = engineState.baseSignal !== previousBaseSignal;
-    regenerateWaveform({ keepSweep: !waveformChanged });
+    regenerateWaveform();
 }
 
 function handleRuleEffects(event) {
-    const previousBaseSignal = engineState.baseSignal;
     const hr = event.detail?.effects?.vitals?.hr;
     if (Number.isFinite(hr)) engineState.patientRate = hr;
     if (event.detail?.effects?.waveformId) {
         engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
     }
-    const waveformChanged = engineState.baseSignal !== previousBaseSignal;
-    regenerateWaveform({ keepSweep: !waveformChanged });
+    regenerateWaveform();
 }
 
 function handleWaveformChange(event) {
@@ -128,6 +124,8 @@ function configureTraceStyle() {
 function mapWaveformId(waveformId) {
     switch (waveformId) {
         case 'loss-of-capture':
+            return 'Ventricular pacing';
+        case 'ventricular-paced':
             return 'Ventricular pacing';
         case 'normal-sinus':
         default:
@@ -191,8 +189,7 @@ function handleResize() {
     resetSweep();
 }
 
-function regenerateWaveform(options = {}) {
-    const { keepSweep = false } = options;
+function regenerateWaveform() {
     const gap = heartRate(engineState.patientRate);
     const ecgFunc = (type) => {
         const resolvedType = type === 'Normal' ? engineState.baseSignal : type;
@@ -221,12 +218,9 @@ function regenerateWaveform(options = {}) {
     heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
     heartRateEngine?.reset();
 
-    if (keepSweep) {
+    if (waveformDuration > 0) {
         sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
-        return;
     }
-
-    resetSweep();
 }
 
 function resetSweep() {
