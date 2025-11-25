@@ -1,3 +1,5 @@
+import { ecgWave, heartRate, stitchBeatsNew } from '../ecg/ecgCore.js';
+
 const SAMPLES_PER_SECOND = 250;
 const SECONDS_VISIBLE = 10;
 const BUFFER_LENGTH = SAMPLES_PER_SECOND * SECONDS_VISIBLE;
@@ -11,10 +13,6 @@ let caliper = null;
 let pendingCaliper = null;
 let ignoreNextPointerUp = false;
 
-
-const waveformCache = new Map();
-let waveformIndex = null;
-let activeWaveformId = null;
 
 const engineState = {
     buffer: new Array(BUFFER_LENGTH).fill(0),
@@ -30,7 +28,13 @@ const engineState = {
         sensitivity: null
     },
     waveform: null,
-    timerId: null
+    timerId: null,
+    patientHr: 78,
+    generatedWave: {
+        samples: [],
+        spikes: [],
+        index: 0
+    }
 };
 
 const defaultWaveform = {
@@ -60,96 +64,28 @@ function initEcgEngine() {
     draw();
 
     window.addEventListener('edupace-scenario-change', (event) => {
-        const waveformId = event.detail?.waveformId;
-        if (waveformId) {
-            setWaveform(waveformId);
+        const patientHr = event.detail?.vitals?.hr;
+        if (typeof patientHr === 'number') {
+            engineState.patientHr = patientHr;
         }
+        regenerateWaveform();
     });
 
-    window.addEventListener('edupace-waveform-change', (event) => {
-        const waveformId = event.detail?.waveformId;
-        if (waveformId) {
-            setWaveform(waveformId);
-        }
+    window.addEventListener('edupace-waveform-change', () => {
+        regenerateWaveform();
     });
 
     window.addEventListener('edupace-parameters', (event) => {
         Object.assign(engineState.parameters, event.detail ?? {});
+        regenerateWaveform();
     });
 
     if (engineState.timerId) {
         clearInterval(engineState.timerId);
     }
 
+    regenerateWaveform();
     engineState.timerId = setInterval(step, 1000 / SAMPLES_PER_SECOND);
-}
-
-async function setWaveform(waveformId) {
-    if (!waveformId || waveformId === activeWaveformId) {
-        return;
-    }
-
-    const waveform = await loadWaveform(waveformId);
-    if (!waveform) {
-        return;
-    }
-
-    activeWaveformId = waveformId;
-    engineState.waveform = waveform;
-    engineState.sweepPosition = 0;
-    engineState.samplesWritten = 0;
-    engineState.beatDurationSeconds = null;
-    engineState.beatStartSeconds = 0;
-    engineState.totalSamples = 0;
-    engineState.buffer.fill(0);
-    engineState.spikes.fill(0);
-
-    if (leadLabel && waveform.label) {
-        leadLabel.textContent = waveform.label;
-    }
-}
-
-async function loadWaveform(waveformId) {
-    if (waveformCache.has(waveformId)) {
-        return waveformCache.get(waveformId);
-    }
-
-    const index = await loadWaveformIndex();
-    const entry = index.get(waveformId);
-    if (!entry) {
-        console.warn(`Waveform ${waveformId} not found in index`);
-        return null;
-    }
-
-    const response = await fetch(`data/waveforms/${entry.file}`, { cache: 'no-store' });
-    if (!response.ok) {
-        console.error(`Unable to load waveform ${waveformId}`);
-        return null;
-    }
-
-    const waveform = await response.json();
-    waveformCache.set(waveformId, waveform);
-    return waveform;
-}
-
-async function loadWaveformIndex() {
-    if (waveformIndex) {
-        return waveformIndex;
-    }
-
-    try {
-        const response = await fetch('data/waveforms/index.json', { cache: 'no-store' });
-        const payload = await response.json();
-        waveformIndex = new Map();
-        (payload.waveforms ?? []).forEach((wf) => {
-            waveformIndex.set(wf.id, wf);
-        });
-    } catch (error) {
-        console.error('Unable to load waveform index', error);
-        waveformIndex = new Map();
-    }
-
-    return waveformIndex;
 }
 
 function step() {
@@ -168,22 +104,41 @@ function step() {
     draw();
 }
 
+function regenerateWaveform() {
+    const patientHr = engineState.patientHr ?? 78;
+    const gap = heartRate(patientHr);
+    const sensitivity = engineState.parameters.sensitivity ?? 2.5;
+    const rate = engineState.parameters.rate ?? patientHr;
+    const output = engineState.parameters.output ?? 5;
+
+    const { y } = stitchBeatsNew(ecgWave, gap, 'Regular', sensitivity, rate, output, false);
+    const maxAbs = Math.max(1, ...y.map((value) => Math.abs(value)));
+    const normalized = y.map((value) => value / maxAbs);
+
+    const samples = [];
+    while (samples.length < BUFFER_LENGTH * 2) {
+        samples.push(...normalized);
+    }
+
+    engineState.generatedWave = {
+        samples,
+        spikes: new Array(samples.length).fill(0),
+        index: 0
+    };
+}
+
 function generateSample() {
-    const waveform = engineState.waveform ?? defaultWaveform;
-    const nowSeconds = engineState.totalSamples / SAMPLES_PER_SECOND;
-    const effective = resolveEffectiveConfig(waveform);
+    if (!engineState.generatedWave.samples.length) {
+        regenerateWaveform();
+    }
 
-    const phase = computePhase(nowSeconds, effective);
+    const { samples, spikes } = engineState.generatedWave;
+    const index = engineState.generatedWave.index % samples.length;
+    const value = samples[index];
+    const spike = spikes[index] ?? 0;
+    engineState.generatedWave.index = (index + 1) % samples.length;
 
-    let v = baselineWander(effective, nowSeconds);
-    v += renderPWave(effective, phase);
-    v += renderQrs(effective, phase);
-    v += renderTWave(effective, phase);
-    v += noise(effective);
-
-    const spike = shouldShowSpike(effective, phase) ? 1 : 0;
-
-    return { value: v, spike };
+    return { value, spike };
 }
 
 function resolveEffectiveConfig(waveform) {
