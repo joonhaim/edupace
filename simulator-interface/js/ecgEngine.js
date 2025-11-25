@@ -143,7 +143,7 @@ function flashLed(element) {
 }
 
 function processLedEvents(windowStart, windowEnd) {
-    if (!waveformDuration || !waveformEvents.length) return;
+    if (!engineState.poweredOn || !waveformDuration || !waveformEvents.length) return;
 
     waveformEvents.forEach((event) => {
         if (!event || typeof event.time !== 'number') return;

@@ -31,6 +31,7 @@ const parameterState = {
     output: null,
     sensitivity: null
 };
+let isPoweredOn = false;
 
 function setBasePaceMode(mode) {
     if (!ui.paceMode) return;
@@ -87,6 +88,9 @@ function initHardwareIntegration() {
 
     window.addEventListener('edupace-parameters', (event) => {
         const sensitivity = event.detail?.sensitivity;
+        if (typeof event.detail?.power === 'boolean') {
+            isPoweredOn = event.detail.power;
+        }
         applyAsyncModeFromSensitivity(sensitivity);
     });
 
@@ -211,6 +215,7 @@ function handleHardwareMessage(line) {
 
     if (payload.power !== undefined) {
         ui.powerStatus.textContent = `Power: ${payload.power}`;
+        isPoweredOn = payload.power === 'ON';
     }
 
     if (payload.lock !== undefined) {
@@ -288,6 +293,10 @@ function parsePayload(line) {
 }
 
 function flashLed(ledElement) {
+    if (!isPoweredOn) {
+        return;
+    }
+
     ledElement.classList.add('led-on');
     setTimeout(() => {
         ledElement.classList.remove('led-on');
