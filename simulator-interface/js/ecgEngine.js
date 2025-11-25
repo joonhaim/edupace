@@ -151,9 +151,11 @@ function resetSweep() {
     if (traceCtx && traceCanvas) {
         traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
         traceCtx.lineWidth = 2;
-        traceCtx.strokeStyle = '#22d3ee';
+        traceCtx.strokeStyle = '#22c55e';
         traceCtx.lineJoin = 'round';
         traceCtx.lineCap = 'round';
+        traceCtx.shadowColor = 'rgba(34, 197, 94, 0.7)';
+        traceCtx.shadowBlur = 4;
     }
     draw();
 }
