@@ -69,7 +69,19 @@
                             <div class="ecg-frame">
                                 <canvas id="ecgCanvas" width="1200" height="550"></canvas>
                                 <div class="ecg-overlay">
+                                <div class="ecg-meta">
                                     <div class="ecg-label" aria-live="polite">Lead II</div>
+                                    <button
+                                        id="soundToggle"
+                                        class="sound-toggle"
+                                        type="button"
+                                        aria-pressed="true"
+                                        aria-label="Toggle heartbeat sound"
+                                        title="Mute heartbeat sound"
+                                    >
+                                        🔊
+                                    </button>
+                                </div>
                                     <div class="ecg-vitals">
                                         <div class="vital-block">
                                             <span class="vital-label">HR</span>

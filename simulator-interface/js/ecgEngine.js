@@ -35,6 +35,7 @@ let caliper = null;
 let pendingCaliper = null;
 let ignoreNextPointerUp = false;
 let heartRateEngine = null;
+let soundToggleButton = null;
 
 function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
@@ -50,6 +51,8 @@ function initEcgEngine() {
     configureTraceStyle();
 
     heartRateEngine = createHeartRateEngine(document.getElementById('hrValue'));
+    soundToggleButton = document.getElementById('soundToggle');
+    setupSoundToggle();
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -65,6 +68,25 @@ function initEcgEngine() {
 
     regenerateWaveform();
     startAnimationLoop();
+}
+
+function setupSoundToggle() {
+    if (!soundToggleButton || !heartRateEngine) return;
+
+    const updateUi = (enabled) => {
+        soundToggleButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+        soundToggleButton.classList.toggle('sound-off', !enabled);
+        soundToggleButton.textContent = enabled ? '🔊' : '🔇';
+        soundToggleButton.title = enabled ? 'Mute heartbeat sound' : 'Unmute heartbeat sound';
+    };
+
+    soundToggleButton.addEventListener('click', () => {
+        const nextState = !heartRateEngine.isBeepEnabled();
+        heartRateEngine.setBeepEnabled(nextState);
+        updateUi(nextState);
+    });
+
+    updateUi(heartRateEngine.isBeepEnabled());
 }
 
 function handleParameterChange(event) {

@@ -14,7 +14,8 @@ function createHeartRateEngine(displayElement) {
     };
 
     const audioState = {
-        context: null
+        context: null,
+        enabled: true
     };
 
     let maxWaveAmplitude = 1;
@@ -115,7 +116,9 @@ function createHeartRateEngine(displayElement) {
 
     function ensureAudioContext() {
         if (audioState.context) {
-            if (audioState.context.state === 'suspended') audioState.context.resume();
+            if (audioState.enabled && audioState.context.state === 'suspended') {
+                audioState.context.resume();
+            }
             return audioState.context;
         }
 
@@ -128,19 +131,21 @@ function createHeartRateEngine(displayElement) {
     }
 
     function playBeep() {
+        if (!audioState.enabled) return;
+
         const context = ensureAudioContext();
         if (!context) return;
 
         const oscillator = context.createOscillator();
         const gainNode = context.createGain();
         const now = context.currentTime;
-        const duration = 0.12;
+        const duration = 0.05;
 
         oscillator.type = 'square';
-        oscillator.frequency.value = 880;
+        oscillator.frequency.value = 1000;
 
         gainNode.gain.setValueAtTime(0.0001, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.25, now + 0.005);
         gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
         oscillator.connect(gainNode);
@@ -150,12 +155,28 @@ function createHeartRateEngine(displayElement) {
         oscillator.stop(now + duration);
     }
 
+    function setBeepEnabled(enabled) {
+        audioState.enabled = Boolean(enabled);
+
+        if (!audioState.enabled && audioState.context?.state !== 'closed') {
+            audioState.context.suspend();
+        } else if (audioState.enabled) {
+            ensureAudioContext();
+        }
+    }
+
+    function isBeepEnabled() {
+        return audioState.enabled;
+    }
+
     updateDisplay();
 
     return {
         processSample,
         reset,
-        setMaxWaveAmplitude
+        setMaxWaveAmplitude,
+        setBeepEnabled,
+        isBeepEnabled
     };
 }
 
