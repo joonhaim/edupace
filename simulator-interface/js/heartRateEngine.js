@@ -13,6 +13,10 @@ function createHeartRateEngine(displayElement) {
         bpm: null
     };
 
+    const audioState = {
+        context: null
+    };
+
     let maxWaveAmplitude = 1;
 
     function reset() {
@@ -82,6 +86,7 @@ function createHeartRateEngine(displayElement) {
         heartRateState.peaks.push(timeSeconds);
         purgeOldPeaks(timeSeconds);
         updateFromPeaks();
+        playBeep();
     }
 
     function processSample(timeSeconds, value) {
@@ -106,6 +111,43 @@ function createHeartRateEngine(displayElement) {
         heartRateState.previousMagnitude = magnitude;
         heartRateState.previousSampleTime = timeSeconds;
         purgeOldPeaks(timeSeconds);
+    }
+
+    function ensureAudioContext() {
+        if (audioState.context) {
+            if (audioState.context.state === 'suspended') audioState.context.resume();
+            return audioState.context;
+        }
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return null;
+
+        const context = new AudioContext();
+        audioState.context = context;
+        return context;
+    }
+
+    function playBeep() {
+        const context = ensureAudioContext();
+        if (!context) return;
+
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+        const now = context.currentTime;
+        const duration = 0.12;
+
+        oscillator.type = 'square';
+        oscillator.frequency.value = 880;
+
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+
+        oscillator.start(now);
+        oscillator.stop(now + duration);
     }
 
     updateDisplay();
