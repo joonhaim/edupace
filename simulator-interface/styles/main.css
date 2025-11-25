@@ -88,17 +88,18 @@ a {
 }
 
 .brand::before {
-    content: "+";
+    content: "";
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 28px;
     height: 28px;
     border-radius: 8px;
-    background: var(--primary);
-    color: #fff;
-    font-weight: 900;
-    font-size: 1rem;
+
+    background-image: url("../assets/logos/edupace_logo2.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .nav-buttons {
@@ -1162,4 +1163,8 @@ body.simulation-dark .param-step:hover,
 body.simulation-dark .param-step:focus-visible {
     border-color: #4facff;
     box-shadow: 0 0 0 3px rgba(79, 172, 255, 0.25);
+}
+
+body.simulation-dark .brand::before {
+    background-image: url("../assets/logos/edupace_logo2_neg.png");
 }
