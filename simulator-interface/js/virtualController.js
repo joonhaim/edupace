@@ -7,22 +7,15 @@ const controllerState = {
 };
 
 function initVirtualController() {
-    const card = document.getElementById('virtualControllerCard');
-    if (!card) {
+    const parametersCard = document.querySelector('.parameters-card');
+    const title = document.getElementById('pacemakerTitle');
+
+    if (!parametersCard || !title) {
         return;
     }
 
-    const labels = {
-        rate: card.querySelector('[data-value="rate"]'),
-        output: card.querySelector('[data-value="output"]'),
-        sensitivity: card.querySelector('[data-value="sensitivity"]')
-    };
-
-    const inputs = {
-        rate: card.querySelector('[data-control="rate"]'),
-        output: card.querySelector('[data-control="output"]'),
-        sensitivity: card.querySelector('[data-control="sensitivity"]')
-    };
+    const modeRadios = document.querySelectorAll('input[name="inputMode"]');
+    const controlGroups = parametersCard.querySelectorAll('[data-virtual-control]');
 
     const display = {
         rate: document.getElementById('rateValue'),
@@ -30,41 +23,7 @@ function initVirtualController() {
         sensitivity: document.getElementById('sensValue')
     };
 
-    const modeRadios = document.querySelectorAll('input[name="inputMode"]');
-
-    Object.entries(inputs).forEach(([key, input]) => {
-        if (!input) return;
-
-        const presets = knobPresets[key] ?? [];
-
-        if (presets.length) {
-            input.min = 0;
-            input.max = presets.length - 1;
-            input.step = 1;
-            input.value = getPresetIndex(key, controllerState[key]);
-        } else {
-            input.value = controllerState[key];
-        }
-
-        input.addEventListener('input', () => {
-            controllerState[key] = getPresetValue(key, Number(input.value));
-            updateInputs();
-            updateLabels();
-            broadcastParameters();
-        });
-    });
-
-    const updateLabels = () => {
-        if (labels.rate) {
-            labels.rate.textContent = `${formatValue('rate', controllerState.rate)} bpm`;
-        }
-        if (labels.output) {
-            labels.output.textContent = `${formatValue('output', controllerState.output)} mA`;
-        }
-        if (labels.sensitivity) {
-            labels.sensitivity.textContent = `${formatValue('sensitivity', controllerState.sensitivity)} mV`;
-        }
-    };
+    const isVirtualMode = () => Array.from(modeRadios).some((radio) => radio.checked && radio.value === 'virtual');
 
     const updateTiles = () => {
         if (display.rate) {
@@ -90,6 +49,8 @@ function initVirtualController() {
     const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
     const adjustValue = (key, direction, min, max, step) => {
+        if (!isVirtualMode()) return;
+
         const presets = knobPresets[key] ?? [];
 
         if (presets.length) {
@@ -100,8 +61,6 @@ function initVirtualController() {
 
             if (nextValue !== controllerState[key]) {
                 controllerState[key] = nextValue;
-                updateInputs();
-                updateLabels();
                 broadcastParameters();
             }
             return;
@@ -113,69 +72,43 @@ function initVirtualController() {
         const rounded = Number(next.toFixed(decimals));
         if (rounded !== controllerState[key]) {
             controllerState[key] = rounded;
-            updateLabels();
             broadcastParameters();
         }
     };
 
-    const controls = card.querySelectorAll('.virtual-control');
-
-    controls.forEach((control) => {
-        const key = control.dataset.control;
+    controlGroups.forEach((group) => {
+        const key = group.dataset.virtualControl;
         if (!key || !(key in controllerState)) return;
 
-        const min = Number(control.dataset.min ?? 0);
-        const max = Number(control.dataset.max ?? 100);
-        const step = Number(control.dataset.step ?? 1);
+        const min = Number(group.dataset.min ?? 0);
+        const max = Number(group.dataset.max ?? 100);
+        const step = Number(group.dataset.step ?? 1);
 
-        const decrement = control.querySelector('[data-direction="down"]');
-        const increment = control.querySelector('[data-direction="up"]');
+        const decrement = group.querySelector('[data-direction="down"]');
+        const increment = group.querySelector('[data-direction="up"]');
 
-        const handleAdjust = (direction) => {
-            adjustValue(key, direction, min, max, step);
-        };
+        const handleAdjust = (direction) => adjustValue(key, direction, min, max, step);
 
         decrement?.addEventListener('click', () => handleAdjust('down'));
         increment?.addEventListener('click', () => handleAdjust('up'));
-
-        control.addEventListener('keydown', (event) => {
-            if (event.key === 'ArrowLeft') {
-                event.preventDefault();
-                handleAdjust('down');
-            } else if (event.key === 'ArrowRight') {
-                event.preventDefault();
-                handleAdjust('up');
-            }
-        });
     });
 
-    const toggleCardVisibility = () => {
-        const isVirtual = Array.from(modeRadios).some((radio) => radio.checked && radio.value === 'virtual');
-        card.classList.toggle('is-active', isVirtual);
-        card.setAttribute('aria-hidden', String(!isVirtual));
-        if (isVirtual) {
-            updateInputs();
+    const applyModeState = () => {
+        const virtualMode = isVirtualMode();
+        parametersCard.classList.toggle('is-virtual', virtualMode);
+        controlGroups.forEach((group) => group.setAttribute('aria-hidden', String(!virtualMode)));
+        title.textContent = virtualMode ? 'Virtual Pacemaker Controller' : 'Pacemaker parameters';
+
+        if (virtualMode) {
             broadcastParameters();
         }
     };
 
     modeRadios.forEach((radio) => {
-        radio.addEventListener('change', toggleCardVisibility);
+        radio.addEventListener('change', applyModeState);
     });
 
-    updateInputs();
-    updateLabels();
-    toggleCardVisibility();
-}
-
-function getPresetValue(parameter, index) {
-    const presets = knobPresets[parameter] ?? [];
-    if (!presets.length) {
-        return index;
-    }
-
-    const clampedIndex = Math.min(Math.max(Math.round(index), 0), presets.length - 1);
-    return presets[clampedIndex];
+    applyModeState();
 }
 
 function getPresetIndex(parameter, value) {
@@ -219,30 +152,6 @@ function formatValue(parameter, value) {
         return `${Math.round(value)}`;
     }
     return `${value.toFixed(1)}`;
-}
-
-function updateInputs() {
-    const card = document.getElementById('virtualControllerCard');
-    if (!card) {
-        return;
-    }
-
-    const inputs = {
-        rate: card.querySelector('[data-control="rate"]'),
-        output: card.querySelector('[data-control="output"]'),
-        sensitivity: card.querySelector('[data-control="sensitivity"]')
-    };
-
-    Object.entries(inputs).forEach(([key, input]) => {
-        if (!input) return;
-
-        const presets = knobPresets[key] ?? [];
-        if (presets.length) {
-            input.value = getPresetIndex(key, controllerState[key]);
-        } else {
-            input.value = controllerState[key];
-        }
-    });
 }
 
 export { initVirtualController };
