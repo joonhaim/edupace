@@ -1,4 +1,5 @@
 import { ecgWave, heartRate, stitchBeatsNew } from '../ecg/ecgCore.js';
+import { createHeartRateEngine } from './heartRateEngine.js';
 
 const SECONDS_VISIBLE = 6;
 const SWEEP_SPEED_MM_PER_SEC = 25;
@@ -33,6 +34,7 @@ let isPaused = false;
 let caliper = null;
 let pendingCaliper = null;
 let ignoreNextPointerUp = false;
+let heartRateEngine = null;
 
 function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
@@ -46,6 +48,8 @@ function initEcgEngine() {
     traceCtx = traceCanvas.getContext('2d');
     syncCanvasSize();
     configureTraceStyle();
+
+    heartRateEngine = createHeartRateEngine(document.getElementById('hrValue'));
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -181,6 +185,8 @@ function regenerateWaveform(options = {}) {
     waveformDuration = Math.max(...x, 0);
     waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
     maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
+    heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
+    heartRateEngine?.reset();
 
     if (keepSweep) {
         sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
@@ -194,6 +200,7 @@ function resetSweep() {
     sweepX = 0;
     sweepTime = 0;
     lastFrameTime = null;
+    heartRateEngine?.reset();
     if (traceCtx && traceCanvas) {
         traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
         configureTraceStyle();
@@ -301,14 +308,18 @@ function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height
         const ratio = offset / distance;
         const x = startX + ratio * (endX - startX);
         const time = startTime + ratio * timeSpan;
-        const y = valueToY(sampleWaveform(time), midY, scaleY);
+        const value = sampleWaveform(time);
+        const y = valueToY(value, midY, scaleY);
+        heartRateEngine?.processSample(time, value);
         if (offset === 0) {
             traceCtx.moveTo(x, y);
         } else {
             traceCtx.lineTo(x, y);
         }
     }
-    const finalY = valueToY(sampleWaveform(endTime), midY, scaleY);
+    const finalValue = sampleWaveform(endTime);
+    heartRateEngine?.processSample(endTime, finalValue);
+    const finalY = valueToY(finalValue, midY, scaleY);
     traceCtx.lineTo(endX, finalY);
     traceCtx.stroke();
 }

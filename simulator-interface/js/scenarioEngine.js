@@ -3,7 +3,6 @@ const ALARM_LEVELS = ['normal', 'warning', 'critical'];
 const scenarioElements = {
     scenarioName: document.getElementById('scenarioName'),
     scenarioText: document.getElementById('scenarioText'),
-    hrValue: document.getElementById('hrValue'),
     paceMode: document.getElementById('paceMode'),
     alarmBanner: document.getElementById('alarmBanner'),
     alarmText: document.getElementById('alarmText'),
@@ -14,7 +13,6 @@ const scenarioElements = {
 const textKeys = [
     'scenarioName',
     'scenarioText',
-    'hrValue',
     'paceMode',
     'alarmText',
     'objectiveText',
@@ -122,7 +120,6 @@ function populateScenarioSelect(select, scenarios) {
 function applyScenarioText(scenario) {
     updateText('scenarioName', scenario.title);
     updateText('scenarioText', scenario.description);
-    updateText('hrValue', scenario.vitals?.hr ?? null);
     updateText('paceMode', scenario.pacing?.mode ?? null);
     updateAlarm(scenario.alarm);
     updateText('objectiveText', scenario.objective ?? null);
@@ -130,8 +127,6 @@ function applyScenarioText(scenario) {
 }
 
 function applyVitalsOverride(baseScenario, overrides) {
-    const hr = overrides?.hr ?? baseScenario.vitals?.hr;
-    updateText('hrValue', hr ?? null);
 }
 
 function applyRuleEffects(effects) {
