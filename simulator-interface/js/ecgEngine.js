@@ -129,6 +129,8 @@ function mapWaveformId(waveformId) {
     switch (waveformId) {
         case 'loss-of-capture':
             return 'Ventricular pacing';
+        case 'ventricular-paced':
+            return 'Ventricular pacing';
         case 'normal-sinus':
         default:
             return 'Normal';
