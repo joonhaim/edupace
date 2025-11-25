@@ -11,7 +11,8 @@ const engineState = {
     sensitivity: 2.0,
     regularity: 'Regular',
     asynchronous: false,
-    baseSignal: 'Normal'
+    baseSignal: 'Normal',
+    poweredOn: true
 };
 
 let canvas;
@@ -63,10 +64,11 @@ function initEcgEngine() {
 }
 
 function handleParameterChange(event) {
-    const { rate, output, sensitivity } = event.detail ?? {};
+    const { rate, output, sensitivity, power } = event.detail ?? {};
     if (Number.isFinite(rate)) engineState.pacingRate = rate;
     if (Number.isFinite(output)) engineState.output = output;
     if (Number.isFinite(sensitivity)) engineState.sensitivity = sensitivity;
+    if (typeof power === 'boolean') engineState.poweredOn = power;
     regenerateWaveform({ keepSweep: true });
 }
 
@@ -74,6 +76,11 @@ function handleScenarioChange(event) {
     const previousBaseSignal = engineState.baseSignal;
     const hr = event.detail?.vitals?.hr;
     if (Number.isFinite(hr)) engineState.patientRate = hr;
+    if (typeof event.detail?.pacing?.poweredOn === 'boolean') {
+        engineState.poweredOn = event.detail.pacing.poweredOn;
+    } else {
+        engineState.poweredOn = true;
+    }
     if (event.detail?.waveformId) {
         engineState.baseSignal = mapWaveformId(event.detail.waveformId);
     }
@@ -156,14 +163,19 @@ function regenerateWaveform(options = {}) {
         return ecgWave(resolvedType);
     };
 
+    const pacingEnabled = engineState.poweredOn;
+    const pacingRate = pacingEnabled ? engineState.pacingRate : engineState.patientRate;
+    const pacingOutput = pacingEnabled ? engineState.output : 0;
+    const pacingAsync = pacingEnabled ? engineState.asynchronous : false;
+
     const { x, y } = stitchBeatsNew(
         ecgFunc,
         gap,
         engineState.regularity,
         engineState.sensitivity,
-        engineState.pacingRate,
-        engineState.output,
-        engineState.asynchronous
+        pacingRate,
+        pacingOutput,
+        pacingAsync
     );
 
     waveformDuration = Math.max(...x, 0);
