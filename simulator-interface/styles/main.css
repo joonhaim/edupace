@@ -714,6 +714,47 @@ h1, h2, h3 {
     gap: 0.4rem;
 }
 
+.virtual-actions {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-top: 0.8rem;
+}
+
+.virtual-action-btn {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.65rem 0.75rem;
+    border-radius: 12px;
+    border: 1px solid #d1d9e6;
+    background: linear-gradient(180deg, #ffffff, #f5f7fb);
+    color: #0f172a;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(6, 15, 31, 0.12);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.virtual-action-btn .action-state {
+    font-size: 0.85rem;
+    color: #4b5565;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.virtual-action-btn:hover,
+.virtual-action-btn:focus-visible {
+    border-color: #9fb4d8;
+    box-shadow: 0 0 0 3px rgba(80, 127, 187, 0.18);
+}
+
+.virtual-action-btn:active {
+    transform: translateY(1px);
+}
+
 .param-step {
     border: 1px solid #d1d9e6;
     background: linear-gradient(180deg, #ffffff, #f4f7fb);
@@ -743,6 +784,49 @@ h1, h2, h3 {
 
 .parameters-card.is-virtual .param-controls {
     display: inline-flex;
+}
+
+.parameters-card.is-virtual .virtual-actions {
+    display: flex;
+}
+
+.parameters-card.is-locked .param-controls {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.parameters-card.is-locked .param-step {
+    cursor: not-allowed;
+}
+
+.virtual-action-btn.is-active {
+    border-color: #6ca5ff;
+    background: linear-gradient(180deg, #f0f6ff, #e4edff);
+    box-shadow: 0 12px 26px rgba(15, 76, 173, 0.25);
+}
+
+.virtual-action-btn.is-active .action-state {
+    color: #0f4a86;
+}
+
+.parameters-card.is-powered-off .virtual-action-btn[data-virtual-action="power"] {
+    border-color: #f7c7c3;
+    background: linear-gradient(180deg, #fff5f4, #ffe9e7);
+    box-shadow: 0 12px 26px rgba(176, 37, 22, 0.12);
+}
+
+.parameters-card.is-powered-off .virtual-action-btn[data-virtual-action="power"] .action-state {
+    color: #b42318;
+}
+
+.parameters-card.is-locked .virtual-action-btn[data-virtual-action="lock"] {
+    border-color: #cdd5e0;
+    background: linear-gradient(180deg, #f6f7fa, #edf1f7);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.parameters-card.is-locked .virtual-action-btn[data-virtual-action="lock"] .action-state {
+    color: #4b5565;
 }
 
 .param-unit {

@@ -3,7 +3,9 @@ import { knobPresets } from './knobPresets.js';
 const controllerState = {
     rate: getNearestPreset('rate', 80),
     output: getNearestPreset('output', 10),
-    sensitivity: getNearestPreset('sensitivity', 2.0)
+    sensitivity: getNearestPreset('sensitivity', 2.0),
+    power: true,
+    locked: false
 };
 
 function initVirtualController() {
@@ -16,6 +18,11 @@ function initVirtualController() {
 
     const modeRadios = document.querySelectorAll('input[name="inputMode"]');
     const controlGroups = parametersCard.querySelectorAll('[data-virtual-control]');
+    const actionsContainer = parametersCard.querySelector('.virtual-actions');
+    const actionButtons = {
+        power: parametersCard.querySelector('[data-virtual-action="power"]'),
+        lock: parametersCard.querySelector('[data-virtual-action="lock"]')
+    };
 
     const display = {
         rate: document.getElementById('rateValue'),
@@ -37,8 +44,37 @@ function initVirtualController() {
         }
     };
 
-    const broadcastParameters = () => {
+    const setActionVisualState = (button, active, label) => {
+        if (!button) return;
+
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', String(active));
+        const stateLabel = button.querySelector('[data-action-state]');
+        if (stateLabel) {
+            stateLabel.textContent = label;
+        }
+    };
+
+    const refreshDisplay = () => {
         updateTiles();
+        setActionVisualState(actionButtons.power, controllerState.power, controllerState.power ? 'On' : 'Off');
+        setActionVisualState(
+            actionButtons.lock,
+            controllerState.locked,
+            controllerState.locked ? 'Locked' : 'Unlocked'
+        );
+
+        const virtualMode = isVirtualMode();
+        parametersCard.classList.toggle('is-powered-off', virtualMode && !controllerState.power);
+        parametersCard.classList.toggle('is-locked', virtualMode && controllerState.locked);
+
+        controlGroups.forEach((group) => {
+            group.setAttribute('aria-disabled', String(controllerState.locked && virtualMode));
+        });
+    };
+
+    const broadcastParameters = () => {
+        refreshDisplay();
         window.dispatchEvent(
             new CustomEvent('edupace-parameters', {
                 detail: { ...controllerState }
@@ -49,7 +85,7 @@ function initVirtualController() {
     const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
     const adjustValue = (key, direction, min, max, step) => {
-        if (!isVirtualMode()) return;
+        if (!isVirtualMode() || controllerState.locked) return;
 
         const presets = knobPresets[key] ?? [];
 
@@ -93,14 +129,50 @@ function initVirtualController() {
         increment?.addEventListener('click', () => handleAdjust('up'));
     });
 
+    const togglePower = () => {
+        if (!isVirtualMode()) return;
+
+        controllerState.power = !controllerState.power;
+        broadcastParameters();
+    };
+
+    const toggleLock = () => {
+        if (!isVirtualMode()) return;
+
+        controllerState.locked = !controllerState.locked;
+        broadcastParameters();
+    };
+
+    actionButtons.power?.addEventListener('click', togglePower);
+    actionButtons.lock?.addEventListener('click', toggleLock);
+
+    const applyScenarioDefaults = (scenario) => {
+        controllerState.locked = false;
+
+        if (typeof scenario?.pacing?.poweredOn === 'boolean') {
+            controllerState.power = scenario.pacing.poweredOn;
+        }
+
+        refreshDisplay();
+
+        if (isVirtualMode()) {
+            broadcastParameters();
+        }
+    };
+
+    window.addEventListener('edupace-scenario-change', (event) => applyScenarioDefaults(event.detail));
+
     const applyModeState = () => {
         const virtualMode = isVirtualMode();
         parametersCard.classList.toggle('is-virtual', virtualMode);
         controlGroups.forEach((group) => group.setAttribute('aria-hidden', String(!virtualMode)));
+        actionsContainer?.setAttribute('aria-hidden', String(!virtualMode));
         title.textContent = virtualMode ? 'Virtual Pacemaker Controller' : 'Pacemaker parameters';
 
         if (virtualMode) {
             broadcastParameters();
+        } else {
+            refreshDisplay();
         }
     };
 

@@ -15,7 +15,8 @@
         "temp": 36.8
       },
       "pacing": {
-        "mode": "VVI (standby)"
+        "mode": "VVI (standby)",
+        "poweredOn": false
       },
       "alarm": {
         "level": "normal",
