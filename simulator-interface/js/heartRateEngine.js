@@ -10,7 +10,7 @@ function createHeartRateEngine(displayElement) {
         previousMagnitude: null,
         previousSlope: null,
         previousSampleTime: null,
-        bpm: null
+        ppm: null
     };
 
     let maxWaveAmplitude = 1;
@@ -21,7 +21,7 @@ function createHeartRateEngine(displayElement) {
         heartRateState.previousMagnitude = null;
         heartRateState.previousSlope = null;
         heartRateState.previousSampleTime = null;
-        heartRateState.bpm = null;
+        heartRateState.ppm = null;
         updateDisplay();
     }
 
@@ -32,8 +32,8 @@ function createHeartRateEngine(displayElement) {
     function updateDisplay() {
         if (!displayElement) return;
 
-        const text = Number.isFinite(heartRateState.bpm)
-            ? heartRateState.bpm.toString()
+        const text = Number.isFinite(heartRateState.ppm)
+            ? heartRateState.ppm.toString()
             : '--';
         displayElement.textContent = text;
     }
@@ -47,14 +47,14 @@ function createHeartRateEngine(displayElement) {
         heartRateState.peaks = heartRateState.peaks.filter((peakTime) => peakTime >= cutoff);
 
         if (heartRateState.peaks.length < 2) {
-            heartRateState.bpm = null;
+            heartRateState.ppm = null;
             updateDisplay();
         }
     }
 
     function updateFromPeaks() {
         if (heartRateState.peaks.length < 2) {
-            heartRateState.bpm = null;
+            heartRateState.ppm = null;
             updateDisplay();
             return;
         }
@@ -66,14 +66,14 @@ function createHeartRateEngine(displayElement) {
         }
 
         if (!intervals.length) {
-            heartRateState.bpm = null;
+            heartRateState.ppm = null;
             updateDisplay();
             return;
         }
 
         const total = intervals.reduce((acc, value) => acc + value, 0);
         const averageIntervalSeconds = total / intervals.length;
-        heartRateState.bpm = Math.round(60 / averageIntervalSeconds);
+        heartRateState.ppm = Math.round(60 / averageIntervalSeconds);
         updateDisplay();
     }
 

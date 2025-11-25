@@ -85,7 +85,7 @@ def ECG_wave(signal_type):
 # ----- HR → gap -----
 def heart_rate(patient_HR):
     '''
-    Calculates the gap between beats based on patient heart rate in bpm
+    Calculates the gap between beats based on patient heart rate in ppm
     Note: assumes all heart beats are exactly the same (based on standard heartbeat defined in ECG_wave function)
     only gives give that results in approximately patient_HR
     '''
@@ -102,7 +102,7 @@ def stitch_beats_new(ecg_func, gap, regularity, sensitivity, rate, output, async
     gap: base gap between beats
     regularity: 'Regular' or 'Irregular' spacing between beats
     sensitivity: sensitivity setting of pacemaker in mV
-    rate: programmed rate of pacemaker in bpm
+    rate: programmed rate of pacemaker in ppm
     output: output setting of pacemaker in mA
     asynchronous: boolean indicating if pacemaker is in asynchronous mode
 
@@ -205,7 +205,7 @@ def stitch_beats_new(ecg_func, gap, regularity, sensitivity, rate, output, async
 
             else:  # If beat is sensed, then determine location of R wave and calculate measured rate
                 RR_dist = x_temp_shifted[np.argmax(y_temp)] - R_location
-                # Convert distance between R waves to bpm
+                # Convert distance between R waves to ppm
                 measured_rate = 1500 * 0.04 / RR_dist
 
                 # Update R_location for next iteration

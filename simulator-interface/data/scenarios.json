@@ -71,8 +71,8 @@
         "level": "warning",
         "text": "Symptomatic bradycardia – initiate pacing"
       },
-      "objective": "Increase the VVI pacing rate above the intrinsic 34–38 bpm rhythm with adequate output and sensitivity to achieve consistent ventricular capture.",
-      "feedback": "Start VVI pacing, set the rate to 60–70 bpm, output to 5–10 mA, and sensitivity around 2 mV to obtain paced QRS complexes.",
+      "objective": "Increase the VVI pacing rate above the intrinsic 34–38 ppm rhythm with adequate output and sensitivity to achieve consistent ventricular capture.",
+      "feedback": "Start VVI pacing, set the rate to 60–70 ppm, output to 5–10 mA, and sensitivity around 2 mV to obtain paced QRS complexes.",
       "rules": [
         {
           "id": "uc01-loss-of-capture",
