@@ -2,6 +2,7 @@ const HR_MEASUREMENT_WINDOW_SECONDS = 8;
 const MIN_PEAK_INTERVAL_SECONDS = 0.3;
 const MIN_PEAK_FRACTION = 0.45;
 const MIN_PEAK_ABSOLUTE = 0.5;
+const MIN_PEAK_WIDTH_SECONDS = 0.02;
 
 function createHeartRateEngine(displayElement) {
     const heartRateState = {
@@ -10,6 +11,7 @@ function createHeartRateEngine(displayElement) {
         previousMagnitude: null,
         previousSlope: null,
         previousSampleTime: null,
+        aboveThresholdStart: null,
         bpm: null
     };
 
@@ -26,6 +28,7 @@ function createHeartRateEngine(displayElement) {
         heartRateState.previousMagnitude = null;
         heartRateState.previousSlope = null;
         heartRateState.previousSampleTime = null;
+        heartRateState.aboveThresholdStart = null;
         heartRateState.bpm = null;
         updateDisplay();
     }
@@ -92,16 +95,29 @@ function createHeartRateEngine(displayElement) {
 
     function processSample(timeSeconds, value) {
         const magnitude = Math.abs(value);
+        const threshold = getPeakThreshold();
+
+        if (magnitude >= threshold && heartRateState.aboveThresholdStart === null) {
+            heartRateState.aboveThresholdStart = heartRateState.previousSampleTime ?? timeSeconds;
+        } else if (magnitude < threshold && heartRateState.previousMagnitude !== null && heartRateState.previousMagnitude >= threshold) {
+            heartRateState.aboveThresholdStart = null;
+        } else if (magnitude < threshold && heartRateState.previousMagnitude !== null && heartRateState.previousMagnitude < threshold) {
+            heartRateState.aboveThresholdStart = null;
+        }
 
         if (heartRateState.previousMagnitude !== null) {
             const slope = magnitude - heartRateState.previousMagnitude;
             const previousSlope = heartRateState.previousSlope;
 
-            if (previousSlope !== null && previousSlope > 0 && slope <= 0 && heartRateState.previousMagnitude >= getPeakThreshold()) {
+            if (previousSlope !== null && previousSlope > 0 && slope <= 0 && heartRateState.previousMagnitude >= threshold) {
                 const isSeparated =
                     (timeSeconds - heartRateState.lastPeakTime) >= MIN_PEAK_INTERVAL_SECONDS;
 
-                if (isSeparated) {
+                const peakStart = heartRateState.aboveThresholdStart ?? heartRateState.previousSampleTime ?? timeSeconds;
+                const peakWidth = Math.max(0, (heartRateState.previousSampleTime ?? timeSeconds) - peakStart);
+                const isWideEnough = peakWidth >= MIN_PEAK_WIDTH_SECONDS;
+
+                if (isSeparated && isWideEnough) {
                     recordPeak(heartRateState.previousSampleTime ?? timeSeconds);
                 }
             }

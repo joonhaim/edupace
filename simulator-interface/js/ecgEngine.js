@@ -76,8 +76,9 @@ function setupSoundToggle() {
     const updateUi = (enabled) => {
         soundToggleButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
         soundToggleButton.classList.toggle('sound-off', !enabled);
-        soundToggleButton.textContent = enabled ? '🔊' : '🔇';
-        soundToggleButton.title = enabled ? 'Mute heartbeat sound' : 'Unmute heartbeat sound';
+        const label = enabled ? 'Mute heartbeat sound' : 'Unmute heartbeat sound';
+        soundToggleButton.setAttribute('aria-label', label);
+        soundToggleButton.title = label;
     };
 
     soundToggleButton.addEventListener('click', () => {
