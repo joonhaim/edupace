@@ -44,6 +44,7 @@ function initEcgEngine() {
     traceCanvas = document.createElement('canvas');
     traceCtx = traceCanvas.getContext('2d');
     syncCanvasSize();
+    configureTraceStyle();
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -66,25 +67,29 @@ function handleParameterChange(event) {
     if (Number.isFinite(rate)) engineState.pacingRate = rate;
     if (Number.isFinite(output)) engineState.output = output;
     if (Number.isFinite(sensitivity)) engineState.sensitivity = sensitivity;
-    regenerateWaveform();
+    regenerateWaveform({ keepSweep: true });
 }
 
 function handleScenarioChange(event) {
+    const previousBaseSignal = engineState.baseSignal;
     const hr = event.detail?.vitals?.hr;
     if (Number.isFinite(hr)) engineState.patientRate = hr;
     if (event.detail?.waveformId) {
         engineState.baseSignal = mapWaveformId(event.detail.waveformId);
     }
-    regenerateWaveform();
+    const waveformChanged = engineState.baseSignal !== previousBaseSignal;
+    regenerateWaveform({ keepSweep: !waveformChanged });
 }
 
 function handleRuleEffects(event) {
+    const previousBaseSignal = engineState.baseSignal;
     const hr = event.detail?.effects?.vitals?.hr;
     if (Number.isFinite(hr)) engineState.patientRate = hr;
     if (event.detail?.effects?.waveformId) {
         engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
     }
-    regenerateWaveform();
+    const waveformChanged = engineState.baseSignal !== previousBaseSignal;
+    regenerateWaveform({ keepSweep: !waveformChanged });
 }
 
 function handleWaveformChange(event) {
@@ -93,6 +98,14 @@ function handleWaveformChange(event) {
         engineState.baseSignal = mapWaveformId(waveformId);
         regenerateWaveform();
     }
+}
+
+function configureTraceStyle() {
+    if (!traceCtx) return;
+    traceCtx.lineWidth = 2;
+    traceCtx.strokeStyle = '#00ff63';
+    traceCtx.lineJoin = 'round';
+    traceCtx.lineCap = 'round';
 }
 
 function mapWaveformId(waveformId) {
@@ -119,6 +132,7 @@ function syncCanvasSize() {
     if (traceCanvas.width !== newWidth || traceCanvas.height !== newHeight) {
         traceCanvas.width = newWidth;
         traceCanvas.height = newHeight;
+        configureTraceStyle();
     }
 
     if (gridCanvas.width !== newWidth || gridCanvas.height !== newHeight) {
@@ -134,7 +148,8 @@ function handleResize() {
     resetSweep();
 }
 
-function regenerateWaveform() {
+function regenerateWaveform(options = {}) {
+    const { keepSweep = false } = options;
     const gap = heartRate(engineState.patientRate);
     const ecgFunc = (type) => {
         const resolvedType = type === 'Normal' ? engineState.baseSignal : type;
@@ -154,6 +169,12 @@ function regenerateWaveform() {
     waveformDuration = Math.max(...x, 0);
     waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
     maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
+
+    if (keepSweep) {
+        sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
+        return;
+    }
+
     resetSweep();
 }
 
@@ -163,12 +184,7 @@ function resetSweep() {
     lastFrameTime = null;
     if (traceCtx && traceCanvas) {
         traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
-        traceCtx.lineWidth = 2;
-        traceCtx.strokeStyle = '#22c55e';
-        traceCtx.lineJoin = 'round';
-        traceCtx.lineCap = 'round';
-        traceCtx.shadowColor = 'rgba(34, 197, 94, 0.7)';
-        traceCtx.shadowBlur = 4;
+        configureTraceStyle();
     }
     draw();
 }
@@ -215,42 +231,8 @@ function drawGrid(width, height, pixelsPerMm) {
     if (gridDirty) {
         gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
         gridCtx.save();
-        gridCtx.fillStyle = '#020617';
+        gridCtx.fillStyle = '#000';
         gridCtx.fillRect(0, 0, gridCanvas.width, gridCanvas.height);
-
-        const largeSpacing = pixelsPerMm * 5;
-        const smallSpacing = pixelsPerMm;
-
-        gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        gridCtx.lineWidth = 1;
-
-        for (let x = 0; x <= gridCanvas.width; x += largeSpacing) {
-            gridCtx.beginPath();
-            gridCtx.moveTo(x + 0.5, 0);
-            gridCtx.lineTo(x + 0.5, gridCanvas.height);
-            gridCtx.stroke();
-        }
-
-        for (let y = 0; y <= gridCanvas.height; y += largeSpacing) {
-            gridCtx.beginPath();
-            gridCtx.moveTo(0, y + 0.5);
-            gridCtx.lineTo(gridCanvas.width, y + 0.5);
-            gridCtx.stroke();
-        }
-
-        gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-        for (let x = 0; x <= gridCanvas.width; x += smallSpacing) {
-            gridCtx.beginPath();
-            gridCtx.moveTo(x + 0.5, 0);
-            gridCtx.lineTo(x + 0.5, gridCanvas.height);
-            gridCtx.stroke();
-        }
-        for (let y = 0; y <= gridCanvas.height; y += smallSpacing) {
-            gridCtx.beginPath();
-            gridCtx.moveTo(0, y + 0.5);
-            gridCtx.lineTo(gridCanvas.width, y + 0.5);
-            gridCtx.stroke();
-        }
         gridCtx.restore();
         gridDirty = false;
     }
@@ -294,16 +276,28 @@ function advanceSweep(deltaSeconds) {
 
 function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height) {
     if (!traceCtx) return;
-    const clearStart = Math.min(startX, endX) - traceCtx.lineWidth;
+    const clearStart = Math.max(0, Math.min(startX, endX) - traceCtx.lineWidth);
     const clearWidth = Math.abs(endX - startX) + traceCtx.lineWidth * 2;
     traceCtx.clearRect(clearStart, 0, clearWidth, height);
 
-    const startY = valueToY(sampleWaveform(startTime), midY, scaleY);
-    const endY = valueToY(sampleWaveform(endTime), midY, scaleY);
+    const distance = Math.max(1, Math.abs(endX - startX));
+    const timeSpan = endTime - startTime;
+    const step = Math.max(1, Math.floor(distance / 6));
 
     traceCtx.beginPath();
-    traceCtx.moveTo(startX, startY);
-    traceCtx.lineTo(endX, endY);
+    for (let offset = 0; offset <= distance; offset += step) {
+        const ratio = offset / distance;
+        const x = startX + ratio * (endX - startX);
+        const time = startTime + ratio * timeSpan;
+        const y = valueToY(sampleWaveform(time), midY, scaleY);
+        if (offset === 0) {
+            traceCtx.moveTo(x, y);
+        } else {
+            traceCtx.lineTo(x, y);
+        }
+    }
+    const finalY = valueToY(sampleWaveform(endTime), midY, scaleY);
+    traceCtx.lineTo(endX, finalY);
     traceCtx.stroke();
 }
 

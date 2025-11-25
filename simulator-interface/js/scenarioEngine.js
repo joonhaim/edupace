@@ -11,8 +11,7 @@ const scenarioElements = {
     alarmBanner: document.getElementById('alarmBanner'),
     alarmText: document.getElementById('alarmText'),
     objectiveText: document.getElementById('objectiveText'),
-    feedbackText: document.getElementById('feedbackText'),
-    leadLabel: document.getElementById('leadLabel')
+    feedbackText: document.getElementById('feedbackText')
 };
 
 const textKeys = [
