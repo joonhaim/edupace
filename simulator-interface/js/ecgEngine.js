@@ -276,9 +276,9 @@ function advanceSweep(deltaSeconds) {
 
 function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height) {
     if (!traceCtx) return;
-    const clearStart = Math.max(0, Math.min(startX, endX) - traceCtx.lineWidth);
-    const clearWidth = Math.abs(endX - startX) + traceCtx.lineWidth * 2;
-    traceCtx.clearRect(clearStart, 0, clearWidth, height);
+    const clearStart = Math.max(0, Math.min(startX, endX));
+    const clearEnd = Math.min(traceCanvas.width, Math.max(startX, endX) + traceCtx.lineWidth * 2);
+    traceCtx.clearRect(clearStart, 0, clearEnd - clearStart, height);
 
     const distance = Math.max(1, Math.abs(endX - startX));
     const timeSpan = endTime - startTime;
