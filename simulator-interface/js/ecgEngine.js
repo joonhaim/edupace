@@ -106,7 +106,8 @@ function handleRuleEffects(event) {
         engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
     }
     const waveformChanged = engineState.baseSignal !== previousBaseSignal;
-    regenerateWaveform({ keepSweep: !waveformChanged });
+    const maintainSweep = event.detail?.effects?.waveformId === 'ventricular-paced';
+    regenerateWaveform({ keepSweep: maintainSweep || !waveformChanged });
 }
 
 function handleWaveformChange(event) {
