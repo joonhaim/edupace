@@ -16,6 +16,8 @@ const engineState = {
 
 let canvas;
 let ctx;
+let gridCanvas;
+let gridCtx;
 let waveformPoints = [];
 let waveformDuration = 0;
 let maxWaveAmplitude = 1;
@@ -25,6 +27,7 @@ let lastFrameTime = null;
 let animationFrameId = null;
 let traceCanvas;
 let traceCtx;
+let gridDirty = true;
 let isPaused = false;
 let caliper = null;
 let pendingCaliper = null;
@@ -34,6 +37,9 @@ function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
     if (!canvas) return;
     ctx = canvas.getContext('2d');
+
+    gridCanvas = document.createElement('canvas');
+    gridCtx = gridCanvas.getContext('2d');
 
     traceCanvas = document.createElement('canvas');
     traceCtx = traceCanvas.getContext('2d');
@@ -100,7 +106,7 @@ function mapWaveformId(waveformId) {
 }
 
 function syncCanvasSize() {
-    if (!canvas || !traceCanvas) return;
+    if (!canvas || !traceCanvas || !gridCanvas) return;
     const rect = canvas.getBoundingClientRect();
     const newWidth = Math.max(Math.round(rect.width || canvas.width || 1), 1);
     const newHeight = Math.max(Math.round(rect.height || canvas.height || 1), 1);
@@ -114,6 +120,13 @@ function syncCanvasSize() {
         traceCanvas.width = newWidth;
         traceCanvas.height = newHeight;
     }
+
+    if (gridCanvas.width !== newWidth || gridCanvas.height !== newHeight) {
+        gridCanvas.width = newWidth;
+        gridCanvas.height = newHeight;
+    }
+
+    gridDirty = true;
 }
 
 function handleResize() {
@@ -187,8 +200,6 @@ function draw() {
     if (!ctx || !canvas) return;
 
     const { width, height } = canvas;
-    ctx.clearRect(0, 0, width, height);
-
     const pixelsPerSecond = width / SECONDS_VISIBLE;
     const pixelsPerMm = pixelsPerSecond / SWEEP_SPEED_MM_PER_SEC;
 
@@ -199,46 +210,53 @@ function draw() {
 }
 
 function drawGrid(width, height, pixelsPerMm) {
-    if (!pixelsPerMm) return;
+    if (!pixelsPerMm || !gridCtx || !gridCanvas) return;
 
-    ctx.save();
-    ctx.fillStyle = '#020617';
-    ctx.fillRect(0, 0, width, height);
+    if (gridDirty) {
+        gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+        gridCtx.save();
+        gridCtx.fillStyle = '#020617';
+        gridCtx.fillRect(0, 0, gridCanvas.width, gridCanvas.height);
 
-    const largeSpacing = pixelsPerMm * 5;
-    const smallSpacing = pixelsPerMm;
+        const largeSpacing = pixelsPerMm * 5;
+        const smallSpacing = pixelsPerMm;
 
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.lineWidth = 1;
+        gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        gridCtx.lineWidth = 1;
 
-    for (let x = 0; x <= width; x += largeSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(x + 0.5, 0);
-        ctx.lineTo(x + 0.5, height);
-        ctx.stroke();
+        for (let x = 0; x <= gridCanvas.width; x += largeSpacing) {
+            gridCtx.beginPath();
+            gridCtx.moveTo(x + 0.5, 0);
+            gridCtx.lineTo(x + 0.5, gridCanvas.height);
+            gridCtx.stroke();
+        }
+
+        for (let y = 0; y <= gridCanvas.height; y += largeSpacing) {
+            gridCtx.beginPath();
+            gridCtx.moveTo(0, y + 0.5);
+            gridCtx.lineTo(gridCanvas.width, y + 0.5);
+            gridCtx.stroke();
+        }
+
+        gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        for (let x = 0; x <= gridCanvas.width; x += smallSpacing) {
+            gridCtx.beginPath();
+            gridCtx.moveTo(x + 0.5, 0);
+            gridCtx.lineTo(x + 0.5, gridCanvas.height);
+            gridCtx.stroke();
+        }
+        for (let y = 0; y <= gridCanvas.height; y += smallSpacing) {
+            gridCtx.beginPath();
+            gridCtx.moveTo(0, y + 0.5);
+            gridCtx.lineTo(gridCanvas.width, y + 0.5);
+            gridCtx.stroke();
+        }
+        gridCtx.restore();
+        gridDirty = false;
     }
 
-    for (let y = 0; y <= height; y += largeSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(0, y + 0.5);
-        ctx.lineTo(width, y + 0.5);
-        ctx.stroke();
-    }
-
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-    for (let x = 0; x <= width; x += smallSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(x + 0.5, 0);
-        ctx.lineTo(x + 0.5, height);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= height; y += smallSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(0, y + 0.5);
-        ctx.lineTo(width, y + 0.5);
-        ctx.stroke();
-    }
-    ctx.restore();
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(gridCanvas, 0, 0, width, height);
 }
 
 function drawWaveform(width, height) {
