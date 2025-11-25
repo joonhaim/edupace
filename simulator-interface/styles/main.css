@@ -1127,18 +1127,6 @@ body.simulation-dark .led-sense.led-on {
     box-shadow: 0 0 12px 3px rgba(96, 165, 250, 0.7);
 }
 
-body.simulation-dark .chip-disconnected {
-    background: rgba(127, 29, 29, 0.35);
-    color: #ffffff;
-    border-color: rgba(248, 113, 113, 0.7);
-}
-
-body.simulation-dark .chip-connected {
-    background: rgba(22, 101, 52, 0.35);
-    color: #bbf7d0;
-    border-color: rgba(74, 222, 128, 0.7);
-}
-
 
 
 body.simulation-dark .telemetry-item,
