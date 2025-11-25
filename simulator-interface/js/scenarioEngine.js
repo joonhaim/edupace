@@ -5,9 +5,6 @@ const scenarioElements = {
     scenarioText: document.getElementById('scenarioText'),
     hrValue: document.getElementById('hrValue'),
     paceMode: document.getElementById('paceMode'),
-    bpValue: document.getElementById('bpValue'),
-    spo2Value: document.getElementById('spo2Value'),
-    tempValue: document.getElementById('tempValue'),
     alarmBanner: document.getElementById('alarmBanner'),
     alarmText: document.getElementById('alarmText'),
     objectiveText: document.getElementById('objectiveText'),
@@ -19,9 +16,6 @@ const textKeys = [
     'scenarioText',
     'hrValue',
     'paceMode',
-    'bpValue',
-    'spo2Value',
-    'tempValue',
     'alarmText',
     'objectiveText',
     'feedbackText'
@@ -130,26 +124,14 @@ function applyScenarioText(scenario) {
     updateText('scenarioText', scenario.description);
     updateText('hrValue', scenario.vitals?.hr ?? null);
     updateText('paceMode', scenario.pacing?.mode ?? null);
-    updateText('bpValue', scenario.vitals?.bp ?? null);
-    updateText('spo2Value', scenario.vitals?.spo2 ?? null);
-    updateText('tempValue', scenario.vitals?.temp ?? null);
     updateAlarm(scenario.alarm);
     updateText('objectiveText', scenario.objective ?? null);
     updateText('feedbackText', scenario.feedback ?? null);
 }
 
 function applyVitalsOverride(baseScenario, overrides) {
-    const vitals = {
-        hr: overrides?.hr ?? baseScenario.vitals?.hr,
-        bp: overrides?.bp ?? baseScenario.vitals?.bp,
-        spo2: overrides?.spo2 ?? baseScenario.vitals?.spo2,
-        temp: overrides?.temp ?? baseScenario.vitals?.temp
-    };
-
-    updateText('hrValue', vitals.hr ?? null);
-    updateText('bpValue', vitals.bp ?? null);
-    updateText('spo2Value', vitals.spo2 ?? null);
-    updateText('tempValue', vitals.temp ?? null);
+    const hr = overrides?.hr ?? baseScenario.vitals?.hr;
+    updateText('hrValue', hr ?? null);
 }
 
 function applyRuleEffects(effects) {
