@@ -35,6 +35,12 @@ let caliper = null;
 let pendingCaliper = null;
 let ignoreNextPointerUp = false;
 let heartRateEngine = null;
+let waveformEvents = [];
+
+const ledElements = {
+    pace: document.getElementById('paceLed'),
+    sense: document.getElementById('senseLed')
+};
 
 function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
@@ -129,6 +135,32 @@ function mapWaveformId(waveformId) {
     }
 }
 
+function flashLed(element) {
+    if (!element) return;
+
+    element.classList.add('led-on');
+    setTimeout(() => element.classList.remove('led-on'), 180);
+}
+
+function processLedEvents(windowStart, windowEnd) {
+    if (!waveformDuration || !waveformEvents.length) return;
+
+    waveformEvents.forEach((event) => {
+        if (!event || typeof event.time !== 'number') return;
+
+        const cyclesOffset = Math.max(0, Math.ceil((windowStart - event.time) / waveformDuration));
+        const occurrence = event.time + cyclesOffset * waveformDuration;
+
+        if (occurrence >= windowStart && occurrence <= windowEnd) {
+            if (event.type === 'pace') {
+                flashLed(ledElements.pace);
+            } else if (event.type === 'sense') {
+                flashLed(ledElements.sense);
+            }
+        }
+    });
+}
+
 function syncCanvasSize() {
     if (!canvas || !traceCanvas || !gridCanvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -172,7 +204,7 @@ function regenerateWaveform(options = {}) {
     const pacingOutput = pacingEnabled ? engineState.output : 0;
     const pacingAsync = pacingEnabled ? engineState.asynchronous : false;
 
-    const { x, y } = stitchBeatsNew(
+    const { x, y, events } = stitchBeatsNew(
         ecgFunc,
         gap,
         engineState.regularity,
@@ -184,6 +216,7 @@ function regenerateWaveform(options = {}) {
 
     waveformDuration = Math.max(...x, 0);
     waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
+    waveformEvents = Array.isArray(events) ? events : [];
     maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
     heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
     heartRateEngine?.reset();
@@ -285,6 +318,7 @@ function advanceSweep(deltaSeconds) {
         const startX = sweepX;
         const endX = sweepX + stepPixels;
 
+        processLedEvents(startTime, endTime);
         drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height);
 
         sweepX = endX >= width ? 0 : endX;

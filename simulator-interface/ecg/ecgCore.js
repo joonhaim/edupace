@@ -296,6 +296,18 @@ export function stitchBeatsNew(
   let x = [];
   let y = [];
   let R_location = 0;
+  const events = [];
+
+  const recordEvent = (beatType, beatX, beatY) => {
+    if (!beatX.length || beatX.length !== beatY.length) return;
+    const isPaced = beatType === "Ventricular pacing";
+    const index = isPaced ? argMax(beatY) : argMax(beatY);
+    const time = beatX[index];
+
+    if (typeof time === "number" && Number.isFinite(time)) {
+      events.push({ time, type: isPaced ? "pace" : "sense" });
+    }
+  };
 
   for (let i = 0; i < 10; i++) {
     // ecg_func(beat_list[i])
@@ -327,6 +339,8 @@ export function stitchBeatsNew(
 
       x = x_temp.slice();
       y = y_temp.slice();
+
+      recordEvent(beatList[i], x_temp, y_temp);
 
       if (maxArray(y_temp) < sensitivity) {
         // beat not sensed
@@ -369,6 +383,8 @@ export function stitchBeatsNew(
 
       x = x.concat(x_temp_shifted);
       y = y.concat(y_temp);
+
+      recordEvent(beatList[i], x_temp_shifted, y_temp);
 
       offset = maxArray(x_temp_shifted);
 
@@ -421,5 +437,5 @@ export function stitchBeatsNew(
     }
   }
 
-  return { x, y };
+  return { x, y, events };
 }
