@@ -552,7 +552,7 @@ h1, h2, h3 {
 
 .ecg-frame {
     position: relative;
-    background: var(--card);
+    background: #000;
     border-radius: 16px;
     border: 1px solid var(--border);
     padding: 1rem;
@@ -567,14 +567,6 @@ h1, h2, h3 {
 }
 
 
-.ecg-frame::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(15, 108, 197, 0.08), transparent 50%);
-    pointer-events: none;
-}
-
 .ecg-overlay {
     position: absolute;
     top: 0;
@@ -586,26 +578,11 @@ h1, h2, h3 {
 }
 
 .ecg-label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-}
-
-.label-heading {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    color: var(--muted);
-    letter-spacing: 0.18em;
-}
-
-.lead-indicator {
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 0.25rem 0.8rem;
-    font-size: 0.8rem;
+    color: #00ff63;
     font-weight: 700;
-    background: rgba(15, 108, 197, 0.12);
-    color: var(--primary);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .ecg-vitals {
@@ -634,7 +611,7 @@ h1, h2, h3 {
 }
 
 .hr-value {
-    color: var(--primary);
+    color: #00ff63;
 }
 
 .pace-value {

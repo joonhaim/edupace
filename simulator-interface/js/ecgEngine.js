@@ -103,11 +103,9 @@ function handleWaveformChange(event) {
 function configureTraceStyle() {
     if (!traceCtx) return;
     traceCtx.lineWidth = 2;
-    traceCtx.strokeStyle = '#22c55e';
+    traceCtx.strokeStyle = '#00ff63';
     traceCtx.lineJoin = 'round';
     traceCtx.lineCap = 'round';
-    traceCtx.shadowColor = 'rgba(34, 197, 94, 0.7)';
-    traceCtx.shadowBlur = 4;
 }
 
 function mapWaveformId(waveformId) {
@@ -233,42 +231,8 @@ function drawGrid(width, height, pixelsPerMm) {
     if (gridDirty) {
         gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
         gridCtx.save();
-        gridCtx.fillStyle = '#020617';
+        gridCtx.fillStyle = '#000';
         gridCtx.fillRect(0, 0, gridCanvas.width, gridCanvas.height);
-
-        const largeSpacing = pixelsPerMm * 5;
-        const smallSpacing = pixelsPerMm;
-
-        gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        gridCtx.lineWidth = 1;
-
-        for (let x = 0; x <= gridCanvas.width; x += largeSpacing) {
-            gridCtx.beginPath();
-            gridCtx.moveTo(x + 0.5, 0);
-            gridCtx.lineTo(x + 0.5, gridCanvas.height);
-            gridCtx.stroke();
-        }
-
-        for (let y = 0; y <= gridCanvas.height; y += largeSpacing) {
-            gridCtx.beginPath();
-            gridCtx.moveTo(0, y + 0.5);
-            gridCtx.lineTo(gridCanvas.width, y + 0.5);
-            gridCtx.stroke();
-        }
-
-        gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-        for (let x = 0; x <= gridCanvas.width; x += smallSpacing) {
-            gridCtx.beginPath();
-            gridCtx.moveTo(x + 0.5, 0);
-            gridCtx.lineTo(x + 0.5, gridCanvas.height);
-            gridCtx.stroke();
-        }
-        for (let y = 0; y <= gridCanvas.height; y += smallSpacing) {
-            gridCtx.beginPath();
-            gridCtx.moveTo(0, y + 0.5);
-            gridCtx.lineTo(gridCanvas.width, y + 0.5);
-            gridCtx.stroke();
-        }
         gridCtx.restore();
         gridDirty = false;
     }
