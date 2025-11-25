@@ -4,7 +4,7 @@ const controllerState = {
     rate: getNearestPreset('rate', 80),
     output: getNearestPreset('output', 10),
     sensitivity: getNearestPreset('sensitivity', 2.0),
-    power: true,
+    power: false,
     locked: false
 };
 
@@ -30,17 +30,32 @@ function initVirtualController() {
         sensitivity: document.getElementById('sensValue')
     };
 
+    const powerHoldHint = document.createElement('div');
+    powerHoldHint.className = 'power-hold-hint';
+    powerHoldHint.setAttribute('role', 'alert');
+    powerHoldHint.textContent = 'Hold for 2 seconds to turn off the controller';
+    parametersCard.appendChild(powerHoldHint);
+
+    const POWER_OFF_HOLD_MS = 2000;
+    let powerHoldTimer = null;
+    let suppressNextClick = false;
+    let hintTimer = null;
+
     const isVirtualMode = () => Array.from(modeRadios).some((radio) => radio.checked && radio.value === 'virtual');
 
     const updateTiles = () => {
+        const showValues = controllerState.power;
+
         if (display.rate) {
-            display.rate.textContent = formatValue('rate', controllerState.rate);
+            display.rate.textContent = showValues ? formatValue('rate', controllerState.rate) : '--';
         }
         if (display.output) {
-            display.output.textContent = formatValue('output', controllerState.output);
+            display.output.textContent = showValues ? formatValue('output', controllerState.output) : '--';
         }
         if (display.sensitivity) {
-            display.sensitivity.textContent = formatValue('sensitivity', controllerState.sensitivity);
+            display.sensitivity.textContent = showValues
+                ? formatValue('sensitivity', controllerState.sensitivity)
+                : '--';
         }
     };
 
@@ -129,11 +144,76 @@ function initVirtualController() {
         increment?.addEventListener('click', () => handleAdjust('up'));
     });
 
-    const togglePower = () => {
+    const clearPowerHint = () => {
+        if (hintTimer) {
+            clearTimeout(hintTimer);
+            hintTimer = null;
+        }
+        powerHoldHint.classList.remove('is-visible');
+    };
+
+    const showPowerHint = () => {
+        powerHoldHint.classList.add('is-visible');
+        if (hintTimer) {
+            clearTimeout(hintTimer);
+        }
+        hintTimer = window.setTimeout(() => {
+            powerHoldHint.classList.remove('is-visible');
+            hintTimer = null;
+        }, 2200);
+    };
+
+    const clearPowerHold = () => {
+        if (powerHoldTimer) {
+            clearTimeout(powerHoldTimer);
+            powerHoldTimer = null;
+        }
+    };
+
+    const handlePowerPointerDown = () => {
         if (!isVirtualMode()) return;
 
-        controllerState.power = !controllerState.power;
-        broadcastParameters();
+        if (!controllerState.power) {
+            return;
+        }
+
+        clearPowerHint();
+        clearPowerHold();
+        powerHoldTimer = window.setTimeout(() => {
+            controllerState.power = false;
+            suppressNextClick = true;
+            broadcastParameters();
+            clearPowerHold();
+        }, POWER_OFF_HOLD_MS);
+    };
+
+    const handlePowerPointerUp = () => {
+        if (!isVirtualMode()) {
+            clearPowerHold();
+            return;
+        }
+
+        if (controllerState.power && powerHoldTimer !== null) {
+            showPowerHint();
+        }
+
+        clearPowerHold();
+    };
+
+    const handlePowerClick = (event) => {
+        if (!isVirtualMode()) return;
+
+        if (suppressNextClick) {
+            suppressNextClick = false;
+            return;
+        }
+
+        if (!controllerState.power) {
+            controllerState.power = true;
+            broadcastParameters();
+        }
+
+        event.preventDefault();
     };
 
     const toggleLock = () => {
@@ -143,7 +223,11 @@ function initVirtualController() {
         broadcastParameters();
     };
 
-    actionButtons.power?.addEventListener('click', togglePower);
+    actionButtons.power?.addEventListener('pointerdown', handlePowerPointerDown);
+    actionButtons.power?.addEventListener('pointerup', handlePowerPointerUp);
+    actionButtons.power?.addEventListener('pointercancel', handlePowerPointerUp);
+    actionButtons.power?.addEventListener('pointerleave', handlePowerPointerUp);
+    actionButtons.power?.addEventListener('click', handlePowerClick);
     actionButtons.lock?.addEventListener('click', toggleLock);
 
     const applyScenarioDefaults = (scenario) => {
