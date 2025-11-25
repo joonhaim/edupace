@@ -3,6 +3,10 @@ import { ecgWave, heartRate, stitchBeatsNew } from '../ecg/ecgCore.js';
 const SECONDS_VISIBLE = 6;
 const SWEEP_SPEED_MM_PER_SEC = 25;
 const CALIPER_THRESHOLD = 4;
+const HR_MEASUREMENT_WINDOW_SECONDS = 8;
+const MIN_PEAK_INTERVAL_SECONDS = 0.3;
+const MIN_PEAK_FRACTION = 0.45;
+const MIN_PEAK_ABSOLUTE = 0.5;
 
 const engineState = {
     patientRate: 70,
@@ -32,6 +36,15 @@ let isPaused = false;
 let caliper = null;
 let pendingCaliper = null;
 let ignoreNextPointerUp = false;
+const heartRateState = {
+    element: null,
+    peaks: [],
+    lastPeakTime: -Infinity,
+    previousMagnitude: null,
+    previousSlope: null,
+    previousSampleTime: null,
+    bpm: null
+};
 
 function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
@@ -45,6 +58,9 @@ function initEcgEngine() {
     traceCtx = traceCanvas.getContext('2d');
     syncCanvasSize();
     configureTraceStyle();
+
+    heartRateState.element = document.getElementById('hrValue');
+    resetHeartRateMeasurement();
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -118,6 +134,95 @@ function mapWaveformId(waveformId) {
     }
 }
 
+function resetHeartRateMeasurement() {
+    heartRateState.peaks = [];
+    heartRateState.lastPeakTime = -Infinity;
+    heartRateState.previousMagnitude = null;
+    heartRateState.previousSlope = null;
+    heartRateState.previousSampleTime = null;
+    heartRateState.bpm = null;
+    updateHeartRateDisplay();
+}
+
+function getPeakThreshold() {
+    return Math.max(MIN_PEAK_ABSOLUTE, maxWaveAmplitude * MIN_PEAK_FRACTION);
+}
+
+function processHeartRateSample(timeSeconds, value) {
+    const magnitude = Math.abs(value);
+
+    if (heartRateState.previousMagnitude !== null) {
+        const slope = magnitude - heartRateState.previousMagnitude;
+        const previousSlope = heartRateState.previousSlope;
+
+        if (previousSlope !== null && previousSlope > 0 && slope <= 0 && heartRateState.previousMagnitude >= getPeakThreshold()) {
+            const isSeparated =
+                (timeSeconds - heartRateState.lastPeakTime) >= MIN_PEAK_INTERVAL_SECONDS;
+
+            if (isSeparated) {
+                recordHeartRatePeak(heartRateState.previousSampleTime ?? timeSeconds);
+            }
+        }
+
+        heartRateState.previousSlope = slope;
+    }
+
+    heartRateState.previousMagnitude = magnitude;
+    heartRateState.previousSampleTime = timeSeconds;
+    purgeOldPeaks(timeSeconds);
+}
+
+function recordHeartRatePeak(timeSeconds) {
+    heartRateState.lastPeakTime = timeSeconds;
+    heartRateState.peaks.push(timeSeconds);
+    purgeOldPeaks(timeSeconds);
+    updateHeartRateFromPeaks();
+}
+
+function purgeOldPeaks(currentTime) {
+    const cutoff = currentTime - HR_MEASUREMENT_WINDOW_SECONDS;
+    heartRateState.peaks = heartRateState.peaks.filter((peakTime) => peakTime >= cutoff);
+
+    if (heartRateState.peaks.length < 2) {
+        heartRateState.bpm = null;
+        updateHeartRateDisplay();
+    }
+}
+
+function updateHeartRateFromPeaks() {
+    if (heartRateState.peaks.length < 2) {
+        heartRateState.bpm = null;
+        updateHeartRateDisplay();
+        return;
+    }
+
+    const intervals = [];
+    for (let i = 1; i < heartRateState.peaks.length; i++) {
+        const delta = heartRateState.peaks[i] - heartRateState.peaks[i - 1];
+        if (delta > 0) intervals.push(delta);
+    }
+
+    if (!intervals.length) {
+        heartRateState.bpm = null;
+        updateHeartRateDisplay();
+        return;
+    }
+
+    const total = intervals.reduce((acc, value) => acc + value, 0);
+    const averageIntervalSeconds = total / intervals.length;
+    heartRateState.bpm = Math.round(60 / averageIntervalSeconds);
+    updateHeartRateDisplay();
+}
+
+function updateHeartRateDisplay() {
+    if (!heartRateState.element) return;
+
+    const text = Number.isFinite(heartRateState.bpm)
+        ? heartRateState.bpm.toString()
+        : '--';
+    heartRateState.element.textContent = text;
+}
+
 function syncCanvasSize() {
     if (!canvas || !traceCanvas || !gridCanvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -169,6 +274,7 @@ function regenerateWaveform(options = {}) {
     waveformDuration = Math.max(...x, 0);
     waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
     maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
+    resetHeartRateMeasurement();
 
     if (keepSweep) {
         sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
@@ -182,6 +288,7 @@ function resetSweep() {
     sweepX = 0;
     sweepTime = 0;
     lastFrameTime = null;
+    resetHeartRateMeasurement();
     if (traceCtx && traceCanvas) {
         traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
         configureTraceStyle();
@@ -289,14 +396,18 @@ function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height
         const ratio = offset / distance;
         const x = startX + ratio * (endX - startX);
         const time = startTime + ratio * timeSpan;
-        const y = valueToY(sampleWaveform(time), midY, scaleY);
+        const value = sampleWaveform(time);
+        const y = valueToY(value, midY, scaleY);
+        processHeartRateSample(time, value);
         if (offset === 0) {
             traceCtx.moveTo(x, y);
         } else {
             traceCtx.lineTo(x, y);
         }
     }
-    const finalY = valueToY(sampleWaveform(endTime), midY, scaleY);
+    const finalValue = sampleWaveform(endTime);
+    processHeartRateSample(endTime, finalValue);
+    const finalY = valueToY(finalValue, midY, scaleY);
     traceCtx.lineTo(endX, finalY);
     traceCtx.stroke();
 }
