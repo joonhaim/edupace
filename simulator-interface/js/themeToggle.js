@@ -7,11 +7,11 @@ function applyTheme(theme) {
     body.classList.toggle('simulation-dark', isDark);
     body.classList.toggle('simulation-light', !isDark);
 
-    const toggle = document.querySelector('[data-theme-toggle]');
-    if (toggle) {
+    const toggles = document.querySelectorAll('[data-theme-toggle]');
+    toggles.forEach((toggle) => {
         toggle.textContent = isDark ? 'Dark mode' : 'Light mode';
         toggle.setAttribute('aria-pressed', String(isDark));
-    }
+    });
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
@@ -21,18 +21,19 @@ function applyTheme(theme) {
 
 function initThemeToggle() {
     const savedTheme = localStorage.getItem(THEME_KEY);
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+    const initialTheme = savedTheme || 'dark';
 
     applyTheme(initialTheme);
 
-    const toggle = document.querySelector('[data-theme-toggle]');
-    if (!toggle) return;
+    const toggles = document.querySelectorAll('[data-theme-toggle]');
+    if (!toggles.length) return;
 
-    toggle.addEventListener('click', () => {
-        const nextTheme = document.body.classList.contains('simulation-dark') ? 'light' : 'dark';
-        applyTheme(nextTheme);
-        localStorage.setItem(THEME_KEY, nextTheme);
+    toggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => {
+            const nextTheme = document.body.classList.contains('simulation-dark') ? 'light' : 'dark';
+            applyTheme(nextTheme);
+            localStorage.setItem(THEME_KEY, nextTheme);
+        });
     });
 }
 
