@@ -1,6 +1,9 @@
 <header class="global-nav">
     <div class="global-nav-inner">
-        <div class="brand">EduPace</div>
+        <a class="brand" href="index.html" aria-label="Go to home">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span class="brand-name">EduPace</span>
+        </a>
         <nav class="nav-buttons" aria-label="Primary navigation">
             <a class="nav-btn{{ACTIVE_HOME}}" href="index.html">Home</a>
             <a class="nav-btn{{ACTIVE_SIMULATION}}" href="simulation.html">Simulation</a>
@@ -12,6 +15,23 @@
                 <option value="en">EN</option>
                 <option value="nl">NL</option>
             </select>
+            <button
+                type="button"
+                class="btn btn-ghost btn-small theme-toggle"
+                data-theme-toggle
+                aria-pressed="true"
+            >
+                Dark mode
+            </button>
+            <button
+                type="button"
+                class="btn btn-ghost btn-small settings-toggle"
+                data-settings-toggle
+                aria-expanded="false"
+                aria-controls="ecgSettingsPanel"
+            >
+                Settings
+            </button>
         </div>
     </div>
 </header>
