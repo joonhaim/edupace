@@ -223,3 +223,9 @@ body.simulation-dark .param-step:focus-visible {
 body.simulation-dark .brand::before {
     background-image: url("../assets/logos/edupace_logo2_neg.png");
 }
+
+body.simulation-light .alarm-normal {
+    background: rgba(31, 75, 153, 0.12);
+    color: #1f4b99;
+    border-color: rgba(31, 75, 153, 0.28);
+}
