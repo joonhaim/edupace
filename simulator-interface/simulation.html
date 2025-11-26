@@ -222,6 +222,256 @@
                                     <span id="feedbackText" class="perf-value small">–</span>
                                 </div>
                             </div>
+
+                            <div class="settings-launch">
+                                <button
+                                    type="button"
+                                    class="btn btn-ghost settings-toggle"
+                                    data-settings-toggle
+                                    aria-expanded="false"
+                                    aria-controls="ecgSettingsPanel"
+                                >
+                                    <span class="settings-toggle-icon" aria-hidden="true">⚙️</span>
+                                    <span>Settings</span>
+                                </button>
+                            </div>
+
+                            <div class="settings-layer is-hidden" data-settings-layer>
+                                <div
+                                    class="card settings-card settings-window"
+                                    data-settings-panel
+                                    id="ecgSettingsPanel"
+                                    role="dialog"
+                                    aria-modal="true"
+                                    aria-labelledby="settingsTitle"
+                                >
+                                    <div class="card-heading settings-window-header">
+                                        <div>
+                                            <p class="eyebrow">Simulation</p>
+                                            <h3 id="settingsTitle">ECG Settings</h3>
+                                            <p>Open the display preferences in a dedicated panel.</p>
+                                        </div>
+                                        <div class="settings-window-actions">
+                                            <button
+                                                type="button"
+                                                class="btn btn-ghost"
+                                                data-settings-toggle
+                                                aria-label="Close settings"
+                                                aria-controls="ecgSettingsPanel"
+                                            >
+                                                Close
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-body">
+                                        <div class="settings-section">
+                                            <div class="section-label">ECG display</div>
+
+                                            <div class="setting-row">
+                                                <div class="setting-copy">
+                                                    <div class="setting-title">Gridlines</div>
+                                                    <p class="setting-hint">Show ECG grid overlay.</p>
+                                                </div>
+                                                <label class="switch">
+                                                    <input type="checkbox" id="gridlinesToggle">
+                                                    <span class="switch-track"></span>
+                                                </label>
+                                            </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Grid density</div>
+                                            <p class="setting-hint">Choose between 1 mm or 2 mm boxes.</p>
+                                        </div>
+                                        <div class="pill-group" role="radiogroup" aria-label="Grid density">
+                                            <label class="pill-option">
+                                                <input type="radio" name="gridDensity" value="1mm">
+                                                <span>1 mm</span>
+                                            </label>
+                                            <label class="pill-option">
+                                                <input type="radio" name="gridDensity" value="2mm" checked>
+                                                <span>2 mm</span>
+                                            </label>
+                                            <label class="pill-option">
+                                                <input type="radio" name="gridDensity" value="none">
+                                                <span>None</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Grid intensity</div>
+                                            <p class="setting-hint">Adjust line brightness.</p>
+                                        </div>
+                                        <div class="slider-row">
+                                            <input type="range" id="gridIntensity" min="0" max="100" value="55">
+                                            <span class="slider-value" data-slider-value="gridIntensity">55%</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Sweep speed</div>
+                                            <p class="setting-hint">Set millimeters per second.</p>
+                                        </div>
+                                        <div class="pill-group" role="radiogroup" aria-label="Sweep speed">
+                                            <label class="pill-option">
+                                                <input type="radio" name="sweepSpeed" value="25" checked>
+                                                <span>25 mm/s</span>
+                                            </label>
+                                            <label class="pill-option">
+                                                <input type="radio" name="sweepSpeed" value="12.5">
+                                                <span>12.5</span>
+                                            </label>
+                                            <label class="pill-option">
+                                                <input type="radio" name="sweepSpeed" value="50">
+                                                <span>50</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Amplitude scaling</div>
+                                            <p class="setting-hint">Adjust mm per mV.</p>
+                                        </div>
+                                        <div class="pill-group" role="radiogroup" aria-label="Amplitude scaling">
+                                            <label class="pill-option">
+                                                <input type="radio" name="amplitudeScaling" value="5">
+                                                <span>5</span>
+                                            </label>
+                                            <label class="pill-option">
+                                                <input type="radio" name="amplitudeScaling" value="10" checked>
+                                                <span>10 mm/mV</span>
+                                            </label>
+                                            <label class="pill-option">
+                                                <input type="radio" name="amplitudeScaling" value="20">
+                                                <span>20</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Trace color</div>
+                                            <p class="setting-hint">Switch trace palette.</p>
+                                        </div>
+                                        <div class="pill-group" role="radiogroup" aria-label="Trace color">
+                                            <label class="pill-option">
+                                                <input type="radio" name="traceColor" value="green" checked>
+                                                <span>Green</span>
+                                            </label>
+                                            <label class="pill-option">
+                                                <input type="radio" name="traceColor" value="blue">
+                                                <span>Blue</span>
+                                            </label>
+                                            <label class="pill-option">
+                                                <input type="radio" name="traceColor" value="white">
+                                                <span>White</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Trace thickness</div>
+                                            <p class="setting-hint">Select line weight.</p>
+                                        </div>
+                                        <div class="pill-group" role="radiogroup" aria-label="Trace thickness">
+                                            <label class="pill-option">
+                                                <input type="radio" name="traceThickness" value="thin">
+                                                <span>Thin</span>
+                                            </label>
+                                            <label class="pill-option">
+                                                <input type="radio" name="traceThickness" value="normal" checked>
+                                                <span>Normal</span>
+                                            </label>
+                                            <label class="pill-option">
+                                                <input type="radio" name="traceThickness" value="thick">
+                                                <span>Thick</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-section">
+                                    <div class="section-label">Annotations</div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Lead label</div>
+                                            <p class="setting-hint">Show "Lead II" overlay.</p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="leadLabelToggle" checked>
+                                            <span class="switch-track"></span>
+                                        </label>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Calibration markers</div>
+                                            <p class="setting-hint">Show calibration legend.</p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="calibrationToggle" checked>
+                                            <span class="switch-track"></span>
+                                        </label>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">R-wave markers</div>
+                                            <p class="setting-hint">Enable beat markers.</p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="rWaveToggle">
+                                            <span class="switch-track"></span>
+                                        </label>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Pacing spike label</div>
+                                            <p class="setting-hint">Show pacing annotations.</p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="pacingLabelToggle" checked>
+                                            <span class="switch-track"></span>
+                                        </label>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Intrinsic beat labels</div>
+                                            <p class="setting-hint">Mark intrinsic beats.</p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="intrinsicLabelToggle">
+                                            <span class="switch-track"></span>
+                                        </label>
+                                    </div>
+
+                                    <div class="setting-row">
+                                        <div class="setting-copy">
+                                            <div class="setting-title">Color code beats</div>
+                                            <p class="setting-hint">Differentiate paced vs intrinsic.</p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="colorCodeToggle" checked>
+                                            <span class="switch-track"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="settings-actions">
+                                    <button type="button" class="btn btn-ghost" data-settings-reset>Reset to defaults</button>
+                                </div>
+                                    </div>
+                                </div>
+                            </div>
                         </aside>
                     </div>
 

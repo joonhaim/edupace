@@ -1,8 +1,8 @@
 import { ecgWave, heartRate, stitchBeatsNew } from '../ecg/ecgCore.js';
 import { createHeartRateEngine } from './heartRateEngine.js';
 
-const SECONDS_VISIBLE = 6;
-const SWEEP_SPEED_MM_PER_SEC = 25;
+const DEFAULT_SECONDS_VISIBLE = 6;
+const DEFAULT_SWEEP_SPEED_MM_PER_SEC = 25;
 const CALIPER_THRESHOLD = 4;
 
 const engineState = {
@@ -36,10 +36,31 @@ let pendingCaliper = null;
 let ignoreNextPointerUp = false;
 let heartRateEngine = null;
 let waveformEvents = [];
+let displaySettings = {
+    gridlines: false,
+    gridDensity: '2mm',
+    gridIntensity: 55,
+    sweepSpeed: DEFAULT_SWEEP_SPEED_MM_PER_SEC,
+    amplitudeScaling: 10,
+    traceColor: 'green',
+    traceThickness: 'normal',
+    leadLabel: true,
+    calibrationMarkers: true,
+    rWaveMarkers: false,
+    pacingSpikeLabel: true,
+    intrinsicBeatLabels: false,
+    colorCodeBeats: true
+};
 
 const ledElements = {
     pace: document.getElementById('paceLed'),
     sense: document.getElementById('senseLed')
+};
+
+const overlayElements = {
+    leadLabel: document.querySelector('.ecg-label'),
+    calibration: document.querySelector('.calibration-note'),
+    calibrationValue: document.querySelector('.calibration-note .calibration-value')
 };
 
 function initEcgEngine() {
@@ -68,9 +89,11 @@ function initEcgEngine() {
     window.addEventListener('edupace-scenario-change', handleScenarioChange);
     window.addEventListener('edupace-rule-effects', handleRuleEffects);
     window.addEventListener('edupace-waveform-change', handleWaveformChange);
+    window.addEventListener('edupace-ecg-settings', handleDisplaySettings);
 
     regenerateWaveform();
     startAnimationLoop();
+    updateCalibrationNote();
 }
 
 function handleParameterChange(event) {
@@ -115,8 +138,10 @@ function handleWaveformChange(event) {
 
 function configureTraceStyle() {
     if (!traceCtx) return;
-    traceCtx.lineWidth = 2;
-    traceCtx.strokeStyle = '#00E000';
+    const thickness = displaySettings.traceThickness;
+    const color = displaySettings.traceColor;
+    traceCtx.lineWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 3 : 2;
+    traceCtx.strokeStyle = color === 'white' ? '#e5e7eb' : color === 'blue' ? '#38bdf8' : '#00E000';
     traceCtx.lineJoin = 'round';
     traceCtx.lineCap = 'round';
 }
@@ -262,8 +287,9 @@ function draw() {
     if (!ctx || !canvas) return;
 
     const { width, height } = canvas;
-    const pixelsPerSecond = width / SECONDS_VISIBLE;
-    const pixelsPerMm = pixelsPerSecond / SWEEP_SPEED_MM_PER_SEC;
+    const secondsVisible = getSecondsVisible();
+    const pixelsPerSecond = width / secondsVisible;
+    const pixelsPerMm = pixelsPerSecond / displaySettings.sweepSpeed;
 
     drawGrid(width, height, pixelsPerMm);
     drawWaveform(width, height);
@@ -279,6 +305,35 @@ function drawGrid(width, height, pixelsPerMm) {
         gridCtx.save();
         gridCtx.fillStyle = '#000';
         gridCtx.fillRect(0, 0, gridCanvas.width, gridCanvas.height);
+        if (displaySettings.gridlines && displaySettings.gridDensity !== 'none') {
+            const intensity = clamp(displaySettings.gridIntensity / 100, 0, 1);
+            const spacingMm = displaySettings.gridDensity === '1mm' ? 1 : 2;
+            const spacingPx = Math.max(pixelsPerMm * spacingMm, 1);
+            const majorEvery = 5;
+            gridCtx.lineWidth = 1;
+
+            for (let x = 0; x <= gridCanvas.width; x += spacingPx) {
+                const isMajor = Math.round(x / spacingPx) % majorEvery === 0;
+                gridCtx.strokeStyle = isMajor
+                    ? `rgba(255, 255, 255, ${0.32 * intensity})`
+                    : `rgba(255, 255, 255, ${0.12 * intensity})`;
+                gridCtx.beginPath();
+                gridCtx.moveTo(Math.floor(x) + 0.5, 0);
+                gridCtx.lineTo(Math.floor(x) + 0.5, gridCanvas.height);
+                gridCtx.stroke();
+            }
+
+            for (let y = 0; y <= gridCanvas.height; y += spacingPx) {
+                const isMajor = Math.round(y / spacingPx) % majorEvery === 0;
+                gridCtx.strokeStyle = isMajor
+                    ? `rgba(255, 255, 255, ${0.32 * intensity})`
+                    : `rgba(255, 255, 255, ${0.12 * intensity})`;
+                gridCtx.beginPath();
+                gridCtx.moveTo(0, Math.floor(y) + 0.5);
+                gridCtx.lineTo(gridCanvas.width, Math.floor(y) + 0.5);
+                gridCtx.stroke();
+            }
+        }
         gridCtx.restore();
         gridDirty = false;
     }
@@ -297,8 +352,9 @@ function advanceSweep(deltaSeconds) {
 
     const width = traceCanvas.width;
     const height = traceCanvas.height;
-    const pixelsPerSecond = width / SECONDS_VISIBLE;
-    const amplitude = height * 0.18;
+    const secondsVisible = getSecondsVisible();
+    const pixelsPerSecond = width / secondsVisible;
+    const amplitude = height * 0.18 * (displaySettings.amplitudeScaling / 10);
     const scaleY = amplitude / maxWaveAmplitude;
     const midY = height * 0.55;
 
@@ -477,7 +533,7 @@ function drawCaliper(width, height) {
     ctx.lineTo(right, midY);
     ctx.stroke();
 
-    const diffSeconds = ((right - left) / width) * SECONDS_VISIBLE;
+    const diffSeconds = ((right - left) / width) * getSecondsVisible();
     const diffMs = Math.max(0, diffSeconds * 1000);
     const label = `${diffMs.toFixed(0)} ms`;
     const textX = (left + right) / 2;
@@ -506,6 +562,125 @@ function drawPauseOverlay(width, height) {
     ctx.restore();
 }
 
+
+function handleDisplaySettings(event) {
+    const settings = event.detail ?? {};
+    let needsTraceStyle = false;
+    let needsSweepReset = false;
+
+    if (typeof settings.gridlines === 'boolean' && settings.gridlines !== displaySettings.gridlines) {
+        displaySettings.gridlines = settings.gridlines;
+        gridDirty = true;
+    }
+
+    if (typeof settings.gridDensity === 'string' && settings.gridDensity !== displaySettings.gridDensity) {
+        displaySettings.gridDensity = settings.gridDensity;
+        gridDirty = true;
+    }
+
+    if (Number.isFinite(settings.gridIntensity) && settings.gridIntensity !== displaySettings.gridIntensity) {
+        displaySettings.gridIntensity = clamp(settings.gridIntensity, 0, 100);
+        gridDirty = true;
+    }
+
+    if (Number.isFinite(settings.sweepSpeed) && settings.sweepSpeed > 0) {
+        if (settings.sweepSpeed !== displaySettings.sweepSpeed) {
+            displaySettings.sweepSpeed = settings.sweepSpeed;
+            gridDirty = true;
+            needsSweepReset = true;
+        }
+    }
+
+    if (Number.isFinite(settings.amplitudeScaling) && settings.amplitudeScaling > 0) {
+        if (settings.amplitudeScaling !== displaySettings.amplitudeScaling) {
+            displaySettings.amplitudeScaling = settings.amplitudeScaling;
+            needsSweepReset = true;
+        }
+    }
+
+    if (typeof settings.traceColor === 'string' && settings.traceColor !== displaySettings.traceColor) {
+        displaySettings.traceColor = settings.traceColor;
+        needsTraceStyle = true;
+    }
+
+    if (
+        typeof settings.traceThickness === 'string' &&
+        settings.traceThickness !== displaySettings.traceThickness
+    ) {
+        displaySettings.traceThickness = settings.traceThickness;
+        needsTraceStyle = true;
+    }
+
+    if (typeof settings.leadLabel === 'boolean') {
+        displaySettings.leadLabel = settings.leadLabel;
+        if (overlayElements.leadLabel) overlayElements.leadLabel.hidden = !settings.leadLabel;
+    }
+
+    if (typeof settings.calibrationMarkers === 'boolean') {
+        displaySettings.calibrationMarkers = settings.calibrationMarkers;
+        if (overlayElements.calibration) overlayElements.calibration.hidden = !settings.calibrationMarkers;
+    }
+
+    if (typeof settings.rWaveMarkers === 'boolean') {
+        displaySettings.rWaveMarkers = settings.rWaveMarkers;
+        setCanvasStateFlag('rwave', settings.rWaveMarkers);
+    }
+
+    if (typeof settings.pacingSpikeLabel === 'boolean') {
+        displaySettings.pacingSpikeLabel = settings.pacingSpikeLabel;
+        setCanvasStateFlag('pacelabel', settings.pacingSpikeLabel);
+    }
+
+    if (typeof settings.intrinsicBeatLabels === 'boolean') {
+        displaySettings.intrinsicBeatLabels = settings.intrinsicBeatLabels;
+        setCanvasStateFlag('intrinsic', settings.intrinsicBeatLabels);
+    }
+
+    if (typeof settings.colorCodeBeats === 'boolean') {
+        displaySettings.colorCodeBeats = settings.colorCodeBeats;
+        setCanvasStateFlag('colorcode', settings.colorCodeBeats);
+    }
+
+    if (needsTraceStyle) {
+        configureTraceStyle();
+    }
+
+    updateCalibrationNote();
+
+    if (needsSweepReset) {
+        resetSweep();
+    } else {
+        draw();
+    }
+}
+
+function setCanvasStateFlag(key, enabled) {
+    if (!canvas) return;
+    canvas.dataset[key] = enabled ? 'on' : 'off';
+}
+
+function getSecondsVisible() {
+    return (DEFAULT_SECONDS_VISIBLE * DEFAULT_SWEEP_SPEED_MM_PER_SEC) / displaySettings.sweepSpeed;
+}
+
+function updateCalibrationNote() {
+    const secondsVisible = getSecondsVisible();
+    const windowText = Number.isInteger(secondsVisible)
+        ? secondsVisible.toString()
+        : secondsVisible.toFixed(1);
+
+    if (overlayElements.calibrationValue) {
+        overlayElements.calibrationValue.textContent = `${displaySettings.amplitudeScaling} mm/mV · ${displaySettings.sweepSpeed} mm/s · ${windowText} s window`;
+    }
+
+    if (overlayElements.calibration) {
+        overlayElements.calibration.hidden = !displaySettings.calibrationMarkers;
+    }
+
+    if (overlayElements.leadLabel) {
+        overlayElements.leadLabel.hidden = !displaySettings.leadLabel;
+    }
+}
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
