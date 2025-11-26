@@ -1,0 +1,259 @@
+.theme-transition {
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+
+/* Dark mode */
+
+body.simulation-dark {
+    background-color: #0b111c;
+    background-image:
+        linear-gradient(90deg, var(--grid-line-dark) 1px, transparent 1px),
+        linear-gradient(0deg, var(--grid-line-dark) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color: #e3e9f4;
+}
+
+body.simulation-dark .global-nav {
+    background: #0f1624;
+    border-bottom-color: #1c2738;
+}
+
+body.simulation-dark .nav-btn {
+    color: #b7c0cd;
+}
+
+body.simulation-dark .nav-btn.active {
+    color: var(--primary);
+}
+
+body.simulation-dark .landing-panel,
+body.simulation-dark .instructions-shell,
+body.simulation-dark .card,
+body.simulation-dark .param-tile,
+body.simulation-dark .ecg-frame,
+body.simulation-dark .scenario-banner,
+body.simulation-dark .connection-group,
+body.simulation-dark .calibration-note {
+    background: #0f1624;
+    border-color: #1c2738;
+    box-shadow: none;
+}
+
+body.simulation-dark .learning-item {
+    background: #101827;
+    border-color: #1c2738;
+}
+
+body.simulation-dark .chip-disconnected {
+    background: #111827;
+    color: #f3f6fc;
+    border-color: #243b53;
+}
+
+body.simulation-dark .chip-connected {
+    background: rgba(109, 165, 255, 0.22);
+    color: #e7f0ff;
+    border-color: #6da3ff;
+}
+
+body.simulation-dark .chip-unsupported {
+    background: rgba(203, 159, 255, 0.22);
+    color: #f4eaff;
+    border-color: #bf94ff;
+}
+
+body.simulation-dark .learning-label,
+body.simulation-dark .learning-body {
+    color: #e3e9f4;
+}
+
+body.simulation-dark .calibration-note {
+    box-shadow: none;
+}
+
+body.simulation-dark .card-heading p {
+    color: #aab3c6;
+}
+
+body.simulation-dark .btn-primary {
+    background: #2f6db5;
+}
+
+body.simulation-dark .btn-ghost {
+    background: #222b3a;
+    color: #dce2ec;
+}
+
+body.simulation-dark .led-pace {
+    background: #4b5563;
+}
+
+body.simulation-dark .led-sense {
+    background: #4b5563;
+}
+
+body.simulation-dark .led-pace.led-on {
+    box-shadow: 0 0 12px 3px rgba(52, 211, 153, 0.7);
+}
+
+body.simulation-dark .led-sense.led-on {
+    box-shadow: 0 0 12px 3px rgba(96, 165, 250, 0.7);
+}
+
+
+
+body.simulation-dark .telemetry-item,
+body.simulation-dark .sim-summary {
+    background: #101827;
+    border-color: #1c2738;
+}
+
+body.simulation-dark .settings-layer {
+    background: rgba(7, 12, 20, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+body.simulation-dark .mode-toggle {
+    background: #0e1524;
+    border-color: #1c2436;
+}
+
+body.simulation-dark .mode-pill {
+    color: #c9d1dc;
+}
+
+body.simulation-dark .mode-pill:has(input:checked) {
+    background: #111b2c;
+    color: #f2f5fb;
+    border-color: #1f2b3f;
+    box-shadow: none;
+}
+
+body.simulation-dark .mode-pill input:checked + span,
+body.simulation-dark .mode-pill input:checked ~ span {
+    color: #f2f5fb;
+}
+
+body.simulation-dark .settings-window {
+    background: #0f1624;
+    border-color: #1c2738;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+}
+
+body.simulation-dark .settings-window .card-heading p {
+    color: #c9d1dc;
+}
+
+body.simulation-dark .settings-window::before {
+    height: 0;
+}
+
+body.simulation-dark .settings-section {
+    border-color: #1c2738;
+}
+
+body.simulation-dark .setting-hint,
+body.simulation-dark .section-label {
+    color: #c9d1dc;
+}
+
+body.simulation-dark .switch-track {
+    background: #10192a;
+    border-color: #1f2b3f;
+}
+
+body.simulation-dark .switch-track::after {
+    background: #0f1624;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+body.simulation-dark .switch input:checked + .switch-track {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(47, 109, 181, 0.25);
+}
+
+body.simulation-dark .pill-option span {
+    background: #0f1624;
+    border-color: #1f2b3f;
+    color: #e3e9f4;
+}
+
+body.simulation-dark .pill-option input:checked + span {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: none;
+}
+
+body.simulation-dark .settings-tab {
+    color: #c9d1dc;
+}
+
+body.simulation-dark .settings-tab.is-active {
+    background: #0f1624;
+    border-color: #1c2738;
+    color: #f2f5fb;
+}
+
+body.simulation-dark .slider-value {
+    color: var(--primary);
+}
+
+body.simulation-dark .nav-btn,
+body.simulation-dark .nav-actions,
+body.simulation-dark .scenario-text,
+body.simulation-dark .telemetry-unit,
+body.simulation-dark .calibration-note,
+body.simulation-dark .card-heading p{
+    color: #c9d1dc;
+}
+
+body.simulation-dark .connection-label,
+body.simulation-dark .scenario-label,
+body.simulation-dark .scenario-name {
+    color: #e3e9f4;
+}
+
+body.simulation-dark .scenario-pill {
+    color: #8fb9ef;
+}
+
+body.simulation-dark .brand {
+    color: #e5e8ed;
+}
+body.simulation-dark .param-tile {
+    background: #101827;
+    border-color: #1c2738;
+}
+body.simulation-dark .stack-divider {
+    background: #1c2738;
+}
+body.simulation-dark .scenario-select {
+    background: #0f1624;
+    color: #e3e9f4;
+    border-color: #1c2738;
+}
+
+body.simulation-dark .param-step {
+    background: #0f1624;
+    border-color: #1c2738;
+    color: #e3e9f4;
+    box-shadow: none;
+}
+
+body.simulation-dark .param-step:hover,
+body.simulation-dark .param-step:focus-visible {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(47, 188, 165, 0.25);
+}
+
+body.simulation-dark .brand::before {
+    background-image: url("../assets/logos/edupace_logo2_neg.png");
+}
+
+body.simulation-light .alarm-normal {
+    background: rgba(31, 75, 153, 0.12);
+    color: #1f4b99;
+    border-color: rgba(31, 75, 153, 0.28);
+}
