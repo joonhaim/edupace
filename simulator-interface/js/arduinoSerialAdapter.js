@@ -259,6 +259,7 @@ function parsePayload(line) {
         const value = rawValue.trim();
 
         switch (key) {
+            case 'pace':
             case 'rate':
                 payload.rate = Number.parseFloat(value);
                 break;
@@ -318,8 +319,14 @@ async function sendLedCommand(type) {
         return;
     }
 
-    const command = type === 'PACE' ? 'LED_PACE\n' : 'LED_SENSE\n';
-    await serialState.writer.write(encoder.encode(command));
+    const isPace = type === 'PACE';
+    const onCommand = isPace ? 'GREEN_ON\n' : 'BLUE_ON\n';
+    const offCommand = isPace ? 'GREEN_OFF\n' : 'BLUE_OFF\n';
+
+    await serialState.writer.write(encoder.encode(onCommand));
+    setTimeout(() => {
+        serialState.writer?.write(encoder.encode(offCommand));
+    }, 180);
 }
 
 export { initHardwareIntegration };
