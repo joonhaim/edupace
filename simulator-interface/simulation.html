@@ -95,7 +95,10 @@
                         <!-- Right: controls -->
                         <aside class="control-column" aria-label="Controls">
                             <div class="card parameters-card">
-                                <h3 class="card-title" id="pacemakerTitle">Pacemaker parameters</h3>
+                                <div class="card-heading compact">
+                                    <p class="eyebrow">Pacemaker</p>
+                                    <h3 class="card-title" id="pacemakerTitle">Parameters</h3>
+                                </div>
 
                                 <div class="led-row">
                                     <div class="led-group">
@@ -194,10 +197,13 @@
                                 </div>
                             </div>
 
-                            <div class="card mode-card">
-                                <div class="card-heading">
-                                    <h3>Input source</h3>
-                                    <p>Pick hardware controls or the on-screen controller.</p>
+                            <div class="card control-stack">
+                                <div class="card-heading inline">
+                                    <div>
+                                        <p class="eyebrow">Control</p>
+                                        <h3>Input source</h3>
+                                    </div>
+                                    <p class="muted">Use hardware or the on-screen controller.</p>
                                 </div>
                                 <div class="mode-toggle" role="radiogroup" aria-label="Input source">
                                     <label class="mode-pill">
@@ -209,17 +215,18 @@
                                         <span>Virtual</span>
                                     </label>
                                 </div>
-                            </div>
 
-                            <div class="card performance-card">
-                                <h3 class="card-title">Performance</h3>
-                                <div class="perf-row">
-                                    <span>Current objective</span>
-                                    <span id="objectiveText" class="perf-value">–</span>
-                                </div>
-                                <div class="perf-row">
-                                    <span>Feedback</span>
-                                    <span id="feedbackText" class="perf-value small">–</span>
+                                <div class="stack-divider" aria-hidden="true"></div>
+
+                                <div class="performance-minimal" aria-label="Performance feedback">
+                                    <div class="perf-row">
+                                        <span>Current objective</span>
+                                        <span id="objectiveText" class="perf-value">–</span>
+                                    </div>
+                                    <div class="perf-row">
+                                        <span>Feedback</span>
+                                        <span id="feedbackText" class="perf-value small">–</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -248,8 +255,8 @@
                                     <div class="card-heading settings-window-header">
                                         <div>
                                             <p class="eyebrow">Simulation</p>
-                                            <h3 id="settingsTitle">ECG Settings</h3>
-                                            <p>Open the display preferences in a dedicated panel.</p>
+                                            <h3 id="settingsTitle">ECG preferences</h3>
+                                            <p class="muted">Clean controls for trace and overlay.</p>
                                         </div>
                                         <div class="settings-window-actions">
                                             <button
