@@ -157,6 +157,16 @@ a {
     font-size: 0.9rem;
 }
 
+body.page-home .nav-actions .theme-toggle,
+body.page-instructions .nav-actions .theme-toggle {
+    display: none;
+}
+
+body.page-home .nav-actions .settings-toggle,
+body.page-instructions .nav-actions .settings-toggle {
+    display: none;
+}
+
 .nav-actions select {
     padding: 0.45rem 0.6rem;
     border-radius: 10px;
@@ -981,6 +991,34 @@ body.simulation-light .theme-toggle {
     gap: 0.55rem;
 }
 
+.learning-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.learning-item {
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+}
+
+.learning-label {
+    margin: 0;
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.learning-body {
+    margin: 0.35rem 0 0;
+    font-size: 0.98rem;
+    line-height: 1.6;
+}
+
 .settings-card {
     display: flex;
     flex-direction: column;
@@ -1410,7 +1448,7 @@ body.simulation-light .theme-toggle {
 }
 
 .calibration-note {
-    margin-top: 1.1rem;
+    margin-top: 0.5rem;
     padding: 1rem 1.1rem;
     border-radius: 12px;
     border: 1px solid var(--border);
@@ -1441,6 +1479,10 @@ body.simulation-light .theme-toggle {
 
 .performance-card {
     gap: 0.7rem;
+}
+
+.calibration-performance {
+    margin-top: 0.75rem;
 }
 
 .perf-row {
@@ -1572,6 +1614,11 @@ body.simulation-dark .mode-pill:has(input:checked) {
     color: #f2f5fb;
     border-color: #1f2b3f;
     box-shadow: none;
+}
+
+body.simulation-dark .mode-pill input:checked + span,
+body.simulation-dark .mode-pill input:checked ~ span {
+    color: #f2f5fb;
 }
 
 body.simulation-dark .settings-window {
