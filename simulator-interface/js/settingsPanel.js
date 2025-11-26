@@ -22,29 +22,37 @@ let currentSettings = { ...defaultSettings };
 function initSettingsPanel() {
     const settingsCard = document.querySelector('[data-settings-panel]');
     const settingsLayer = document.querySelector('[data-settings-layer]');
-    const toggles = Array.from(document.querySelectorAll('[data-settings-toggle]'));
     const tabButtons = Array.from(document.querySelectorAll('[data-settings-tab]'));
     const tabPanels = Array.from(document.querySelectorAll('[data-settings-panel-target]'));
 
-    if (!settingsCard || !toggles.length) return;
+    if (!settingsCard) return;
+
+    const getToggles = () => Array.from(document.querySelectorAll('[data-settings-toggle]'));
+    const syncToggleState = (isVisible = !settingsCard.classList.contains('is-hidden')) => {
+        getToggles().forEach((toggle) => toggle.setAttribute('aria-expanded', String(isVisible)));
+    };
 
     settingsCard.setAttribute('tabindex', '-1');
 
     const setVisibility = (isVisible) => {
         settingsCard.classList.toggle('is-hidden', !isVisible);
         if (settingsLayer) settingsLayer.classList.toggle('is-hidden', !isVisible);
-        toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', String(isVisible)));
+        syncToggleState(isVisible);
 
         if (isVisible) {
             settingsCard.focus({ preventScroll: true });
         }
     };
 
-    toggles.forEach((toggle) => {
-        toggle.addEventListener('click', () => {
-            const willShow = settingsCard.classList.contains('is-hidden');
-            setVisibility(willShow);
-        });
+    const observer = new MutationObserver(() => syncToggleState());
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener('click', (event) => {
+        const toggle = event.target.closest('[data-settings-toggle]');
+        if (!toggle) return;
+
+        const willShow = settingsCard.classList.contains('is-hidden');
+        setVisibility(willShow);
     });
 
     if (tabButtons.length && tabPanels.length) {
