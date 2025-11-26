@@ -45,6 +45,24 @@ body.simulation-dark .learning-item {
     border-color: #1c2738;
 }
 
+body.simulation-dark .chip-disconnected {
+    background: #111827;
+    color: #f3f6fc;
+    border-color: #243b53;
+}
+
+body.simulation-dark .chip-connected {
+    background: rgba(109, 165, 255, 0.22);
+    color: #e7f0ff;
+    border-color: #6da3ff;
+}
+
+body.simulation-dark .chip-unsupported {
+    background: rgba(203, 159, 255, 0.22);
+    color: #f4eaff;
+    border-color: #bf94ff;
+}
+
 body.simulation-dark .learning-label,
 body.simulation-dark .learning-body {
     color: #e3e9f4;
@@ -141,8 +159,8 @@ body.simulation-dark .section-label {
 }
 
 body.simulation-dark .switch-track {
-    background: #1a2332;
-    border-color: #243044;
+    background: #10192a;
+    border-color: #1f2b3f;
 }
 
 body.simulation-dark .switch-track::after {
@@ -158,14 +176,24 @@ body.simulation-dark .switch input:checked + .switch-track {
 
 body.simulation-dark .pill-option span {
     background: #0f1624;
-    border-color: #1c2738;
+    border-color: #1f2b3f;
     color: #e3e9f4;
 }
 
 body.simulation-dark .pill-option input:checked + span {
     background: var(--primary);
     border-color: var(--primary);
-    box-shadow: 0 10px 20px rgba(47, 109, 181, 0.22);
+    box-shadow: none;
+}
+
+body.simulation-dark .settings-tab {
+    color: #c9d1dc;
+}
+
+body.simulation-dark .settings-tab.is-active {
+    background: #0f1624;
+    border-color: #1c2738;
+    color: #f2f5fb;
 }
 
 body.simulation-dark .slider-value {
