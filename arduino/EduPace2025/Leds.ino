@@ -1,41 +1,22 @@
 /*Green led (left) - Blue led (right)*/
 
 void updateLeds() {
-  unsigned long currentTime = millis();
-
-  // Toggle flicker state based on interval
-  if (currentTime - lastFlickerTime > flickerInterval) {
-    flickerOn = !flickerOn;
-    lastFlickerTime = currentTime;
-  }
-
   // --- Green LED ---
   if (greenState) {
-    if (flickerOn) {
-      lv_obj_set_style_bg_color(left_circle, lv_color_hex(0x00FF00), LV_PART_MAIN); // green visible
-      lv_obj_set_style_bg_opa(left_circle, LV_OPA_COVER, LV_PART_MAIN);
-    } else {
-      lv_obj_set_style_bg_color(left_circle, lv_color_white(), LV_PART_MAIN);       // off
-      lv_obj_set_style_bg_opa(left_circle, LV_OPA_TRANSP, LV_PART_MAIN);
-    }
+    lv_obj_set_style_bg_color(left_circle, lv_color_hex(0x00FF00), LV_PART_MAIN); // green visible
+    lv_obj_set_style_bg_opa(left_circle, LV_OPA_COVER, LV_PART_MAIN);
   } else {
-    lv_obj_set_style_bg_color(left_circle, lv_color_white(), LV_PART_MAIN); 
-    lv_obj_set_style_bg_opa(left_circle, LV_OPA_TRANSP, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(left_circle, lv_color_white(), LV_PART_MAIN);
   }
 
   // --- Blue LED ---
   if (blueState) {
-    if (flickerOn) {
-      lv_obj_set_style_bg_color(right_circle, lv_color_hex(0x0000FF), LV_PART_MAIN); // blue visible
-      lv_obj_set_style_bg_opa(right_circle, LV_OPA_COVER, LV_PART_MAIN);
-    } else {
-      lv_obj_set_style_bg_color(right_circle, lv_color_white(), LV_PART_MAIN);       // off
-      lv_obj_set_style_bg_opa(right_circle, LV_OPA_TRANSP, LV_PART_MAIN);
-    }
-  } else {
-    lv_obj_set_style_bg_color(right_circle, lv_color_white(), LV_PART_MAIN); 
+    lv_obj_set_style_bg_color(right_circle, lv_color_hex(0x0000FF), LV_PART_MAIN); // blue visible
+    lv_obj_set_style_bg_opa(right_circle, LV_OPA_COVER, LV_PART_MAIN);
+} else {
+      lv_obj_set_style_bg_color(right_circle, lv_color_white(), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(right_circle, LV_OPA_TRANSP, LV_PART_MAIN);
-  }
+
 }
 
 void handleSerialSignals() {
@@ -51,6 +32,6 @@ void handleSerialSignals() {
     updateLeds(); // refresh LED display
   }
 }
-
+}
 
 

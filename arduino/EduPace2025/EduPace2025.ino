@@ -26,12 +26,8 @@ bool key_pressed = false;
 bool autoLocked = false;
 
 //Led States
-bool greenState = true;  // current state of green LED
+bool greenState = false;  // current state of green LED
 bool blueState  = false;  // current state of blue LED
-
-unsigned long lastFlickerTime = 0;
-bool flickerOn = false;    // current flicker state (on/off)
-const int flickerInterval = 300; // ms between flicker states
 
 //Encoder values (Default values: Pace 80, output 10, sensen 2.0)
 float pace = 80;
