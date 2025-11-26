@@ -90,7 +90,30 @@ function initSettingsPanel() {
         }
     });
 
-    bindToggle(settingsCard, 'gridlinesToggle', 'gridlines');
+    const updateGridDependencies = (isEnabled) => {
+        const densityRow = settingsCard.querySelector('[data-setting-row="gridDensity"]');
+        const intensityRow = settingsCard.querySelector('[data-setting-row="gridIntensity"]');
+        const densityInputs = settingsCard.querySelectorAll('input[name="gridDensity"]');
+        const intensityInput = settingsCard.querySelector('#gridIntensity');
+        const intensityValue = settingsCard.querySelector('[data-slider-value="gridIntensity"]');
+
+        densityInputs.forEach((input) => {
+            input.disabled = !isEnabled;
+        });
+
+        if (intensityInput) {
+            intensityInput.disabled = !isEnabled;
+        }
+
+        if (intensityValue) {
+            intensityValue.setAttribute('aria-disabled', String(!isEnabled));
+        }
+
+        if (densityRow) densityRow.classList.toggle('is-disabled', !isEnabled);
+        if (intensityRow) intensityRow.classList.toggle('is-disabled', !isEnabled);
+    };
+
+    bindToggle(settingsCard, 'gridlinesToggle', 'gridlines', updateGridDependencies);
     bindRadios(settingsCard, 'gridDensity', 'gridDensity');
     bindSlider(settingsCard, 'gridIntensity', 'gridIntensity');
     bindSlider(settingsCard, 'soundVolume', 'soundVolume');
@@ -113,23 +136,28 @@ function initSettingsPanel() {
         resetBtn.addEventListener('click', () => {
             currentSettings = { ...defaultSettings };
             syncInputs(settingsCard);
+            updateGridDependencies(currentSettings.gridlines);
             emitSettings();
         });
     }
 
     syncInputs(settingsCard);
+    updateGridDependencies(currentSettings.gridlines);
     emitSettings();
     setVisibility(false);
 }
 
-function bindToggle(root, inputId, key) {
+function bindToggle(root, inputId, key, onChange) {
     const input = root.querySelector(`#${inputId}`);
     if (!input) return;
     input.checked = Boolean(currentSettings[key]);
     input.addEventListener('change', () => {
         currentSettings[key] = input.checked;
+        if (typeof onChange === 'function') onChange(input.checked, input);
         emitSettings();
     });
+
+    if (typeof onChange === 'function') onChange(input.checked, input);
 }
 
 function bindRadios(root, name, key, parser = (value) => value) {
