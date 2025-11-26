@@ -18,13 +18,21 @@ let currentSettings = { ...defaultSettings };
 
 function initSettingsPanel() {
     const settingsCard = document.querySelector('[data-settings-panel]');
+    const settingsLayer = document.querySelector('[data-settings-layer]');
     const toggles = Array.from(document.querySelectorAll('[data-settings-toggle]'));
 
     if (!settingsCard || !toggles.length) return;
 
+    settingsCard.setAttribute('tabindex', '-1');
+
     const setVisibility = (isVisible) => {
         settingsCard.classList.toggle('is-hidden', !isVisible);
+        if (settingsLayer) settingsLayer.classList.toggle('is-hidden', !isVisible);
         toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', String(isVisible)));
+
+        if (isVisible) {
+            settingsCard.focus({ preventScroll: true });
+        }
     };
 
     toggles.forEach((toggle) => {
@@ -32,6 +40,20 @@ function initSettingsPanel() {
             const willShow = settingsCard.classList.contains('is-hidden');
             setVisibility(willShow);
         });
+    });
+
+    if (settingsLayer) {
+        settingsLayer.addEventListener('click', (event) => {
+            if (event.target === settingsLayer) {
+                setVisibility(false);
+            }
+        });
+    }
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            setVisibility(false);
+        }
     });
 
     bindToggle(settingsCard, 'gridlinesToggle', 'gridlines');

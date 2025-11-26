@@ -236,36 +236,48 @@
                                 </button>
                             </div>
 
-                            <div class="card settings-card is-hidden" data-settings-panel id="ecgSettingsPanel">
-                                <div class="card-heading">
-                                    <div>
-                                        <h3>Settings</h3>
-                                        <p>Tune ECG rendering and annotation overlays.</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        class="icon-button"
-                                        data-settings-toggle
-                                        aria-label="Close settings"
-                                        aria-controls="ecgSettingsPanel"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-
-                                <div class="settings-section">
-                                    <div class="section-label">ECG display</div>
-
-                                    <div class="setting-row">
-                                        <div class="setting-copy">
-                                            <div class="setting-title">Gridlines</div>
-                                            <p class="setting-hint">Show ECG grid overlay.</p>
+                            <div class="settings-layer is-hidden" data-settings-layer>
+                                <div
+                                    class="card settings-card settings-window"
+                                    data-settings-panel
+                                    id="ecgSettingsPanel"
+                                    role="dialog"
+                                    aria-modal="true"
+                                    aria-labelledby="settingsTitle"
+                                >
+                                    <div class="card-heading settings-window-header">
+                                        <div>
+                                            <p class="eyebrow">Simulation</p>
+                                            <h3 id="settingsTitle">ECG Settings</h3>
+                                            <p>Open the display preferences in a dedicated panel.</p>
                                         </div>
-                                        <label class="switch">
-                                            <input type="checkbox" id="gridlinesToggle">
-                                            <span class="switch-track"></span>
-                                        </label>
+                                        <div class="settings-window-actions">
+                                            <button
+                                                type="button"
+                                                class="btn btn-ghost"
+                                                data-settings-toggle
+                                                aria-label="Close settings"
+                                                aria-controls="ecgSettingsPanel"
+                                            >
+                                                Close
+                                            </button>
+                                        </div>
                                     </div>
+
+                                    <div class="settings-body">
+                                        <div class="settings-section">
+                                            <div class="section-label">ECG display</div>
+
+                                            <div class="setting-row">
+                                                <div class="setting-copy">
+                                                    <div class="setting-title">Gridlines</div>
+                                                    <p class="setting-hint">Show ECG grid overlay.</p>
+                                                </div>
+                                                <label class="switch">
+                                                    <input type="checkbox" id="gridlinesToggle">
+                                                    <span class="switch-track"></span>
+                                                </label>
+                                            </div>
 
                                     <div class="setting-row">
                                         <div class="setting-copy">
@@ -456,6 +468,8 @@
 
                                 <div class="settings-actions">
                                     <button type="button" class="btn btn-ghost" data-settings-reset>Reset to defaults</button>
+                                </div>
+                                    </div>
                                 </div>
                             </div>
                         </aside>
