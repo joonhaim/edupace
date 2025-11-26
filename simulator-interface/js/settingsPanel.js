@@ -6,6 +6,9 @@ const defaultSettings = {
     amplitudeScaling: 10,
     traceColor: 'green',
     traceThickness: 'normal',
+    alarmSound: true,
+    buttonBeeps: true,
+    soundVolume: 70,
     leadLabel: true,
     calibrationMarkers: true,
     rWaveMarkers: false,
@@ -20,6 +23,8 @@ function initSettingsPanel() {
     const settingsCard = document.querySelector('[data-settings-panel]');
     const settingsLayer = document.querySelector('[data-settings-layer]');
     const toggles = Array.from(document.querySelectorAll('[data-settings-toggle]'));
+    const tabButtons = Array.from(document.querySelectorAll('[data-settings-tab]'));
+    const tabPanels = Array.from(document.querySelectorAll('[data-settings-panel-target]'));
 
     if (!settingsCard || !toggles.length) return;
 
@@ -42,6 +47,27 @@ function initSettingsPanel() {
         });
     });
 
+    if (tabButtons.length && tabPanels.length) {
+        const activateTab = (tabId) => {
+            tabButtons.forEach((button) => {
+                const isActive = button.dataset.settingsTab === tabId;
+                button.classList.toggle('is-active', isActive);
+                button.setAttribute('aria-selected', String(isActive));
+            });
+
+            tabPanels.forEach((panel) => {
+                panel.classList.toggle('is-hidden', panel.dataset.settingsPanelTarget !== tabId);
+            });
+        };
+
+        tabButtons.forEach((button) => {
+            button.addEventListener('click', () => activateTab(button.dataset.settingsTab));
+        });
+
+        const initiallyActive = tabButtons.find((button) => button.classList.contains('is-active'));
+        activateTab(initiallyActive?.dataset.settingsTab || tabButtons[0].dataset.settingsTab);
+    }
+
     if (settingsLayer) {
         settingsLayer.addEventListener('click', (event) => {
             if (event.target === settingsLayer) {
@@ -59,6 +85,7 @@ function initSettingsPanel() {
     bindToggle(settingsCard, 'gridlinesToggle', 'gridlines');
     bindRadios(settingsCard, 'gridDensity', 'gridDensity');
     bindSlider(settingsCard, 'gridIntensity', 'gridIntensity');
+    bindSlider(settingsCard, 'soundVolume', 'soundVolume');
     bindRadios(settingsCard, 'sweepSpeed', 'sweepSpeed', Number);
     bindRadios(settingsCard, 'amplitudeScaling', 'amplitudeScaling', Number);
     bindRadios(settingsCard, 'traceColor', 'traceColor');
@@ -70,6 +97,8 @@ function initSettingsPanel() {
     bindToggle(settingsCard, 'pacingLabelToggle', 'pacingSpikeLabel');
     bindToggle(settingsCard, 'intrinsicLabelToggle', 'intrinsicBeatLabels');
     bindToggle(settingsCard, 'colorCodeToggle', 'colorCodeBeats');
+    bindToggle(settingsCard, 'alarmSoundToggle', 'alarmSound');
+    bindToggle(settingsCard, 'buttonBeepsToggle', 'buttonBeeps');
 
     const resetBtn = settingsCard.querySelector('[data-settings-reset]');
     if (resetBtn) {
