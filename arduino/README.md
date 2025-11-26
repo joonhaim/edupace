@@ -11,6 +11,7 @@
 - LVGL graphics library (9.4.0)
 - Arduino_H7_Video library
 - Arduino_GigaDisplayTouch library
+- Download digital.c and add inside the font folder of Arduino "C:\..\..\..\Arduino\libraries\lvgl\src\font\digital.c"
 
 ## Features
 
