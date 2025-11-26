@@ -6,8 +6,14 @@ const scenarioElements = {
     paceMode: document.getElementById('paceMode'),
     alarmBanner: document.getElementById('alarmBanner'),
     alarmText: document.getElementById('alarmText'),
-    objectiveText: document.getElementById('objectiveText'),
-    feedbackText: document.getElementById('feedbackText')
+    objectiveText: [
+        document.getElementById('objectiveText'),
+        document.getElementById('objectiveTextSecondary')
+    ].filter(Boolean),
+    feedbackText: [
+        document.getElementById('feedbackText'),
+        document.getElementById('feedbackTextSecondary')
+    ].filter(Boolean)
 };
 
 const textKeys = [
@@ -20,7 +26,9 @@ const textKeys = [
 ];
 
 const defaultTexts = textKeys.reduce((acc, key) => {
-    acc[key] = scenarioElements[key]?.textContent ?? '';
+    const target = scenarioElements[key];
+    const element = Array.isArray(target) ? target[0] : target;
+    acc[key] = element?.textContent ?? '';
     return acc;
 }, {});
 
@@ -32,21 +40,26 @@ const scenarioState = {
 
 
 function updateText(key, value) {
-    const element = scenarioElements[key];
-    if (!element) return;
+    const targets = scenarioElements[key];
+    if (!targets) return;
 
-    if (key === 'paceMode') {
-        const baseValue = value === undefined || value === null || value === ''
-            ? defaultTexts[key]
-            : String(value);
-        element.dataset.baseMode = baseValue;
-    }
+    const elements = Array.isArray(targets) ? targets : [targets];
+    if (!elements.length) return;
 
-    if (value === undefined || value === null || value === '') {
-        element.textContent = defaultTexts[key];
-    } else {
-        element.textContent = String(value);
-    }
+    elements.forEach((element) => {
+        if (key === 'paceMode') {
+            const baseValue = value === undefined || value === null || value === ''
+                ? defaultTexts[key]
+                : String(value);
+            element.dataset.baseMode = baseValue;
+        }
+
+        if (value === undefined || value === null || value === '') {
+            element.textContent = defaultTexts[key];
+        } else {
+            element.textContent = String(value);
+        }
+    });
 }
 
 function setAlarmLevel(level) {
