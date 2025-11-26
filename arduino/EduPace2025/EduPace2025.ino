@@ -29,6 +29,13 @@ bool autoLocked = false;
 bool greenState = false;  // current state of green LED
 bool blueState  = false;  // current state of blue LED
 
+<<<<<<< Updated upstream
+=======
+// unsigned long lastFlickerTime = 0;
+// bool flickerOn = false;    // current flicker state (on/off)
+// const int flickerInterval = 300; // ms between flicker states
+
+>>>>>>> Stashed changes
 //Encoder values (Default values: Pace 80, output 10, sensen 2.0)
 float pace = 80;
 float output = 10;
