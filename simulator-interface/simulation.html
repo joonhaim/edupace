@@ -223,10 +223,34 @@
                                 </div>
                             </div>
 
-                            <div class="card settings-card" data-settings-panel>
+                            <div class="settings-launch">
+                                <button
+                                    type="button"
+                                    class="btn btn-ghost settings-toggle"
+                                    data-settings-toggle
+                                    aria-expanded="false"
+                                    aria-controls="ecgSettingsPanel"
+                                >
+                                    <span class="settings-toggle-icon" aria-hidden="true">⚙️</span>
+                                    <span>Settings</span>
+                                </button>
+                            </div>
+
+                            <div class="card settings-card is-hidden" data-settings-panel id="ecgSettingsPanel">
                                 <div class="card-heading">
-                                    <h3>Settings</h3>
-                                    <p>Tune ECG rendering and annotation overlays.</p>
+                                    <div>
+                                        <h3>Settings</h3>
+                                        <p>Tune ECG rendering and annotation overlays.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="icon-button"
+                                        data-settings-toggle
+                                        aria-label="Close settings"
+                                        aria-controls="ecgSettingsPanel"
+                                    >
+                                        ✕
+                                    </button>
                                 </div>
 
                                 <div class="settings-section">

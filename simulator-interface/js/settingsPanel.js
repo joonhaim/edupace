@@ -18,7 +18,21 @@ let currentSettings = { ...defaultSettings };
 
 function initSettingsPanel() {
     const settingsCard = document.querySelector('[data-settings-panel]');
-    if (!settingsCard) return;
+    const toggles = Array.from(document.querySelectorAll('[data-settings-toggle]'));
+
+    if (!settingsCard || !toggles.length) return;
+
+    const setVisibility = (isVisible) => {
+        settingsCard.classList.toggle('is-hidden', !isVisible);
+        toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', String(isVisible)));
+    };
+
+    toggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => {
+            const willShow = settingsCard.classList.contains('is-hidden');
+            setVisibility(willShow);
+        });
+    });
 
     bindToggle(settingsCard, 'gridlinesToggle', 'gridlines');
     bindRadios(settingsCard, 'gridDensity', 'gridDensity');
@@ -46,6 +60,7 @@ function initSettingsPanel() {
 
     syncInputs(settingsCard);
     emitSettings();
+    setVisibility(false);
 }
 
 function bindToggle(root, inputId, key) {
