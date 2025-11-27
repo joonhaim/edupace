@@ -1,5 +1,7 @@
 import { ecgWave, heartRate, stitchBeatsNew } from '../ecg/ecgCore.js';
 import { createHeartRateEngine } from './heartRateEngine.js';
+import { sendLedCommand } from './arduinoSerialAdapter.js';
+
 
 const DEFAULT_SECONDS_VISIBLE = 6;
 const DEFAULT_SWEEP_SPEED_MM_PER_SEC = 25;
@@ -158,11 +160,14 @@ function mapWaveformId(waveformId) {
     }
 }
 
-function flashLed(element) {
+function flashLed(element, type) {
     if (!element) return;
 
     element.classList.add('led-on');
     setTimeout(() => element.classList.remove('led-on'), 180);
+    if (type) {
+        sendLedCommand(type);
+    }
 }
 
 function processLedEvents(windowStart, windowEnd) {
@@ -176,9 +181,9 @@ function processLedEvents(windowStart, windowEnd) {
 
         if (occurrence >= windowStart && occurrence <= windowEnd) {
             if (event.type === 'pace') {
-                flashLed(ledElements.pace);
+                flashLed(ledElements.pace, 'PACE');
             } else if (event.type === 'sense') {
-                flashLed(ledElements.sense);
+                flashLed(ledElements.sense, 'SENSE');
             }
         }
     });
