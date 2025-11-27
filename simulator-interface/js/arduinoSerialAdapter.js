@@ -329,4 +329,4 @@ async function sendLedCommand(type) {
     }, 180);
 }
 
-export { initHardwareIntegration };
+export { initHardwareIntegration, sendLedCommand };
