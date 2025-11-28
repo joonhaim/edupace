@@ -4,6 +4,7 @@ const scenarioElements = {
     scenarioName: document.getElementById('scenarioPickerLabel'),
     scenarioText: document.getElementById('scenarioText'),
     scenarioPicker: document.getElementById('scenarioPicker'),
+    scenarioPickerArea: document.querySelector('[data-scenario-picker-area]'),
     scenarioNext: document.getElementById('scenarioNextBtn'),
     scenarioMenu: document.getElementById('scenarioMenu'),
     paceMode: document.getElementById('paceMode'),
@@ -286,6 +287,12 @@ async function initScenarios() {
     renderScenarioMenu(menu, scenarios);
 
     picker.addEventListener('click', () => toggleMenu());
+    const pickerArea = scenarioElements.scenarioPickerArea;
+    pickerArea?.addEventListener('click', (event) => {
+        if (event.target.closest('#scenarioPicker') || event.target.closest('#scenarioNextBtn')) return;
+        if (event.target.closest('#scenarioMenu')) return;
+        toggleMenu();
+    });
     nextBtn?.addEventListener('click', () => {
         if (scenarioState.scenarios.length) {
             const total = scenarioState.scenarios.length;

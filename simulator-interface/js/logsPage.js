@@ -49,14 +49,15 @@ function applyLogSettings(patch = {}) {
 function initLogSettingsPanel() {
     const panel = document.querySelector('[data-log-settings-panel]');
     const layer = document.querySelector('[data-log-settings-layer]');
-    const toggles = Array.from(document.querySelectorAll('[data-settings-toggle]'));
+    const toggleSelector = '[data-settings-toggle]';
 
-    if (!panel || !layer || !toggles.length) return;
+    if (!panel || !layer) return;
 
     const dateSelect = panel.querySelector('[data-log-date-format]');
     const timeSelect = panel.querySelector('[data-log-time-format]');
 
     const syncToggleState = (isVisible) => {
+        const toggles = Array.from(document.querySelectorAll(toggleSelector));
         toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', String(isVisible)));
     };
 
@@ -72,12 +73,12 @@ function initLogSettingsPanel() {
         }
     };
 
-    toggles.forEach((toggle) => {
-        toggle.addEventListener('click', (event) => {
-            event.preventDefault();
-            const willShow = panel.classList.contains('is-hidden') || layer.classList.contains('is-hidden');
-            setVisibility(willShow);
-        });
+    document.addEventListener('click', (event) => {
+        const toggle = event.target.closest(toggleSelector);
+        if (!toggle) return;
+        event.preventDefault();
+        const willShow = panel.classList.contains('is-hidden') || layer.classList.contains('is-hidden');
+        setVisibility(willShow);
     });
 
     layer.addEventListener('click', (event) => {
