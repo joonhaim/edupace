@@ -52,6 +52,7 @@ let pendingCaliper = null;
 let ignoreNextPointerUp = false;
 let heartRateEngine = null;
 let waveformEvents = [];
+let visibleBeatLabels = [];
 let displaySettings = {
     gridlines: false,
     gridDensity: '2mm',
@@ -70,7 +71,7 @@ let displaySettings = {
     rWaveMarkers: false,
     pacingSpikeLabel: true,
     paceColor: 'green',
-    intrinsicBeatLabels: false,
+    intrinsicBeatLabels: true,
     senseColor: 'blue',
     colorCodeBeats: true,
     intervalRulers: true
@@ -320,6 +321,7 @@ function regenerateWaveform() {
     waveformDuration = Math.max(...x, 0);
     waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
     waveformEvents = Array.isArray(events) ? events : [];
+    visibleBeatLabels = [];
     maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
     heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
     heartRateEngine?.reset();
@@ -334,6 +336,7 @@ function resetSweep() {
     sweepTime = 0;
     lastFrameTime = null;
     heartRateEngine?.reset();
+    visibleBeatLabels = [];
     if (traceCtx && traceCanvas) {
         traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
         configureTraceStyle();
@@ -454,7 +457,7 @@ function advanceSweep(deltaSeconds) {
             : [];
 
         processLedEvents(occurrences);
-        drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height, occurrences);
+        drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height, amplitude, occurrences);
 
         sweepX = endX >= width ? 0 : endX;
         sweepTime = endTime;
@@ -462,11 +465,15 @@ function advanceSweep(deltaSeconds) {
     }
 }
 
-function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height, occurrences = []) {
+function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height, amplitude, occurrences = []) {
     if (!traceCtx) return;
     const clearStart = Math.max(0, Math.min(startX, endX));
     const clearEnd = Math.min(traceCanvas.width, Math.max(startX, endX) + traceCtx.lineWidth * 2);
     traceCtx.clearRect(clearStart, 0, clearEnd - clearStart, height);
+
+    if (visibleBeatLabels.length && clearEnd > clearStart) {
+        visibleBeatLabels = visibleBeatLabels.filter((label) => label.x < clearStart || label.x > clearEnd);
+    }
 
     const distance = Math.max(1, Math.abs(endX - startX));
     const timeSpan = endTime - startTime;
@@ -492,11 +499,11 @@ function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height
     traceCtx.lineTo(endX, finalY);
     traceCtx.stroke();
 
-    drawBeatLabels(startX, endX, startTime, endTime, height, occurrences);
+    drawBeatLabels(startX, endX, startTime, endTime, height, midY, amplitude, occurrences);
 }
 
-function drawBeatLabels(startX, endX, startTime, endTime, height, occurrences) {
-    if (!traceCtx || !occurrences.length) return;
+function drawBeatLabels(startX, endX, startTime, endTime, height, midY, amplitude, occurrences) {
+    if (!traceCtx) return;
 
     const showPacedLabels = displaySettings.pacingSpikeLabel;
     const showSenseLabels = displaySettings.intrinsicBeatLabels;
@@ -507,7 +514,7 @@ function drawBeatLabels(startX, endX, startTime, endTime, height, occurrences) {
         : displaySettings.labelSize === 'compact'
             ? 14
             : 16;
-    const labelY = Math.max(20, height - 14);
+    const labelY = Math.min(height - 8, midY + amplitude * 0.85);
     const timeSpan = endTime - startTime || 1;
     const paceColor = resolveColorValue(displaySettings.paceColor, '#22c55e');
     const senseColor = resolveColorValue(displaySettings.senseColor, '#2563eb');
@@ -519,6 +526,8 @@ function drawBeatLabels(startX, endX, startTime, endTime, height, occurrences) {
     traceCtx.shadowColor = 'rgba(0, 0, 0, 0.35)';
     traceCtx.shadowBlur = 6;
 
+    const newLabels = [];
+
     occurrences.forEach((event) => {
         const isPaced = event.type === 'pace';
         const isSensed = event.type === 'sense';
@@ -529,7 +538,17 @@ function drawBeatLabels(startX, endX, startTime, endTime, height, occurrences) {
         const x = startX + ratio * (endX - startX);
         const label = isPaced ? 'VP' : 'VS';
 
-        traceCtx.fillStyle = isPaced ? paceColor : senseColor;
+        const color = isPaced ? paceColor : senseColor;
+
+        newLabels.push({ x, label, color });
+    });
+
+    if (newLabels.length) {
+        visibleBeatLabels.push(...newLabels);
+    }
+
+    visibleBeatLabels.forEach(({ x, label, color }) => {
+        traceCtx.fillStyle = color;
         traceCtx.fillText(label, x, labelY);
     });
 
