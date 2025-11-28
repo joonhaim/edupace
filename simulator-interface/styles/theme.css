@@ -39,11 +39,15 @@ body.simulation-dark .landing-panel,
 body.simulation-dark .instructions-shell,
 body.simulation-dark .card,
 body.simulation-dark .param-tile,
-body.simulation-dark .ecg-frame,
 body.simulation-dark .scenario-banner,
 body.simulation-dark .connection-group,
 body.simulation-dark .calibration-note {
     background: #0f1624;
+    border-color: #1c2738;
+    box-shadow: none;
+}
+body.simulation-dark .ecg-frame {
+    background: #000;
     border-color: #1c2738;
     box-shadow: none;
 }
