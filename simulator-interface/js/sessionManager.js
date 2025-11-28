@@ -5,18 +5,52 @@ const sessionElements = {
     pauseBtn: document.getElementById('pauseSessionBtn'),
     endBtn: document.getElementById('endSessionBtn'),
     downloadBtn: document.getElementById('downloadLogBtn'),
-    statusText: document.getElementById('sessionStatusText')
+    statusText: document.getElementById('sessionStatusText'),
+    timerDisplay: document.getElementById('sessionTimerDisplay'),
+    pauseLabel: document.querySelector('#pauseSessionBtn .btn-label'),
+    pauseIcon: document.querySelector('#pauseSessionBtn .btn-icon'),
+    controlModeRadios: document.querySelectorAll('input[name="inputMode"]')
 };
 
 const sessionState = {
     selectedScenario: null,
     currentSession: null,
-    activeLogUrl: null
+    activeLogUrl: null,
+    timing: {
+        startedAtMs: null,
+        pausedMs: 0,
+        pausedSince: null,
+        timerInterval: null
+    }
+};
+
+const telemetryContext = {
+    waveformId: null,
+    paceLed: false,
+    senseLed: false,
+    rate: null,
+    output: null,
+    sensitivity: null,
+    power: null,
+    locked: null,
+    alarm: { level: 'normal', text: null },
+    controlMode: 'hardware',
+    connection: 'disconnected',
+    hardwareConnected: false,
+    lastLed: null
 };
 
 function setStatusText(text) {
     if (!sessionElements.statusText) return;
     sessionElements.statusText.textContent = text;
+}
+
+function getContextSnapshot() {
+    return {
+        ...telemetryContext,
+        alarm: { ...telemetryContext.alarm },
+        lastLed: telemetryContext.lastLed ? { ...telemetryContext.lastLed } : null
+    };
 }
 
 function resetDownloadLink() {
@@ -37,10 +71,12 @@ function logEvent(type, details = {}) {
     const event = {
         timestamp: new Date().toISOString(),
         type,
-        details
+        details,
+        context: getContextSnapshot()
     };
 
     sessionState.currentSession.events.push(event);
+    sessionState.currentSession.lastContext = event.context;
     window.dispatchEvent(
         new CustomEvent('edupace-session-event', {
             detail: { event, session: sessionState.currentSession }
@@ -59,7 +95,14 @@ function updateControls() {
 
     if (pauseBtn) {
         pauseBtn.disabled = !(status === 'running' || status === 'paused');
-        pauseBtn.textContent = status === 'paused' ? 'Resume' : 'Pause';
+        const label = sessionElements.pauseLabel;
+        const icon = sessionElements.pauseIcon;
+        if (label) {
+            label.textContent = status === 'paused' ? 'Resume' : 'Pause';
+        }
+        if (icon) {
+            icon.textContent = status === 'paused' ? '▶' : '⏸';
+        }
     }
 
     if (endBtn) {
@@ -71,8 +114,69 @@ function updateControls() {
     }
 }
 
+function getControlMode() {
+    const checked = Array.from(sessionElements.controlModeRadios ?? []).find((radio) => radio.checked);
+    return checked?.value ?? 'hardware';
+}
+
+function updateTelemetryContext(patch = {}) {
+    const { alarm, lastLed, ...rest } = patch;
+    if (alarm) {
+        telemetryContext.alarm = { ...telemetryContext.alarm, ...alarm };
+    }
+    if (lastLed) {
+        telemetryContext.lastLed = { ...lastLed };
+    }
+
+    Object.assign(telemetryContext, rest);
+}
+
+function formatTimer(ms) {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    const hours = Math.floor(minutes / 60);
+    const mm = String(minutes % 60).padStart(2, '0');
+    const ss = String(seconds).padStart(2, '0');
+    return hours ? `${String(hours).padStart(2, '0')}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+function getElapsedMs() {
+    const { startedAtMs, pausedMs, pausedSince } = sessionState.timing;
+    if (!startedAtMs) return 0;
+
+    const now = Date.now();
+    const pausedTotal = pausedMs + (pausedSince ? Math.max(0, now - pausedSince) : 0);
+    return Math.max(0, now - startedAtMs - pausedTotal);
+}
+
+function updateTimerDisplay() {
+    if (!sessionElements.timerDisplay) return;
+    const elapsed = getElapsedMs();
+    sessionElements.timerDisplay.textContent = formatTimer(elapsed);
+}
+
+function startTimer() {
+    stopTimer();
+    sessionState.timing.timerInterval = window.setInterval(updateTimerDisplay, 1000);
+    updateTimerDisplay();
+}
+
+function stopTimer() {
+    if (sessionState.timing.timerInterval) {
+        clearInterval(sessionState.timing.timerInterval);
+        sessionState.timing.timerInterval = null;
+    }
+}
+
 function setSelectedScenario(scenario) {
     sessionState.selectedScenario = scenario;
+    if (scenario?.waveformId) {
+        updateTelemetryContext({ waveformId: scenario.waveformId });
+    }
+    if (typeof scenario?.pacing?.poweredOn === 'boolean') {
+        updateTelemetryContext({ power: scenario.pacing.poweredOn });
+    }
 
     if (sessionState.currentSession && sessionState.currentSession.status === 'running') {
         logEvent('scenario-updated', {
@@ -88,17 +192,114 @@ function setSelectedScenario(scenario) {
     updateControls();
 }
 
+function handleParametersEvent(event) {
+    const detail = event.detail ?? {};
+    const changes = {};
+    const mappings = {
+        lock: 'locked'
+    };
+
+    ['rate', 'output', 'sensitivity', 'power', 'locked', 'lock'].forEach((key) => {
+        if (detail[key] === undefined || detail[key] === null) return;
+        const targetKey = mappings[key] ?? key;
+        if (telemetryContext[targetKey] !== detail[key]) {
+            changes[targetKey] = detail[key];
+        }
+    });
+
+    if (Object.keys(changes).length) {
+        updateTelemetryContext(changes);
+        if (sessionState.currentSession) {
+            logEvent('parameters-updated', {
+                changes,
+                controlMode: telemetryContext.controlMode
+            });
+        }
+    }
+}
+
+function handleWaveformEvent(event) {
+    const waveformId = event.detail?.waveformId ?? null;
+    if (!waveformId || telemetryContext.waveformId === waveformId) return;
+
+    updateTelemetryContext({ waveformId });
+    if (sessionState.currentSession) {
+        logEvent('waveform-changed', { waveformId });
+    }
+}
+
+function handleAlarmUpdate(event) {
+    const alarm = event.detail ?? {};
+    updateTelemetryContext({ alarm });
+    if (sessionState.currentSession) {
+        logEvent('alarm-update', alarm);
+    }
+}
+
+function handleConnectionChange(event) {
+    const { status, connected, unsupported } = event.detail ?? {};
+    const hardwareOnline = Boolean(connected) && status !== 'VIRTUAL' && !unsupported;
+    updateTelemetryContext({
+        connection: status ?? telemetryContext.connection,
+        hardwareConnected: hardwareOnline
+    });
+
+    if (sessionState.currentSession) {
+        logEvent('connection-update', { status, connected, unsupported });
+    }
+}
+
+function handleControlModeChange(mode) {
+    const controlMode = mode || getControlMode();
+    if (telemetryContext.controlMode === controlMode) return;
+    updateTelemetryContext({ controlMode });
+    if (sessionState.currentSession?.metadata) {
+        sessionState.currentSession.metadata.controlMode = controlMode;
+    }
+    if (sessionState.currentSession) {
+        logEvent('control-mode-changed', { mode: controlMode });
+    }
+}
+
+function handleLedFlash(event) {
+    const { kind, source, at } = event.detail ?? {};
+    if (!kind) return;
+    updateTelemetryContext({
+        lastLed: { kind, source, at },
+        paceLed: kind === 'pace' || telemetryContext.paceLed,
+        senseLed: kind === 'sense' || telemetryContext.senseLed
+    });
+    if (sessionState.currentSession) {
+        logEvent('led-activity', { kind, source, at });
+    }
+}
+
+function handleTelemetryPause(event) {
+    const paused = Boolean(event.detail?.paused);
+    if (!sessionState.currentSession) return;
+
+    const status = sessionState.currentSession.status;
+    if (paused && status === 'running') {
+        pauseSession();
+    } else if (!paused && status === 'paused') {
+        pauseSession();
+    }
+}
+
 function buildLogPayload() {
     const session = sessionState.currentSession;
     if (!session) return null;
 
-    const startedAt = new Date(session.startedAt).getTime();
-    const endedAt = session.endedAt ? new Date(session.endedAt).getTime() : Date.now();
-    const durationSeconds = Math.max(0, Math.round((endedAt - startedAt) / 1000));
+    const elapsedMs =
+        session.status === 'ended' && Number.isFinite(session.durationSeconds)
+            ? session.durationSeconds * 1000
+            : getElapsedMs();
+    const durationSeconds = Math.max(0, Math.round(elapsedMs / 1000));
 
     return {
         ...session,
-        durationSeconds
+        durationSeconds,
+        lastContext: session.lastContext ?? getContextSnapshot()
     };
 }
 
@@ -117,17 +318,29 @@ function prepareDownload(payload = null) {
 }
 
 function createSession() {
-    const now = new Date().toISOString();
+    const now = new Date();
     const scenario = sessionState.selectedScenario;
+
+    sessionState.timing.startedAtMs = now.getTime();
+    sessionState.timing.pausedMs = 0;
+    sessionState.timing.pausedSince = null;
+    updateTelemetryContext({ controlMode: getControlMode() });
 
     sessionState.currentSession = {
         id: `session-${Date.now()}`,
         scenarioId: scenario?.id ?? null,
         scenarioTitle: scenario?.title ?? 'Unknown scenario',
         status: 'running',
-        startedAt: now,
+        startedAt: now.toISOString(),
         endedAt: null,
-        events: []
+        events: [],
+        metadata: {
+            operator: '',
+            notes: '',
+            label: '',
+            controlMode: telemetryContext.controlMode
+        },
+        lastContext: getContextSnapshot()
     };
 
     logEvent('session-started', {
@@ -144,6 +357,7 @@ function startSession() {
 
     resetDownloadLink();
     createSession();
+    startTimer();
     setStatusText('Session running.');
     updateControls();
 }
@@ -155,6 +369,16 @@ function pauseSession() {
 
     const isPaused = sessionState.currentSession.status === 'paused';
     sessionState.currentSession.status = isPaused ? 'running' : 'paused';
+    if (!isPaused) {
+        sessionState.timing.pausedSince = Date.now();
+        stopTimer();
+    } else {
+        if (sessionState.timing.pausedSince) {
+            sessionState.timing.pausedMs += Math.max(0, Date.now() - sessionState.timing.pausedSince);
+            sessionState.timing.pausedSince = null;
+        }
+        startTimer();
+    }
     logEvent(isPaused ? 'session-resumed' : 'session-paused', {
         scenarioId: sessionState.currentSession.scenarioId
     });
@@ -168,8 +392,17 @@ function endSession() {
         return;
     }
 
+    if (sessionState.currentSession.status === 'paused' && sessionState.timing.pausedSince) {
+        sessionState.timing.pausedMs += Math.max(0, Date.now() - sessionState.timing.pausedSince);
+        sessionState.timing.pausedSince = null;
+    }
+
     sessionState.currentSession.status = 'ended';
     sessionState.currentSession.endedAt = new Date().toISOString();
+    sessionState.currentSession.lastContext = getContextSnapshot();
+    stopTimer();
+    updateTimerDisplay();
+    sessionState.currentSession.durationSeconds = Math.max(0, Math.round(getElapsedMs() / 1000));
     logEvent('session-ended', {
         scenarioId: sessionState.currentSession.scenarioId
     });
@@ -195,9 +428,22 @@ function initSessionManager() {
 
     wireControls();
     updateControls();
+    updateTelemetryContext({ controlMode: getControlMode() });
+    updateTimerDisplay();
 
     window.addEventListener('edupace-scenario-change', (event) => {
         setSelectedScenario(event.detail ?? null);
+    });
+
+    window.addEventListener('edupace-parameters', handleParametersEvent);
+    window.addEventListener('edupace-waveform-change', handleWaveformEvent);
+    window.addEventListener('edupace-alarm', handleAlarmUpdate);
+    window.addEventListener('edupace-connection', handleConnectionChange);
+    window.addEventListener('edupace-led-flash', handleLedFlash);
+    window.addEventListener('edupace-telemetry-pause', handleTelemetryPause);
+
+    Array.from(sessionElements.controlModeRadios ?? []).forEach((radio) => {
+        radio.addEventListener('change', () => handleControlModeChange(radio.value));
     });
 }
 

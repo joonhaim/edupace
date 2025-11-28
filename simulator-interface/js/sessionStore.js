@@ -41,6 +41,17 @@ function getSessionLogById(id) {
     return readLogs().find((entry) => entry.id === id) ?? null;
 }
 
+function updateSessionLogMetadata(id, metadata = {}) {
+    const logs = readLogs();
+    const index = logs.findIndex((entry) => entry.id === id);
+    if (index === -1) return null;
+
+    const existingMeta = logs[index].metadata ?? {};
+    logs[index].metadata = { ...existingMeta, ...metadata };
+    saveLogs(logs);
+    return logs[index];
+}
+
 function escapeCsvValue(value) {
     const stringValue = `${value ?? ''}`;
     if (/[",\n]/.test(stringValue)) {
@@ -60,7 +71,11 @@ function serializeSessionToCsv(session) {
         'endedAt',
         'durationSeconds',
         'eventCount',
-        'events'
+        'events',
+        'operator',
+        'notes',
+        'controlMode',
+        'label'
     ];
 
     const events = session.events
@@ -75,11 +90,15 @@ function serializeSessionToCsv(session) {
         session.endedAt,
         session.durationSeconds,
         session.events?.length ?? 0,
-        events
+        events,
+        session.metadata?.operator ?? '',
+        session.metadata?.notes ?? '',
+        session.metadata?.controlMode ?? '',
+        session.metadata?.label ?? ''
     ];
 
     const csv = [headers, row].map((line) => line.map(escapeCsvValue).join(',')).join('\n');
     return csv;
 }
 
-export { addSessionLog, getSessionLogById, getSessionLogs, serializeSessionToCsv };
+export { addSessionLog, getSessionLogById, getSessionLogs, serializeSessionToCsv, updateSessionLogMetadata };

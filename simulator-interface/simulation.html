@@ -59,13 +59,16 @@
                             <div class="session-actions" aria-label="Session controls">
                                 <div class="session-cta-row">
                                     <button id="startSessionBtn" class="btn btn-primary session-chip" type="button" disabled>
-                                        Start
+                                        <span class="btn-icon" aria-hidden="true">▶</span>
+                                        <span class="btn-label">Start</span>
                                     </button>
                                     <button id="pauseSessionBtn" class="btn btn-ghost session-chip" type="button" disabled>
-                                        Pause
+                                        <span class="btn-icon" aria-hidden="true">⏸</span>
+                                        <span class="btn-label">Pause</span>
                                     </button>
                                     <button id="endSessionBtn" class="btn btn-ghost session-chip session-end" type="button" disabled>
-                                        End
+                                        <span class="btn-icon" aria-hidden="true">■</span>
+                                        <span class="btn-label">End</span>
                                     </button>
                                     <a
                                         id="downloadLogBtn"
@@ -76,9 +79,15 @@
                                         Download log
                                     </a>
                                 </div>
-                                <p id="sessionStatusText" class="session-status" aria-live="polite">
-                                    Select a scenario to begin.
-                                </p>
+                                <div class="session-meta">
+                                    <p id="sessionStatusText" class="session-status" aria-live="polite">
+                                        Select a scenario to begin.
+                                    </p>
+                                    <div class="session-timer" aria-live="polite">
+                                        <span class="timer-label">Session time</span>
+                                        <span id="sessionTimerDisplay" class="timer-value">00:00</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

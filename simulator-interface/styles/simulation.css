@@ -167,12 +167,19 @@ body.simulation-light .theme-toggle {
 }
 
 .session-chip {
-    padding: 0.35rem 0.85rem;
-    font-size: 0.85rem;
+    padding: 0.45rem 0.95rem;
+    font-size: 0.9rem;
     text-transform: none;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
     border-radius: 999px;
     box-shadow: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border: 1px solid rgba(30, 41, 59, 0.14);
+    background: linear-gradient(120deg, #f8fbff 0%, #eef5ff 100%);
+    color: #0f172a;
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
 .session-chip:disabled {
@@ -181,23 +188,73 @@ body.simulation-light .theme-toggle {
 }
 
 .session-chip.session-end {
-    border-color: var(--border);
-    color: #b42318;
+    border-color: rgba(185, 28, 28, 0.2);
+    color: #991b1b;
+    background: linear-gradient(120deg, #fff5f5 0%, #ffe4e4 100%);
 }
 
 .session-chip.btn-primary {
-    box-shadow: none;
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+    background: linear-gradient(120deg, #2563eb 0%, #1e40af 100%);
+    color: #f8fafc;
+    border: none;
+}
+
+.session-chip.btn-ghost {
+    background: linear-gradient(120deg, #ffffff 0%, #f8fafc 100%);
+    color: #0f172a;
+}
+
+.session-chip:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
 .session-status {
     margin: 0;
     color: var(--muted);
     font-weight: 600;
-    font-size: 0.82rem;
+    font-size: 0.88rem;
 }
 
 .session-download.is-hidden {
     display: none;
+}
+
+.btn-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.session-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.session-timer {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.75rem;
+    background: rgba(37, 99, 235, 0.08);
+    color: #0f172a;
+    border-radius: 999px;
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    font-weight: 700;
+}
+
+.session-timer .timer-label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    color: #1e3a8a;
+}
+
+.session-timer .timer-value {
+    font-variant-numeric: tabular-nums;
 }
 
 .scenario-label {

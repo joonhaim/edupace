@@ -24,6 +24,53 @@
     font-weight: 600;
 }
 
+.logs-toolbar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    box-shadow: 0 10px 18px rgba(15, 23, 42, 0.04);
+    align-items: end;
+}
+
+.logs-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-weight: 700;
+    color: var(--deep-navy);
+}
+
+.filter-label {
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.logs-filter input,
+.logs-filter select,
+.log-form input,
+.log-form textarea {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 0.55rem 0.65rem;
+    font-weight: 600;
+    color: var(--deep-navy);
+    background: #ffffff;
+}
+
+.logs-filter input:focus,
+.logs-filter select:focus,
+.log-form input:focus,
+.log-form textarea:focus {
+    outline: 2px solid rgba(37, 99, 235, 0.25);
+    border-color: rgba(37, 99, 235, 0.4);
+}
+
 .log-list {
     display: grid;
     gap: 0.8rem;
@@ -81,6 +128,57 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
+}
+
+.log-card .log-meta-row,
+.log-card .log-form {
+    grid-column: 1 / -1;
+}
+
+.log-form {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-top: 0.6rem;
+}
+
+.log-form .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.log-form label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--deep-navy);
+}
+
+.log-form textarea {
+    min-height: 72px;
+    resize: vertical;
+}
+
+.log-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #1e3a8a;
+    font-weight: 700;
+    font-size: 0.82rem;
 }
 
 .log-empty {

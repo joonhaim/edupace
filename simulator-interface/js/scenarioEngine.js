@@ -76,6 +76,14 @@ function setAlarmLevel(level) {
 function updateAlarm(alarm = null) {
     updateText('alarmText', alarm?.text ?? null);
     setAlarmLevel(alarm?.level ?? 'normal');
+    window.dispatchEvent(
+        new CustomEvent('edupace-alarm', {
+            detail: {
+                level: alarm?.level ?? 'normal',
+                text: alarm?.text ?? null
+            }
+        })
+    );
 }
 
 async function loadScenarios() {
