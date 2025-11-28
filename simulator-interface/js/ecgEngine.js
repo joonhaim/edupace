@@ -25,6 +25,8 @@ const TRACE_COLOR_MAP = {
     white: '#f5f7fa'
 };
 
+const ASYNC_SENSITIVITY_THRESHOLD = 20;
+
 const engineState = {
     patientRate: 70,
     pacingRate: 70,
@@ -133,7 +135,10 @@ function handleParameterChange(event) {
     const { rate, output, sensitivity, power } = event.detail ?? {};
     if (Number.isFinite(rate)) engineState.pacingRate = rate;
     if (Number.isFinite(output)) engineState.output = output;
-    if (Number.isFinite(sensitivity)) engineState.sensitivity = sensitivity;
+    if (Number.isFinite(sensitivity)) {
+        engineState.sensitivity = sensitivity;
+        engineState.asynchronous = sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
+    }
     if (typeof power === 'boolean') engineState.poweredOn = power;
     regenerateWaveform();
 }
