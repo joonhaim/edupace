@@ -56,6 +56,30 @@
                             <select id="scenarioSelect" class="scenario-select">
                                 <option value="" disabled selected>Loading scenarios…</option>
                             </select>
+                            <div class="session-actions" aria-label="Session controls">
+                                <button id="startSessionBtn" class="btn btn-primary" type="button" disabled>
+                                    Start session
+                                </button>
+                                <div class="session-secondary-actions">
+                                    <button id="pauseSessionBtn" class="btn btn-ghost" type="button" disabled>
+                                        Pause session
+                                    </button>
+                                    <button id="endSessionBtn" class="btn btn-ghost" type="button" disabled>
+                                        End session
+                                    </button>
+                                </div>
+                                <a
+                                    id="downloadLogBtn"
+                                    class="btn btn-small btn-ghost session-download is-hidden"
+                                    role="button"
+                                    download
+                                >
+                                    Download session log
+                                </a>
+                                <p id="sessionStatusText" class="session-status" aria-live="polite">
+                                    Select a scenario to begin.
+                                </p>
+                            </div>
                         </div>
                     </div>
 

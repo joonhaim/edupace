@@ -151,6 +151,30 @@ body.simulation-light .theme-toggle {
     min-width: 220px;
 }
 
+.session-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    align-items: flex-start;
+}
+
+.session-secondary-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.session-status {
+    margin: 0;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.session-download.is-hidden {
+    display: none;
+}
+
 .scenario-label {
     font-size: 0.75rem;
     text-transform: uppercase;
