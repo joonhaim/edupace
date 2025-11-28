@@ -103,7 +103,7 @@ body.simulation-light .theme-toggle {
 .scenario-banner {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     background: var(--card);
     border: 1px solid var(--border);
     padding: 1.2rem 1.4rem;
@@ -155,25 +155,28 @@ body.simulation-light .theme-toggle {
 }
 
 .scenario-picker {
-    border: 1px solid var(--border);
-    background: #ffffff;
-    padding: 0.32rem 0.55rem;
+    border: none;
+    background: transparent;
+    padding: 0;
     color: var(--deep-navy);
     cursor: pointer;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    border-radius: 12px;
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
-    transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+    border-radius: 0;
+    box-shadow: none;
+    appearance: none;
+    text-align: left;
+    transition: color 120ms ease, text-decoration-color 120ms ease;
 }
 
 .scenario-picker:hover:not(:disabled):not(.is-locked),
 .scenario-picker:focus-visible {
-    background: #f7f9fc;
-    border-color: rgba(37, 99, 235, 0.35);
-    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.1);
+    color: var(--primary);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
 }
 
 .scenario-picker .chevron {
@@ -307,8 +310,8 @@ body.simulation-light .theme-toggle {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    border: 1px solid rgba(30, 41, 59, 0.14);
-    background: linear-gradient(120deg, #f8fbff 0%, #eef5ff 100%);
+    border: 1px solid rgba(30, 41, 59, 0.18);
+    background: #f8fafc;
     color: #0f172a;
     transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
@@ -319,20 +322,20 @@ body.simulation-light .theme-toggle {
 }
 
 .session-chip.session-end {
-    border-color: rgba(185, 28, 28, 0.2);
+    border-color: rgba(185, 28, 28, 0.3);
     color: #991b1b;
-    background: linear-gradient(120deg, #fff5f5 0%, #ffe4e4 100%);
+    background: #fff1f1;
 }
 
 .session-chip.btn-primary {
-    box-shadow: 0 10px 22px rgba(49, 108, 221, 0.14);
-    background: linear-gradient(120deg, #3b7df0 0%, #2f63d6 100%);
+    background: #0f172a;
     color: #f8fafc;
-    border: none;
+    border: 1px solid #1f2937;
+    box-shadow: none;
 }
 
 .session-chip.btn-ghost {
-    background: linear-gradient(120deg, #ffffff 0%, #f8fafc 100%);
+    background: #ffffff;
     color: #0f172a;
 }
 
@@ -367,15 +370,25 @@ body.simulation-light .theme-toggle {
 
 .session-timer-inline {
     font-variant-numeric: tabular-nums;
-    margin-left: 0.5rem;
     color: var(--deep-navy);
     font-weight: 700;
+    display: none;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    background: var(--card-alt, #e2e8f0);
+    border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .session-timer-inline.is-active::before {
-    content: '•';
-    margin-right: 0.3rem;
+    content: '⏱';
+    font-size: 0.9rem;
     color: var(--muted);
+}
+
+.session-timer-inline.is-active {
+    display: inline-flex;
 }
 
 
