@@ -2,20 +2,17 @@ import { addSessionLog } from './sessionStore.js';
 
 const sessionElements = {
     startBtn: document.getElementById('startSessionBtn'),
-    pauseBtn: document.getElementById('pauseSessionBtn'),
     endBtn: document.getElementById('endSessionBtn'),
-    downloadBtn: document.getElementById('downloadLogBtn'),
     statusText: document.getElementById('sessionStatusText'),
     timerDisplay: document.getElementById('sessionTimerDisplay'),
-    pauseLabel: document.querySelector('#pauseSessionBtn .btn-label'),
-    pauseIcon: document.querySelector('#pauseSessionBtn .btn-icon'),
+    startLabel: document.querySelector('#startSessionBtn .btn-label'),
+    startIcon: document.querySelector('#startSessionBtn .btn-icon'),
     controlModeRadios: document.querySelectorAll('input[name="inputMode"]')
 };
 
 const sessionState = {
     selectedScenario: null,
     currentSession: null,
-    activeLogUrl: null,
     timing: {
         startedAtMs: null,
         pausedMs: 0,
@@ -53,18 +50,6 @@ function getContextSnapshot() {
     };
 }
 
-function resetDownloadLink() {
-    if (!sessionElements.downloadBtn) return;
-    sessionElements.downloadBtn.classList.add('is-hidden');
-    sessionElements.downloadBtn.removeAttribute('href');
-    sessionElements.downloadBtn.removeAttribute('download');
-
-    if (sessionState.activeLogUrl) {
-        URL.revokeObjectURL(sessionState.activeLogUrl);
-        sessionState.activeLogUrl = null;
-    }
-}
-
 function logEvent(type, details = {}) {
     if (!sessionState.currentSession) return;
 
@@ -85,32 +70,32 @@ function logEvent(type, details = {}) {
 }
 
 function updateControls() {
-    const { startBtn, pauseBtn, endBtn, downloadBtn } = sessionElements;
+    const { startBtn, endBtn } = sessionElements;
     const status = sessionState.currentSession?.status ?? 'idle';
     const hasScenario = Boolean(sessionState.selectedScenario);
 
     if (startBtn) {
-        startBtn.disabled = !hasScenario || status === 'running' || status === 'paused';
-    }
+        const label = sessionElements.startLabel;
+        const icon = sessionElements.startIcon;
+        const isRunning = status === 'running';
+        const isPaused = status === 'paused';
 
-    if (pauseBtn) {
-        pauseBtn.disabled = !(status === 'running' || status === 'paused');
-        const label = sessionElements.pauseLabel;
-        const icon = sessionElements.pauseIcon;
+        startBtn.disabled = !hasScenario;
+
         if (label) {
-            label.textContent = status === 'paused' ? 'Resume' : 'Pause';
+            if (isRunning) label.textContent = 'Pause';
+            else if (isPaused) label.textContent = 'Resume';
+            else label.textContent = 'Start';
         }
+
         if (icon) {
-            icon.textContent = status === 'paused' ? '▶' : '⏸';
+            if (isRunning) icon.textContent = '⏸';
+            else icon.textContent = '▶';
         }
     }
 
     if (endBtn) {
         endBtn.disabled = !(status === 'running' || status === 'paused');
-    }
-
-    if (downloadBtn) {
-        downloadBtn.classList.toggle('is-hidden', status !== 'ended');
     }
 }
 
@@ -158,7 +143,8 @@ function updateTimerDisplay() {
     if (!sessionElements.timerDisplay) return;
     const elapsed = getElapsedMs();
     const hasSession = Boolean(sessionState.currentSession);
-    sessionElements.timerDisplay.textContent = hasSession ? `· ${formatTimer(elapsed)}` : '';
+    sessionElements.timerDisplay.textContent = hasSession ? formatTimer(elapsed) : '';
+    sessionElements.timerDisplay.classList.toggle('is-active', hasSession);
 }
 
 function startTimer() {
@@ -308,20 +294,6 @@ function buildLogPayload() {
     };
 }
 
-function prepareDownload(payload = null) {
-    const payloadToUse = payload ?? buildLogPayload();
-    if (!payloadToUse || !sessionElements.downloadBtn) return;
-
-    const blob = new Blob([JSON.stringify(payloadToUse, null, 2)], { type: 'application/json' });
-    resetDownloadLink();
-
-    const url = URL.createObjectURL(blob);
-    sessionState.activeLogUrl = url;
-    sessionElements.downloadBtn.href = url;
-    sessionElements.downloadBtn.download = `${payloadToUse.id}-log.json`;
-    sessionElements.downloadBtn.classList.remove('is-hidden');
-}
-
 function createSession() {
     const now = new Date();
     const scenario = sessionState.selectedScenario;
@@ -360,7 +332,6 @@ function startSession() {
         return;
     }
 
-    resetDownloadLink();
     createSession();
     startTimer();
     setStatusText('Session running.');
@@ -415,19 +386,24 @@ function endSession() {
     const payload = buildLogPayload();
     addSessionLog(payload);
 
-    setStatusText('Session ended. Download log available.');
-    prepareDownload(payload);
+    setStatusText('Session ended. View the log in the Logs tab.');
     updateControls();
 }
 
 function wireControls() {
-    sessionElements.startBtn?.addEventListener('click', startSession);
-    sessionElements.pauseBtn?.addEventListener('click', pauseSession);
+    sessionElements.startBtn?.addEventListener('click', () => {
+        const status = sessionState.currentSession?.status;
+        if (!status || status === 'ended') {
+            startSession();
+        } else {
+            pauseSession();
+        }
+    });
     sessionElements.endBtn?.addEventListener('click', endSession);
 }
 
 function initSessionManager() {
-    if (!sessionElements.startBtn || !sessionElements.pauseBtn || !sessionElements.endBtn) {
+    if (!sessionElements.startBtn || !sessionElements.endBtn) {
         return;
     }
 

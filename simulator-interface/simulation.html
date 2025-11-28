@@ -50,6 +50,9 @@
                                 <span id="scenarioPickerLabel">No scenario active</span>
                                 <span class="chevron" aria-hidden="true">▾</span>
                             </button>
+                            <button id="scenarioNextBtn" class="scenario-cycle" type="button" aria-label="Load next scenario" title="Next scenario">
+                                <span aria-hidden="true">⟳</span>
+                            </button>
                             <div id="scenarioMenu" class="scenario-menu" role="listbox" aria-label="Available scenarios"></div>
                             <p id="scenarioText" class="scenario-text">
                                 Select a scenario to begin a training case.
@@ -61,22 +64,10 @@
                                     <span class="btn-icon" aria-hidden="true">▶</span>
                                     <span class="btn-label">Start</span>
                                 </button>
-                                <button id="pauseSessionBtn" class="btn btn-ghost session-chip" type="button" disabled>
-                                    <span class="btn-icon" aria-hidden="true">⏸</span>
-                                    <span class="btn-label">Pause</span>
-                                </button>
                                 <button id="endSessionBtn" class="btn btn-ghost session-chip session-end" type="button" disabled>
                                     <span class="btn-icon" aria-hidden="true">■</span>
                                     <span class="btn-label">End</span>
                                 </button>
-                                <a
-                                    id="downloadLogBtn"
-                                    class="btn btn-ghost btn-small session-chip session-download is-hidden"
-                                    role="button"
-                                    download
-                                >
-                                    Download log
-                                </a>
                             </div>
                             <div class="session-meta">
                                 <p id="sessionStatusText" class="session-status" aria-live="polite">

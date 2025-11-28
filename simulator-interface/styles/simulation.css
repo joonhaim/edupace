@@ -154,11 +154,60 @@ body.simulation-light .theme-toggle {
     color: var(--deep-navy);
     cursor: pointer;
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
 }
 
 .scenario-picker .chevron {
     font-size: 0.95rem;
     color: var(--muted);
+    display: inline-flex;
+    transition: transform 160ms ease, color 160ms ease;
+}
+
+.scenario-picker.is-open .chevron {
+    transform: rotate(-180deg) translateY(1px);
+    color: var(--deep-navy);
+}
+
+.scenario-picker:disabled,
+.scenario-picker.is-locked {
+    cursor: not-allowed;
+    color: var(--muted);
+}
+
+.scenario-picker:disabled .chevron,
+.scenario-picker.is-locked .chevron {
+    color: var(--muted);
+}
+
+.scenario-cycle {
+    border: 1px solid var(--border);
+    background: #ffffff;
+    color: var(--deep-navy);
+    border-radius: 999px;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.25rem;
+    box-shadow: 0 10px 18px rgba(15, 23, 42, 0.06);
+    cursor: pointer;
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.scenario-cycle:hover:not(:disabled) {
+    transform: translateY(-1px);
+    background: #f7f9fc;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.1);
+}
+
+.scenario-cycle:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 .scenario-menu {
@@ -254,8 +303,8 @@ body.simulation-light .theme-toggle {
 }
 
 .session-chip.btn-primary {
-    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
-    background: linear-gradient(120deg, #2563eb 0%, #1e40af 100%);
+    box-shadow: 0 10px 22px rgba(49, 108, 221, 0.14);
+    background: linear-gradient(120deg, #3b7df0 0%, #2f63d6 100%);
     color: #f8fafc;
     border: none;
 }
@@ -296,9 +345,15 @@ body.simulation-light .theme-toggle {
 
 .session-timer-inline {
     font-variant-numeric: tabular-nums;
-    margin-left: 0.35rem;
+    margin-left: 0.5rem;
     color: var(--deep-navy);
     font-weight: 700;
+}
+
+.session-timer-inline.is-active::before {
+    content: '•';
+    margin-right: 0.3rem;
+    color: var(--muted);
 }
 
 
@@ -1166,6 +1221,26 @@ body.simulation-light .theme-toggle {
 .setting-hint {
     color: var(--muted);
     font-size: 0.85rem;
+}
+
+.setting-field {
+    display: grid;
+    gap: 0.35rem;
+    font-weight: 700;
+    color: var(--deep-navy);
+}
+
+.setting-label {
+    font-size: 0.9rem;
+}
+
+.log-settings select {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 0.55rem 0.65rem;
+    font-weight: 700;
+    color: var(--deep-navy);
+    background: #ffffff;
 }
 
 .color-options {

@@ -11,6 +11,100 @@ const filterState = {
     selectedId: null
 };
 
+const defaultLogSettings = {
+    dateFormat: 'DMY',
+    timeFormat: '24h'
+};
+
+const LOG_SETTINGS_KEY = 'edupace-log-settings';
+
+let logDisplaySettings = { ...defaultLogSettings };
+
+function loadLogSettings() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(LOG_SETTINGS_KEY));
+        if (saved && typeof saved === 'object') {
+            logDisplaySettings = { ...defaultLogSettings, ...saved };
+        }
+    } catch (error) {
+        console.warn('Unable to load log settings', error);
+        logDisplaySettings = { ...defaultLogSettings };
+    }
+}
+
+function persistLogSettings() {
+    try {
+        localStorage.setItem(LOG_SETTINGS_KEY, JSON.stringify(logDisplaySettings));
+    } catch (error) {
+        console.warn('Unable to save log settings', error);
+    }
+}
+
+function applyLogSettings(patch = {}) {
+    logDisplaySettings = { ...logDisplaySettings, ...patch };
+    persistLogSettings();
+    renderLogs();
+}
+
+function initLogSettingsPanel() {
+    const panel = document.querySelector('[data-log-settings-panel]');
+    const layer = document.querySelector('[data-log-settings-layer]');
+    const toggles = Array.from(document.querySelectorAll('[data-settings-toggle]'));
+
+    if (!panel || !layer || !toggles.length) return;
+
+    const dateSelect = panel.querySelector('[data-log-date-format]');
+    const timeSelect = panel.querySelector('[data-log-time-format]');
+
+    const syncToggleState = (isVisible) => {
+        toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', String(isVisible)));
+    };
+
+    panel.setAttribute('tabindex', '-1');
+
+    const setVisibility = (isVisible) => {
+        panel.classList.toggle('is-hidden', !isVisible);
+        layer.classList.toggle('is-hidden', !isVisible);
+        syncToggleState(isVisible);
+
+        if (isVisible) {
+            panel.focus({ preventScroll: true });
+        }
+    };
+
+    toggles.forEach((toggle) => {
+        toggle.addEventListener('click', (event) => {
+            event.preventDefault();
+            const willShow = panel.classList.contains('is-hidden') || layer.classList.contains('is-hidden');
+            setVisibility(willShow);
+        });
+    });
+
+    layer.addEventListener('click', (event) => {
+        if (event.target === layer) {
+            setVisibility(false);
+        }
+    });
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            setVisibility(false);
+        }
+    });
+
+    if (dateSelect) {
+        dateSelect.value = logDisplaySettings.dateFormat;
+        dateSelect.addEventListener('change', () => applyLogSettings({ dateFormat: dateSelect.value }));
+    }
+
+    if (timeSelect) {
+        timeSelect.value = logDisplaySettings.timeFormat;
+        timeSelect.addEventListener('change', () => applyLogSettings({ timeFormat: timeSelect.value }));
+    }
+
+    setVisibility(false);
+}
+
 function createDownload(url, filename) {
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -83,7 +177,39 @@ function formatDuration(seconds) {
 function formatDate(timestamp) {
     if (!timestamp) return 'Unknown time';
     const date = new Date(timestamp);
-    return date.toLocaleString();
+    if (Number.isNaN(date.getTime())) return 'Unknown time';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    let datePart = `${day}/${month}/${year}`;
+    switch (logDisplaySettings.dateFormat) {
+        case 'MDY':
+            datePart = `${month}/${day}/${year}`;
+            break;
+        case 'YMD':
+            datePart = `${year}-${month}-${day}`;
+            break;
+        case 'DMY':
+        default:
+            datePart = `${day}/${month}/${year}`;
+            break;
+    }
+
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    let suffix = '';
+
+    if (logDisplaySettings.timeFormat === '12h') {
+        suffix = hours >= 12 ? 'pm' : 'am';
+        hours = hours % 12 || 12;
+        const displayHours = String(hours).padStart(2, '0');
+        return `${datePart} ${displayHours}:${minutes}:${seconds} ${suffix}`;
+    }
+
+    return `${datePart} ${String(hours).padStart(2, '0')}:${minutes}:${seconds}`;
 }
 
 function setSelectedLog(id) {
@@ -150,11 +276,11 @@ function renderDetail(log) {
     metaList.className = 'detail-meta';
 
     const labelField = document.createElement('label');
-    labelField.textContent = 'Run label';
+    labelField.textContent = 'Label';
     const labelInput = document.createElement('input');
     labelInput.type = 'text';
     labelInput.value = log.metadata?.label ?? '';
-    labelInput.placeholder = 'e.g., Morning check';
+    labelInput.placeholder = 'e.g., Weekly practice';
     labelField.appendChild(labelInput);
 
     const operatorField = document.createElement('label');
@@ -259,6 +385,8 @@ function bindFilters() {
 }
 
 function initLogsPage() {
+    loadLogSettings();
+    initLogSettingsPanel();
     bindFilters();
     renderLogs();
 }
