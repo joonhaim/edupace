@@ -3,6 +3,10 @@ const THEME_ICONS = {
     dark: 'assets/icons/theme-dark.svg',
     light: 'assets/icons/theme-light.svg'
 };
+const SETTINGS_ICONS = {
+    dark: 'assets/icons/settings-dark.svg',
+    light: 'assets/icons/settings.svg'
+};
 
 function applyTheme(theme) {
     const body = document.body;
@@ -27,6 +31,12 @@ function applyTheme(theme) {
     if (metaTheme) {
         metaTheme.setAttribute('content', isDark ? '#0c1422' : '#f5f7fa');
     }
+
+    const settingsIcons = document.querySelectorAll('[data-settings-icon]');
+    settingsIcons.forEach((icon) => {
+        const iconPath = isDark ? SETTINGS_ICONS.dark : SETTINGS_ICONS.light;
+        icon.setAttribute('src', iconPath);
+    });
 }
 
 function initThemeToggle() {

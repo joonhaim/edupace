@@ -2,7 +2,6 @@
     transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-
 /* Dark mode */
 
 body.simulation-dark {
@@ -25,6 +24,15 @@ body.simulation-dark .nav-btn {
 
 body.simulation-dark .nav-btn.active {
     color: var(--primary);
+}
+
+body.simulation-dark .icon-button {
+    background: #0f1624;
+    border-color: #1c2738;
+}
+
+body.simulation-dark .language-toggle {
+    color: #e3e9f4;
 }
 
 body.simulation-dark .landing-panel,
@@ -83,6 +91,28 @@ body.simulation-dark .btn-primary {
 body.simulation-dark .btn-ghost {
     background: #222b3a;
     color: #dce2ec;
+}
+
+body.simulation-dark.page-home .landing-title,
+body.simulation-dark.page-home .landing-highlights li,
+body.simulation-dark.page-home .landing-meta,
+body.simulation-dark.page-home .landing-subtitle {
+    color: #e3e9f4;
+}
+
+body.simulation-dark.page-home .landing-highlights li::before {
+    background: #8fb9ef;
+}
+
+body.simulation-dark.page-instructions h2,
+body.simulation-dark.page-instructions h3,
+body.simulation-dark.page-instructions p,
+body.simulation-dark.page-instructions .instruction-list li {
+    color: #e3e9f4;
+}
+
+body.simulation-dark.page-instructions .instruction-list li {
+    border-left-color: #2f6db5;
 }
 
 body.simulation-dark .led-pace {
