@@ -14,7 +14,19 @@ const defaultSettings = {
     rWaveMarkers: false,
     pacingSpikeLabel: true,
     intrinsicBeatLabels: false,
-    colorCodeBeats: true
+    colorCodeBeats: true,
+    ecgPreset: 'standard',
+    baselineWander: false,
+    muscleNoise: false,
+    arrhythmiaLevel: 'off',
+    hrDisplay: 'numeric',
+    intervalRulers: false,
+    teachingMode: false,
+    qrsBeep: 'classic',
+    autoLockKnobs: '60',
+    captureDrift: 'off',
+    actionLog: true,
+    postScenarioReview: 'auto'
 };
 
 let currentSettings = { ...defaultSettings };
@@ -113,14 +125,16 @@ function initSettingsPanel() {
         if (intensityRow) intensityRow.classList.toggle('is-disabled', !isEnabled);
     };
 
+    bindRadios(settingsCard, 'ecgPreset', 'ecgPreset');
     bindToggle(settingsCard, 'gridlinesToggle', 'gridlines', updateGridDependencies);
     bindRadios(settingsCard, 'gridDensity', 'gridDensity');
     bindSlider(settingsCard, 'gridIntensity', 'gridIntensity');
-    bindSlider(settingsCard, 'soundVolume', 'soundVolume');
     bindRadios(settingsCard, 'sweepSpeed', 'sweepSpeed', Number);
     bindRadios(settingsCard, 'amplitudeScaling', 'amplitudeScaling', Number);
     bindRadios(settingsCard, 'traceColor', 'traceColor');
     bindRadios(settingsCard, 'traceThickness', 'traceThickness');
+    bindRadios(settingsCard, 'arrhythmiaLevel', 'arrhythmiaLevel');
+    bindRadios(settingsCard, 'hrDisplay', 'hrDisplay');
 
     bindToggle(settingsCard, 'leadLabelToggle', 'leadLabel');
     bindToggle(settingsCard, 'calibrationToggle', 'calibrationMarkers');
@@ -128,8 +142,21 @@ function initSettingsPanel() {
     bindToggle(settingsCard, 'pacingLabelToggle', 'pacingSpikeLabel');
     bindToggle(settingsCard, 'intrinsicLabelToggle', 'intrinsicBeatLabels');
     bindToggle(settingsCard, 'colorCodeToggle', 'colorCodeBeats');
+    bindToggle(settingsCard, 'intervalRulersToggle', 'intervalRulers');
+    bindToggle(settingsCard, 'teachingModeToggle', 'teachingMode');
+
+    bindToggle(settingsCard, 'baselineWanderToggle', 'baselineWander');
+    bindToggle(settingsCard, 'muscleNoiseToggle', 'muscleNoise');
+
     bindToggle(settingsCard, 'alarmSoundToggle', 'alarmSound');
     bindToggle(settingsCard, 'buttonBeepsToggle', 'buttonBeeps');
+    bindRadios(settingsCard, 'qrsBeep', 'qrsBeep');
+    bindSlider(settingsCard, 'soundVolume', 'soundVolume');
+
+    bindRadios(settingsCard, 'autoLockKnobs', 'autoLockKnobs');
+    bindRadios(settingsCard, 'captureDrift', 'captureDrift');
+    bindToggle(settingsCard, 'actionLogToggle', 'actionLog');
+    bindRadios(settingsCard, 'postScenarioReview', 'postScenarioReview');
 
     const resetBtn = settingsCard.querySelector('[data-settings-reset]');
     if (resetBtn) {
