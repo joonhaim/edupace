@@ -431,6 +431,7 @@ body.simulation-light .theme-toggle {
     justify-content: space-between;
     gap: 0.8rem;
     margin-top: 0.8rem;
+    position: relative;
 }
 
 .virtual-action-btn {
@@ -447,6 +448,13 @@ body.simulation-light .theme-toggle {
     box-shadow: 0 10px 24px rgba(6, 15, 31, 0.12);
     cursor: pointer;
     transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.virtual-action-btn:disabled,
+.virtual-action-btn[aria-disabled='true'] {
+    cursor: not-allowed;
+    opacity: 0.7;
+    box-shadow: none;
 }
 
 .virtual-action-btn .action-state {
@@ -651,6 +659,23 @@ body.simulation-light .theme-toggle {
     bottom: -8px;
     right: 22px;
     border-top-color: rgba(12, 20, 34, 0.88);
+}
+
+.lock-warning {
+    right: 0.25rem;
+    bottom: calc(100% + 0.6rem);
+    transform: translateY(10px);
+    max-width: 260px;
+}
+
+.lock-warning.is-visible {
+    transform: translateY(0);
+}
+
+.lock-warning::before {
+    top: 100%;
+    right: 18px;
+    border-bottom-color: rgba(12, 20, 34, 0.88);
 }
 
 .connection-unsupported-hint {
