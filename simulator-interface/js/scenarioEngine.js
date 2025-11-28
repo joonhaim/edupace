@@ -309,7 +309,9 @@ async function initScenarios() {
         }
     });
     document.addEventListener('click', (event) => {
-        if (event.target === picker || menu.contains(event.target)) return;
+        const isPickerClick = picker?.contains(event.target);
+        const isMenuClick = menu?.contains(event.target);
+        if (isPickerClick || isMenuClick) return;
         toggleMenu(false);
     });
 
