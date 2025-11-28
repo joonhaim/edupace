@@ -8,6 +8,7 @@ const DEFAULT_SWEEP_SPEED_MM_PER_SEC = 25;
 const CALIPER_THRESHOLD = 4;
 
 const COLOR_PRESETS = {
+    amber: '#f59e0b',
     blue: '#1d4ed8',
     green: '#00e000',
     red: '#dc2626',
@@ -70,9 +71,9 @@ let displaySettings = {
     calibrationMarkers: true,
     rWaveMarkers: false,
     pacingSpikeLabel: true,
-    paceColor: 'green',
+    paceColor: 'amber',
     intrinsicBeatLabels: true,
-    senseColor: 'blue',
+    senseColor: 'amber',
     colorCodeBeats: true,
     intervalRulers: true
 };
@@ -202,12 +203,12 @@ function applyAnnotationStyles() {
         overlayElements.overlay.dataset.labelSize = displaySettings.labelSize;
     }
 
-    const paceColor = resolveColorValue(displaySettings.paceColor, '#22c55e');
+    const paceColor = resolveColorValue(displaySettings.paceColor, '#f59e0b');
     if (ledElements.pace) {
         ledElements.pace.style.setProperty('--led-on-color', paceColor);
     }
 
-    const senseColor = resolveColorValue(displaySettings.senseColor, '#2563eb');
+    const senseColor = resolveColorValue(displaySettings.senseColor, '#f59e0b');
     if (ledElements.sense) {
         ledElements.sense.style.setProperty('--led-on-color', senseColor);
     }
@@ -459,9 +460,15 @@ function advanceSweep(deltaSeconds) {
         processLedEvents(occurrences);
         drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height, amplitude, occurrences);
 
-        sweepX = endX >= width ? 0 : endX;
+        const completedSweep = endX >= width;
+        sweepX = completedSweep ? 0 : endX;
         sweepTime = endTime;
         remainingPixels -= stepPixels;
+
+        if (completedSweep) {
+            traceCtx.clearRect(0, 0, width, height);
+            visibleBeatLabels = [];
+        }
     }
 }
 
@@ -514,10 +521,10 @@ function drawBeatLabels(startX, endX, startTime, endTime, height, midY, amplitud
         : displaySettings.labelSize === 'compact'
             ? 14
             : 16;
-    const labelY = Math.min(height - 8, midY + amplitude * 0.85);
+    const labelY = Math.min(height - 6, midY + amplitude * 1.05 + 4);
     const timeSpan = endTime - startTime || 1;
-    const paceColor = resolveColorValue(displaySettings.paceColor, '#22c55e');
-    const senseColor = resolveColorValue(displaySettings.senseColor, '#2563eb');
+    const paceColor = resolveColorValue(displaySettings.paceColor, '#f59e0b');
+    const senseColor = resolveColorValue(displaySettings.senseColor, '#f59e0b');
 
     traceCtx.save();
     traceCtx.font = `600 ${labelSize}px "Inter", sans-serif`;
