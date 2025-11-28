@@ -18,7 +18,7 @@
                 aria-controls="ecgSettingsPanel"
                 aria-label="Open settings"
             >
-                <img src="assets/icons/settings.svg" alt="" aria-hidden="true" />
+                <img src="assets/icons/settings.svg" data-settings-icon alt="" aria-hidden="true" />
                 <span class="sr-only">Open settings</span>
             </button>
             <button
@@ -30,6 +30,16 @@
             >
                 <img src="assets/icons/theme-dark.svg" data-theme-icon alt="" aria-hidden="true" />
                 <span class="sr-only">Toggle theme</span>
+            </button>
+            <button
+                type="button"
+                class="icon-button language-toggle"
+                data-language-toggle
+                aria-pressed="false"
+                aria-label="Switch language"
+            >
+                <span data-language-label aria-hidden="true">EN</span>
+                <span class="sr-only">Toggle language</span>
             </button>
         </div>
     </div>

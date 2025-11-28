@@ -152,7 +152,7 @@ a {
 .nav-actions {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.5rem;
     color: var(--muted);
     font-size: 0.9rem;
 }
@@ -161,8 +161,8 @@ a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
+    width: 48px;
+    height: 48px;
     border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--card);
@@ -177,8 +177,20 @@ a {
 }
 
 .icon-button img {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
+}
+
+.language-toggle {
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    color: var(--deep-navy);
+}
+
+body.page-home .settings-toggle,
+body.page-instructions .settings-toggle {
+    display: none;
 }
 
 .sr-only {
