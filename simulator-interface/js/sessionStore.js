@@ -41,6 +41,13 @@ function getSessionLogById(id) {
     return readLogs().find((entry) => entry.id === id) ?? null;
 }
 
+function deleteSessionLog(id) {
+    const logs = readLogs();
+    const nextLogs = logs.filter((entry) => entry.id !== id);
+    saveLogs(nextLogs);
+    return nextLogs;
+}
+
 function updateSessionLogMetadata(id, metadata = {}) {
     const logs = readLogs();
     const index = logs.findIndex((entry) => entry.id === id);
@@ -64,41 +71,89 @@ function serializeSessionToCsv(session) {
     if (!session) return '';
 
     const headers = [
-        'id',
+        'eventIndex',
+        'timestamp',
+        'type',
+        'details',
+        'waveformId',
+        'paceLed',
+        'senseLed',
+        'rate',
+        'output',
+        'sensitivity',
+        'power',
+        'locked',
+        'alarmLevel',
+        'alarmText',
+        'controlMode',
+        'connection',
+        'hardwareConnected',
         'scenarioTitle',
+        'sessionId',
+        'operator',
+        'label',
+        'notes',
         'status',
         'startedAt',
         'endedAt',
-        'durationSeconds',
-        'eventCount',
-        'events',
-        'operator',
-        'notes',
-        'controlMode',
-        'label'
+        'durationSeconds'
     ];
 
-    const events = session.events
-        ?.map((event) => `${event.timestamp} | ${event.type} | ${JSON.stringify(event.details)}`)
-        .join(' ; ');
+    const rows = (session.events ?? []).map((event, index) => {
+        const context = event.context ?? {};
+        const alarm = context.alarm ?? {};
+        return [
+            index + 1,
+            event.timestamp,
+            event.type,
+            JSON.stringify(event.details ?? {}),
+            context.waveformId ?? '',
+            context.paceLed ?? '',
+            context.senseLed ?? '',
+            context.rate ?? '',
+            context.output ?? '',
+            context.sensitivity ?? '',
+            context.power ?? '',
+            context.locked ?? '',
+            alarm.level ?? '',
+            alarm.text ?? '',
+            context.controlMode ?? session.metadata?.controlMode ?? '',
+            context.connection ?? '',
+            context.hardwareConnected ?? '',
+            session.scenarioTitle,
+            session.id,
+            session.metadata?.operator ?? '',
+            session.metadata?.label ?? '',
+            session.metadata?.notes ?? '',
+            session.status,
+            session.startedAt,
+            session.endedAt,
+            session.durationSeconds
+        ];
+    });
 
-    const row = [
-        session.id,
-        session.scenarioTitle,
-        session.status,
-        session.startedAt,
-        session.endedAt,
-        session.durationSeconds,
-        session.events?.length ?? 0,
-        events,
-        session.metadata?.operator ?? '',
-        session.metadata?.notes ?? '',
-        session.metadata?.controlMode ?? '',
-        session.metadata?.label ?? ''
-    ];
+    if (!rows.length) {
+        rows.push(new Array(headers.length).fill(''));
+        rows[0][17] = session.scenarioTitle;
+        rows[0][18] = session.id;
+        rows[0][19] = session.metadata?.operator ?? '';
+        rows[0][20] = session.metadata?.label ?? '';
+        rows[0][21] = session.metadata?.notes ?? '';
+        rows[0][22] = session.status;
+        rows[0][23] = session.startedAt;
+        rows[0][24] = session.endedAt;
+        rows[0][25] = session.durationSeconds;
+    }
 
-    const csv = [headers, row].map((line) => line.map(escapeCsvValue).join(',')).join('\n');
+    const csv = [headers, ...rows].map((line) => line.map(escapeCsvValue).join(',')).join('\n');
     return csv;
 }
 
-export { addSessionLog, getSessionLogById, getSessionLogs, serializeSessionToCsv, updateSessionLogMetadata };
+export {
+    addSessionLog,
+    deleteSessionLog,
+    getSessionLogById,
+    getSessionLogs,
+    serializeSessionToCsv,
+    updateSessionLogMetadata
+};

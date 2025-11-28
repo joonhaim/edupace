@@ -145,6 +145,10 @@ function getElapsedMs() {
     const { startedAtMs, pausedMs, pausedSince } = sessionState.timing;
     if (!startedAtMs) return 0;
 
+    if (sessionState.currentSession?.status === 'ended' && Number.isFinite(sessionState.currentSession.durationSeconds)) {
+        return sessionState.currentSession.durationSeconds * 1000;
+    }
+
     const now = Date.now();
     const pausedTotal = pausedMs + (pausedSince ? Math.max(0, now - pausedSince) : 0);
     return Math.max(0, now - startedAtMs - pausedTotal);
@@ -153,7 +157,8 @@ function getElapsedMs() {
 function updateTimerDisplay() {
     if (!sessionElements.timerDisplay) return;
     const elapsed = getElapsedMs();
-    sessionElements.timerDisplay.textContent = formatTimer(elapsed);
+    const hasSession = Boolean(sessionState.currentSession);
+    sessionElements.timerDisplay.textContent = hasSession ? `· ${formatTimer(elapsed)}` : '';
 }
 
 function startTimer() {
