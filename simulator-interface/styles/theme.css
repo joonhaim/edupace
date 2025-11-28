@@ -289,6 +289,57 @@ body.simulation-dark .brand::before {
     background-image: url("../assets/logos/edupace_logo2_neg.png");
 }
 
+body.simulation-dark.page-logs .logs-toolbar,
+body.simulation-dark.page-logs .log-card,
+body.simulation-dark.page-logs .log-detail,
+body.simulation-dark.page-logs .log-empty {
+    background: #0f1624;
+    border-color: #1c2738;
+    box-shadow: none;
+    color: #e3e9f4;
+}
+
+body.simulation-dark.page-logs .logs-header p,
+body.simulation-dark.page-logs .logs-header-actions p,
+body.simulation-dark.page-logs .log-card .log-meta,
+body.simulation-dark.page-logs .log-card .log-label,
+body.simulation-dark.page-logs .detail-heading .detail-subtitle,
+body.simulation-dark.page-logs .detail-meta label {
+    color: #c9d1dc;
+}
+
+body.simulation-dark.page-logs .log-card .log-title,
+body.simulation-dark.page-logs .detail-heading h2,
+body.simulation-dark.page-logs .logs-header h1 {
+    color: #e3e9f4;
+}
+
+body.simulation-dark.page-logs .logs-filter input,
+body.simulation-dark.page-logs .logs-filter select,
+body.simulation-dark.page-logs .log-detail input,
+body.simulation-dark.page-logs .log-detail textarea {
+    background: #101827;
+    border-color: #1c2738;
+    color: #e3e9f4;
+}
+
+body.simulation-dark.page-logs .logs-filter input:focus,
+body.simulation-dark.page-logs .logs-filter select:focus,
+body.simulation-dark.page-logs .log-detail input:focus,
+body.simulation-dark.page-logs .log-detail textarea:focus {
+    outline-color: rgba(104, 160, 255, 0.3);
+    border-color: rgba(104, 160, 255, 0.5);
+}
+
+body.simulation-dark.page-logs .log-card.is-active {
+    border-color: rgba(104, 160, 255, 0.6);
+    box-shadow: 0 12px 30px rgba(8, 20, 38, 0.4);
+}
+
+body.simulation-dark.page-logs .log-detail .danger {
+    border-color: rgba(255, 123, 123, 0.45);
+}
+
 body.simulation-light .alarm-normal {
     background: rgba(31, 75, 153, 0.12);
     color: #1f4b99;

@@ -4,6 +4,8 @@ const scenarioElements = {
     scenarioName: document.getElementById('scenarioPickerLabel'),
     scenarioText: document.getElementById('scenarioText'),
     scenarioPicker: document.getElementById('scenarioPicker'),
+    scenarioPickerArea: document.querySelector('[data-scenario-picker-area]'),
+    scenarioNext: document.getElementById('scenarioNextBtn'),
     scenarioMenu: document.getElementById('scenarioMenu'),
     paceMode: document.getElementById('paceMode'),
     alarmBanner: document.getElementById('alarmBanner'),
@@ -37,18 +39,53 @@ const defaultTexts = textKeys.reduce((acc, key) => {
 const scenarioState = {
     scenarios: [],
     activeScenario: null,
-    activeIndex: null
+    activeIndex: null,
+    locked: false
 };
 
+
+function isScenarioLocked() {
+    return scenarioState.locked;
+}
+
+function setScenarioLock(locked = false) {
+    scenarioState.locked = Boolean(locked);
+    const picker = scenarioElements.scenarioPicker;
+    const nextBtn = scenarioElements.scenarioNext;
+
+    if (picker) {
+        picker.disabled = scenarioState.locked;
+        picker.setAttribute('aria-disabled', String(scenarioState.locked));
+        picker.classList.toggle('is-locked', scenarioState.locked);
+    }
+
+    if (nextBtn) {
+        nextBtn.disabled = scenarioState.locked;
+        nextBtn.setAttribute('aria-disabled', String(scenarioState.locked));
+    }
+
+    if (scenarioState.locked) {
+        if (scenarioElements.scenarioMenu) {
+            scenarioElements.scenarioMenu.classList.remove('open');
+        }
+        if (scenarioElements.scenarioPicker) {
+            scenarioElements.scenarioPicker.classList.remove('is-open');
+            scenarioElements.scenarioPicker.setAttribute('aria-expanded', 'false');
+        }
+    }
+}
 
 function toggleMenu(open = null) {
     const menu = scenarioElements.scenarioMenu;
     const trigger = scenarioElements.scenarioPicker;
     if (!menu || !trigger) return;
 
+    if (isScenarioLocked()) return;
+
     const isOpen = open === null ? !menu.classList.contains('open') : open;
     menu.classList.toggle('open', isOpen);
     trigger.setAttribute('aria-expanded', String(isOpen));
+    trigger.classList.toggle('is-open', isOpen);
 }
 
 function highlightActiveOption() {
@@ -216,6 +253,10 @@ function applyRuleEffects(effects) {
 }
 
 function startScenario(index) {
+    if (isScenarioLocked()) {
+        return;
+    }
+
     const scenario = scenarioState.scenarios[index];
     if (!scenario || scenario.comingSoon) {
         return;
@@ -236,6 +277,7 @@ function startScenario(index) {
 async function initScenarios() {
     const menu = scenarioElements.scenarioMenu;
     const picker = scenarioElements.scenarioPicker;
+    const nextBtn = scenarioElements.scenarioNext;
 
     if (!menu || !picker) {
         return;
@@ -245,6 +287,27 @@ async function initScenarios() {
     renderScenarioMenu(menu, scenarios);
 
     picker.addEventListener('click', () => toggleMenu());
+    const pickerArea = scenarioElements.scenarioPickerArea;
+    pickerArea?.addEventListener('click', (event) => {
+        if (event.target.closest('#scenarioPicker') || event.target.closest('#scenarioNextBtn')) return;
+        if (event.target.closest('#scenarioMenu')) return;
+        toggleMenu();
+    });
+    nextBtn?.addEventListener('click', () => {
+        if (scenarioState.scenarios.length) {
+            const total = scenarioState.scenarios.length;
+            let nextIndex = (Number.isInteger(scenarioState.activeIndex) ? scenarioState.activeIndex : -1) + 1;
+
+            for (let i = 0; i < total; i += 1) {
+                const candidateIndex = (nextIndex + i) % total;
+                const candidate = scenarioState.scenarios[candidateIndex];
+                if (candidate && !candidate.comingSoon) {
+                    startScenario(candidateIndex);
+                    break;
+                }
+            }
+        }
+    });
     document.addEventListener('click', (event) => {
         if (event.target === picker || menu.contains(event.target)) return;
         toggleMenu(false);
@@ -252,6 +315,12 @@ async function initScenarios() {
 
     window.addEventListener('edupace-rule-effects', (event) => {
         applyRuleEffects(event.detail?.effects ?? {});
+    });
+
+    window.addEventListener('edupace-session-event', (event) => {
+        const status = event.detail?.session?.status;
+        const shouldLock = status === 'running' || status === 'paused';
+        setScenarioLock(shouldLock);
     });
 
     const firstAvailableIndex = scenarios.findIndex((scenario) => !scenario.comingSoon);
