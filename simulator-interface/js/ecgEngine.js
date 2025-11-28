@@ -6,8 +6,11 @@ import { sendLedCommand } from './arduinoSerialAdapter.js';
 const DEFAULT_SECONDS_VISIBLE = 6;
 const DEFAULT_SWEEP_SPEED_MM_PER_SEC = 25;
 const CALIPER_THRESHOLD = 4;
+const LABEL_CLEAR_LEAD_SECONDS = 1;
+const MIN_LABEL_LIFETIME_SECONDS = 0.25;
 
 const COLOR_PRESETS = {
+    amber: '#f59e0b',
     blue: '#1d4ed8',
     green: '#00e000',
     red: '#dc2626',
@@ -15,6 +18,7 @@ const COLOR_PRESETS = {
 };
 
 const TRACE_COLOR_MAP = {
+    amber: '#f59e0b',
     blue: '#1d4ed8',
     green: '#00e000',
     red: '#dc2626',
@@ -52,6 +56,7 @@ let pendingCaliper = null;
 let ignoreNextPointerUp = false;
 let heartRateEngine = null;
 let waveformEvents = [];
+let activeBeatLabels = [];
 let displaySettings = {
     gridlines: false,
     gridDensity: '2mm',
@@ -69,9 +74,9 @@ let displaySettings = {
     calibrationMarkers: true,
     rWaveMarkers: false,
     pacingSpikeLabel: true,
-    paceColor: 'green',
-    intrinsicBeatLabels: false,
-    senseColor: 'blue',
+    paceColor: 'amber',
+    intrinsicBeatLabels: true,
+    senseColor: 'amber',
     colorCodeBeats: true,
     intervalRulers: true
 };
@@ -253,6 +258,54 @@ function processLedEvents(windowStart, windowEnd) {
     });
 }
 
+function clearBeatLabels() {
+    activeBeatLabels = [];
+}
+
+function scheduleBeatLabel(type, occurrenceTime, x, y, secondsVisible) {
+    if (!Number.isFinite(occurrenceTime) || !Number.isFinite(x) || !Number.isFinite(y)) return;
+
+    const alreadyScheduled = activeBeatLabels.some(
+        (label) => label.type === type && Math.abs(label.sourceTime - occurrenceTime) < 0.0001
+    );
+    if (alreadyScheduled) return;
+
+    const lifetime = Math.max(MIN_LABEL_LIFETIME_SECONDS, secondsVisible - LABEL_CLEAR_LEAD_SECONDS);
+    const expiresAt = occurrenceTime + lifetime;
+    activeBeatLabels.push({ type, x, y, expiresAt, sourceTime: occurrenceTime });
+}
+
+function processBeatLabelEvents(windowStart, windowEnd, startX, endX, height, secondsVisible) {
+    if (!engineState.poweredOn || !waveformDuration || !waveformEvents.length) return;
+
+    const showVP = displaySettings.pacingSpikeLabel;
+    const showVS = displaySettings.intrinsicBeatLabels;
+    if (!showVP && !showVS) return;
+
+    const windowSpan = windowEnd - windowStart;
+    if (windowSpan <= 0) return;
+
+    const xSpan = endX - startX;
+    if (!Number.isFinite(xSpan) || xSpan === 0) return;
+    waveformEvents.forEach((event) => {
+        if (!event || typeof event.time !== 'number') return;
+
+        const cyclesOffset = Math.max(0, Math.ceil((windowStart - event.time) / waveformDuration));
+        const occurrence = event.time + cyclesOffset * waveformDuration;
+
+        if (occurrence < windowStart || occurrence > windowEnd) return;
+
+        const labelType = event.type === 'pace' ? 'VP' : 'VS';
+        if ((labelType === 'VP' && !showVP) || (labelType === 'VS' && !showVS)) return;
+
+        const ratio = (occurrence - windowStart) / windowSpan;
+        const x = startX + ratio * xSpan;
+        const y = labelType === 'VP' ? height * 0.18 : height * 0.26;
+
+        scheduleBeatLabel(labelType, occurrence, x, y, secondsVisible);
+    });
+}
+
 function syncCanvasSize() {
     if (!canvas || !traceCanvas || !gridCanvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -311,6 +364,7 @@ function regenerateWaveform() {
     maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
     heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
     heartRateEngine?.reset();
+    clearBeatLabels();
 
     if (waveformDuration > 0) {
         sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
@@ -322,6 +376,7 @@ function resetSweep() {
     sweepTime = 0;
     lastFrameTime = null;
     heartRateEngine?.reset();
+    clearBeatLabels();
     if (traceCtx && traceCanvas) {
         traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
         configureTraceStyle();
@@ -362,6 +417,7 @@ function draw() {
 
     drawGrid(width, height, pixelsPerMm);
     drawWaveform(width, height);
+    drawBeatLabels(width, height);
     drawCaliper(width, height);
     drawPauseOverlay(width, height);
 }
@@ -416,6 +472,50 @@ function drawWaveform(width, height) {
     ctx.drawImage(traceCanvas, 0, 0, width, height);
 }
 
+function pruneExpiredBeatLabels(currentTime) {
+    activeBeatLabels = activeBeatLabels.filter((label) => label.expiresAt > currentTime);
+}
+
+function drawBeatLabels(width, height) {
+    if (!ctx || !activeBeatLabels.length) return;
+
+    pruneExpiredBeatLabels(sweepTime);
+    if (!activeBeatLabels.length) return;
+
+    ctx.save();
+    ctx.font = '700 13px "Inter", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const paddingX = 8;
+    const paddingY = 4;
+    const minBoxWidth = 32;
+
+    activeBeatLabels.forEach((label) => {
+        const text = label.type;
+        const metrics = ctx.measureText(text);
+        const boxWidth = Math.max(minBoxWidth, metrics.width + paddingX * 2);
+        const boxHeight = Math.max(18, (metrics.actualBoundingBoxAscent || 8) + (metrics.actualBoundingBoxDescent || 4) + paddingY * 2);
+        const x = clamp(label.x, boxWidth / 2, width - boxWidth / 2);
+        const y = clamp(label.y, boxHeight / 2, height - boxHeight / 2);
+        const bgX = x - boxWidth / 2;
+        const bgY = y - boxHeight / 2;
+
+        ctx.fillStyle = 'rgba(2, 6, 23, 0.75)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+        ctx.lineWidth = 1;
+        ctx.fillRect(bgX, bgY, boxWidth, boxHeight);
+        ctx.strokeRect(bgX, bgY, boxWidth, boxHeight);
+
+        ctx.fillStyle = label.type === 'VP'
+            ? resolveColorValue(displaySettings.paceColor, '#f59e0b')
+            : resolveColorValue(displaySettings.senseColor, '#f59e0b');
+        ctx.fillText(text, x, y + 0.5);
+    });
+
+    ctx.restore();
+}
+
 function advanceSweep(deltaSeconds) {
     if (!traceCtx || !traceCanvas || !waveformPoints.length || waveformDuration <= 0) return;
 
@@ -438,6 +538,7 @@ function advanceSweep(deltaSeconds) {
         const endX = sweepX + stepPixels;
 
         processLedEvents(startTime, endTime);
+        processBeatLabelEvents(startTime, endTime, startX, endX, height, secondsVisible);
         drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height);
 
         sweepX = endX >= width ? 0 : endX;
@@ -733,6 +834,7 @@ function handleDisplaySettings(event) {
     if (typeof settings.pacingSpikeLabel === 'boolean') {
         displaySettings.pacingSpikeLabel = settings.pacingSpikeLabel;
         setCanvasStateFlag('pacelabel', settings.pacingSpikeLabel);
+        if (!settings.pacingSpikeLabel) clearBeatLabels();
     }
 
     if (typeof settings.paceColor === 'string') {
@@ -743,6 +845,7 @@ function handleDisplaySettings(event) {
     if (typeof settings.intrinsicBeatLabels === 'boolean') {
         displaySettings.intrinsicBeatLabels = settings.intrinsicBeatLabels;
         setCanvasStateFlag('intrinsic', settings.intrinsicBeatLabels);
+        if (!settings.intrinsicBeatLabels) clearBeatLabels();
     }
 
     if (typeof settings.senseColor === 'string') {
