@@ -1,4 +1,7 @@
+const LANGUAGE_KEY = 'edupace-language';
+
 const defaultSettings = {
+    language: 'en',
     gridlines: false,
     gridDensity: '2mm',
     gridIntensity: 55,
@@ -18,6 +21,12 @@ const defaultSettings = {
 };
 
 let currentSettings = { ...defaultSettings };
+const storedLanguage = localStorage.getItem(LANGUAGE_KEY);
+if (storedLanguage) {
+    currentSettings.language = storedLanguage;
+}
+
+document.documentElement.setAttribute('lang', currentSettings.language);
 
 function initSettingsPanel() {
     const settingsCard = document.querySelector('[data-settings-panel]');
@@ -113,6 +122,12 @@ function initSettingsPanel() {
         if (intensityRow) intensityRow.classList.toggle('is-disabled', !isEnabled);
     };
 
+    const applyLanguagePreference = (language) => {
+        document.documentElement.setAttribute('lang', language);
+        localStorage.setItem(LANGUAGE_KEY, language);
+    };
+
+    bindRadios(settingsCard, 'language', 'language', (value) => value, applyLanguagePreference);
     bindToggle(settingsCard, 'gridlinesToggle', 'gridlines', updateGridDependencies);
     bindRadios(settingsCard, 'gridDensity', 'gridDensity');
     bindSlider(settingsCard, 'gridIntensity', 'gridIntensity');
@@ -137,12 +152,14 @@ function initSettingsPanel() {
             currentSettings = { ...defaultSettings };
             syncInputs(settingsCard);
             updateGridDependencies(currentSettings.gridlines);
+            applyLanguagePreference(currentSettings.language);
             emitSettings();
         });
     }
 
     syncInputs(settingsCard);
     updateGridDependencies(currentSettings.gridlines);
+    applyLanguagePreference(currentSettings.language);
     emitSettings();
     setVisibility(false);
 }
@@ -160,7 +177,7 @@ function bindToggle(root, inputId, key, onChange) {
     if (typeof onChange === 'function') onChange(input.checked, input);
 }
 
-function bindRadios(root, name, key, parser = (value) => value) {
+function bindRadios(root, name, key, parser = (value) => value, onChange) {
     const radios = Array.from(root.querySelectorAll(`input[name="${name}"]`));
     if (!radios.length) return;
     radios.forEach((radio) => {
@@ -171,9 +188,12 @@ function bindRadios(root, name, key, parser = (value) => value) {
             if (radio.checked) {
                 currentSettings[key] = parser(radio.value);
                 emitSettings();
+                if (typeof onChange === 'function') onChange(currentSettings[key]);
             }
         });
     });
+
+    if (typeof onChange === 'function') onChange(currentSettings[key]);
 }
 
 function bindSlider(root, inputId, key) {
