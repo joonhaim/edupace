@@ -1,4 +1,8 @@
 const THEME_KEY = 'edupace-theme';
+const THEME_ICONS = {
+    dark: 'assets/icons/theme-dark.svg',
+    light: 'assets/icons/theme-light.svg'
+};
 
 function applyTheme(theme) {
     const body = document.body;
@@ -9,8 +13,14 @@ function applyTheme(theme) {
 
     const toggles = document.querySelectorAll('[data-theme-toggle]');
     toggles.forEach((toggle) => {
-        toggle.textContent = isDark ? 'Dark mode' : 'Light mode';
+        const icon = toggle.querySelector('[data-theme-icon]');
+        if (icon) {
+            const iconPath = isDark ? THEME_ICONS.dark : THEME_ICONS.light;
+            icon.setAttribute('src', iconPath);
+        }
+
         toggle.setAttribute('aria-pressed', String(isDark));
+        toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
     });
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -25,16 +35,36 @@ function initThemeToggle() {
 
     applyTheme(initialTheme);
 
-    const toggles = document.querySelectorAll('[data-theme-toggle]');
-    if (!toggles.length) return;
+    const bindToggles = (toggleElements) => {
+        toggleElements.forEach((toggle) => {
+            if (toggle.dataset.themeBound === 'true') return;
 
-    toggles.forEach((toggle) => {
-        toggle.addEventListener('click', () => {
-            const nextTheme = document.body.classList.contains('simulation-dark') ? 'light' : 'dark';
-            applyTheme(nextTheme);
-            localStorage.setItem(THEME_KEY, nextTheme);
+            toggle.dataset.themeBound = 'true';
+            toggle.addEventListener('click', () => {
+                const nextTheme = document.body.classList.contains('simulation-dark') ? 'light' : 'dark';
+                applyTheme(nextTheme);
+                localStorage.setItem(THEME_KEY, nextTheme);
+            });
         });
-    });
+
+        applyTheme(document.body.classList.contains('simulation-dark') ? 'dark' : 'light');
+    };
+
+    const toggles = Array.from(document.querySelectorAll('[data-theme-toggle]'));
+
+    if (toggles.length) {
+        bindToggles(toggles);
+    } else {
+        const observer = new MutationObserver(() => {
+            const discovered = Array.from(document.querySelectorAll('[data-theme-toggle]'));
+            if (discovered.length) {
+                bindToggles(discovered);
+                observer.disconnect();
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
 }
 
 export { initThemeToggle };
