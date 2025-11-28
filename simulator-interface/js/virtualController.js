@@ -31,15 +31,27 @@ function initVirtualController() {
     };
 
     const powerHoldHint = document.createElement('div');
-    powerHoldHint.className = 'power-hold-hint';
+    powerHoldHint.className = 'hint-toast power-hold-hint';
     powerHoldHint.setAttribute('role', 'alert');
-    powerHoldHint.textContent = 'Hold for 2 seconds to turn off the controller';
+
+    const powerHoldText = document.createElement('span');
+    powerHoldText.textContent = 'Hold for 2 seconds to turn off the controller';
+
+    const powerHoldClose = document.createElement('button');
+    powerHoldClose.type = 'button';
+    powerHoldClose.className = 'hint-toast-close';
+    powerHoldClose.setAttribute('aria-label', 'Dismiss power button hint');
+    powerHoldClose.innerHTML = '&times;';
+
+    powerHoldHint.appendChild(powerHoldText);
+    powerHoldHint.appendChild(powerHoldClose);
     parametersCard.appendChild(powerHoldHint);
 
     const POWER_OFF_HOLD_MS = 2000;
     let powerHoldTimer = null;
     let suppressNextClick = false;
     let hintTimer = null;
+    let powerHintDismissed = false;
 
     const isVirtualMode = () => Array.from(modeRadios).some((radio) => radio.checked && radio.value === 'virtual');
 
@@ -144,23 +156,32 @@ function initVirtualController() {
         increment?.addEventListener('click', () => handleAdjust('up'));
     });
 
-    const clearPowerHint = () => {
+    const clearPowerHintTimer = () => {
         if (hintTimer) {
             clearTimeout(hintTimer);
             hintTimer = null;
         }
-        powerHoldHint.classList.remove('is-visible');
     };
 
-    const showPowerHint = () => {
-        powerHoldHint.classList.add('is-visible');
-        if (hintTimer) {
-            clearTimeout(hintTimer);
+    const setPowerHintVisible = (visible) => {
+        clearPowerHintTimer();
+        if (!visible) {
+            powerHoldHint.classList.remove('is-visible');
+            return;
         }
+
+        powerHoldHint.classList.add('is-visible');
         hintTimer = window.setTimeout(() => {
             powerHoldHint.classList.remove('is-visible');
             hintTimer = null;
         }, 2200);
+    };
+
+    const clearPowerHint = () => setPowerHintVisible(false);
+
+    const showPowerHint = () => {
+        if (powerHintDismissed) return;
+        setPowerHintVisible(true);
     };
 
     const clearPowerHold = () => {
@@ -222,6 +243,11 @@ function initVirtualController() {
         controllerState.locked = !controllerState.locked;
         broadcastParameters();
     };
+
+    powerHoldClose.addEventListener('click', () => {
+        powerHintDismissed = true;
+        setPowerHintVisible(false);
+    });
 
     actionButtons.power?.addEventListener('pointerdown', handlePowerPointerDown);
     actionButtons.power?.addEventListener('pointerup', handlePowerPointerUp);
