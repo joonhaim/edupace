@@ -312,27 +312,6 @@
                                                     <div class="settings-grid">
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Preset</div>
-                                                                <p class="setting-hint">Standard, high-contrast, or classroom color sets.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="ECG preset">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="ecgPreset" value="standard" checked>
-                                                                    <span>Standard</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="ecgPreset" value="high-contrast">
-                                                                    <span>High-contrast</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="ecgPreset" value="classroom">
-                                                                    <span>Classroom</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
                                                                 <div class="setting-title">Sweep speed</div>
                                                                 <p class="setting-hint">Millimeters per second.</p>
                                                             </div>
@@ -348,6 +327,27 @@
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="sweepSpeed" value="50">
                                                                     <span>50 mm/s</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Sweep window</div>
+                                                                <p class="setting-hint">Visible seconds on screen.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep window">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="sweepWindow" value="4">
+                                                                    <span>4 s</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="sweepWindow" value="6" checked>
+                                                                    <span>6 s</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="sweepWindow" value="10">
+                                                                    <span>10 s</span>
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -373,46 +373,57 @@
                                                             </div>
                                                         </div>
 
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title">Trace look</div>
-                                                                <p class="setting-hint">Color and stroke weight.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Trace color">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="traceColor" value="green" checked>
-                                                                    <span>Green</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="traceColor" value="blue">
-                                                                    <span>Blue</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="traceColor" value="white">
-                                                                    <span>White</span>
-                                                                </label>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Trace thickness">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="traceThickness" value="thin">
-                                                                    <span>Thin</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="traceThickness" value="normal" checked>
-                                                                    <span>Normal</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="traceThickness" value="thick">
-                                                                    <span>Thick</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
                                                     </div>
                                                 </div>
 
                                                 <div class="settings-section">
                                                     <div class="section-label">Appearance</div>
                                                     <div class="settings-grid">
+                                                        <div class="setting-row full-span">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Trace look</div>
+                                                                <p class="setting-hint">Color and stroke weight.</p>
+                                                            </div>
+                                                            <div class="setting-controls setting-controls-stacked">
+                                                                <div class="color-options" role="radiogroup" aria-label="Trace color">
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="traceColor" value="green" checked>
+                                                                        <span class="color-swatch" style="--swatch-color: #00e000"></span>
+                                                                        <span class="sr-only">Green</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="traceColor" value="blue">
+                                                                        <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
+                                                                        <span class="sr-only">Blue</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="traceColor" value="red">
+                                                                        <span class="color-swatch" style="--swatch-color: #dc2626"></span>
+                                                                        <span class="sr-only">Red</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="traceColor" value="white">
+                                                                        <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
+                                                                        <span class="sr-only">White</span>
+                                                                    </label>
+                                                                </div>
+                                                                <div class="pill-group" role="radiogroup" aria-label="Trace thickness">
+                                                                    <label class="pill-option">
+                                                                        <input type="radio" name="traceThickness" value="thin">
+                                                                        <span>Thin</span>
+                                                                    </label>
+                                                                    <label class="pill-option">
+                                                                        <input type="radio" name="traceThickness" value="normal" checked>
+                                                                        <span>Normal</span>
+                                                                    </label>
+                                                                    <label class="pill-option">
+                                                                        <input type="radio" name="traceThickness" value="thick">
+                                                                        <span>Thick</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
                                                                 <div class="setting-title">Gridlines</div>
@@ -438,10 +449,6 @@
                                                                     <input type="radio" name="gridDensity" value="2mm" checked>
                                                                     <span>2 mm</span>
                                                                 </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="gridDensity" value="none">
-                                                                    <span>None</span>
-                                                                </label>
                                                             </div>
                                                         </div>
 
@@ -464,21 +471,35 @@
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
                                                                 <div class="setting-title">HR display</div>
-                                                                <p class="setting-hint">Show numeric or trend.</p>
+                                                                <p class="setting-hint">Show heart rate overlay.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Heart rate display">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="hrDisplay" value="off">
-                                                                    <span>Off</span>
+                                                            <div class="setting-controls">
+                                                                <label class="switch">
+                                                                    <input type="checkbox" id="hrDisplayToggle" checked>
+                                                                    <span class="switch-track"></span>
                                                                 </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="hrDisplay" value="numeric" checked>
-                                                                    <span>Numeric</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="hrDisplay" value="trend">
-                                                                    <span>Trend</span>
-                                                                </label>
+                                                                <div class="color-options" role="radiogroup" aria-label="Heart rate color">
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="hrColor" value="green">
+                                                                        <span class="color-swatch" style="--swatch-color: #00e000"></span>
+                                                                        <span class="sr-only">Green</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="hrColor" value="blue" checked>
+                                                                        <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
+                                                                        <span class="sr-only">Blue</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="hrColor" value="red">
+                                                                        <span class="color-swatch" style="--swatch-color: #dc2626"></span>
+                                                                        <span class="sr-only">Red</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="hrColor" value="white">
+                                                                        <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
+                                                                        <span class="sr-only">White</span>
+                                                                    </label>
+                                                                </div>
                                                             </div>
                                                         </div>
 
@@ -487,26 +508,103 @@
                                                                 <div class="setting-title">Lead label</div>
                                                                 <p class="setting-hint">Show current lead overlay.</p>
                                                             </div>
-                                                            <label class="switch">
-                                                                <input type="checkbox" id="leadLabelToggle" checked>
-                                                                <span class="switch-track"></span>
-                                                            </label>
+                                                            <div class="setting-controls">
+                                                                <label class="switch">
+                                                                    <input type="checkbox" id="leadLabelToggle" checked>
+                                                                    <span class="switch-track"></span>
+                                                                </label>
+                                                                <div class="color-options" role="radiogroup" aria-label="Lead label color">
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="leadLabelColor" value="blue" checked>
+                                                                        <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
+                                                                        <span class="sr-only">Blue</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="leadLabelColor" value="green">
+                                                                        <span class="color-swatch" style="--swatch-color: #00e000"></span>
+                                                                        <span class="sr-only">Green</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="leadLabelColor" value="red">
+                                                                        <span class="color-swatch" style="--swatch-color: #dc2626"></span>
+                                                                        <span class="sr-only">Red</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="leadLabelColor" value="white">
+                                                                        <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
+                                                                        <span class="sr-only">White</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
                                                         </div>
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Beat markers</div>
-                                                                <p class="setting-hint">Pace and sense labels.</p>
+                                                                <div class="setting-title">Pace markers</div>
+                                                                <p class="setting-hint">Show paced beat indicators.</p>
                                                             </div>
-                                                            <div class="inline-switches">
+                                                            <div class="setting-controls">
                                                                 <label class="switch">
                                                                     <input type="checkbox" id="pacingLabelToggle" checked>
                                                                     <span class="switch-track"></span>
                                                                 </label>
+                                                                <div class="color-options" role="radiogroup" aria-label="Pace marker color">
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="paceColor" value="green" checked>
+                                                                        <span class="color-swatch" style="--swatch-color: #00e000"></span>
+                                                                        <span class="sr-only">Green</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="paceColor" value="blue">
+                                                                        <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
+                                                                        <span class="sr-only">Blue</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="paceColor" value="red">
+                                                                        <span class="color-swatch" style="--swatch-color: #dc2626"></span>
+                                                                        <span class="sr-only">Red</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="paceColor" value="white">
+                                                                        <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
+                                                                        <span class="sr-only">White</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Sense markers</div>
+                                                                <p class="setting-hint">Show intrinsic beat indicators.</p>
+                                                            </div>
+                                                            <div class="setting-controls">
                                                                 <label class="switch">
                                                                     <input type="checkbox" id="intrinsicLabelToggle">
                                                                     <span class="switch-track"></span>
                                                                 </label>
+                                                                <div class="color-options" role="radiogroup" aria-label="Sense marker color">
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="senseColor" value="green">
+                                                                        <span class="color-swatch" style="--swatch-color: #00e000"></span>
+                                                                        <span class="sr-only">Green</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="senseColor" value="blue" checked>
+                                                                        <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
+                                                                        <span class="sr-only">Blue</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="senseColor" value="red">
+                                                                        <span class="color-swatch" style="--swatch-color: #dc2626"></span>
+                                                                        <span class="sr-only">Red</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="senseColor" value="white">
+                                                                        <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
+                                                                        <span class="sr-only">White</span>
+                                                                    </label>
+                                                                </div>
                                                             </div>
                                                         </div>
 
@@ -516,91 +614,12 @@
                                                                 <p class="setting-hint">RR/PP calipers on drag.</p>
                                                             </div>
                                                             <label class="switch">
-                                                                <input type="checkbox" id="intervalRulersToggle">
-                                                                <span class="switch-track"></span>
-                                                            </label>
-                                                        </div>
-
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title">Calibration & colors</div>
-                                                                <p class="setting-hint">Legend, R-wave, color coding.</p>
-                                                            </div>
-                                                            <div class="inline-switches">
-                                                                <label class="switch">
-                                                                    <input type="checkbox" id="calibrationToggle" checked>
-                                                                    <span class="switch-track"></span>
-                                                                </label>
-                                                                <label class="switch">
-                                                                    <input type="checkbox" id="rWaveToggle">
-                                                                    <span class="switch-track"></span>
-                                                                </label>
-                                                                <label class="switch">
-                                                                    <input type="checkbox" id="colorCodeToggle" checked>
-                                                                    <span class="switch-track"></span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title">Teaching mode</div>
-                                                                <p class="setting-hint">Overlay hints on ECG.</p>
-                                                            </div>
-                                                            <label class="switch">
-                                                                <input type="checkbox" id="teachingModeToggle">
+                                                                <input type="checkbox" id="intervalRulersToggle" checked>
                                                                 <span class="switch-track"></span>
                                                             </label>
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                <details class="settings-section settings-collapsible">
-                                                    <summary class="section-label">Advanced</summary>
-                                                    <div class="settings-grid">
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title">Noise & artifacts</div>
-                                                                <p class="setting-hint">Baseline wander and muscle noise.</p>
-                                                            </div>
-                                                            <div class="inline-switches">
-                                                                <label class="switch">
-                                                                    <input type="checkbox" id="baselineWanderToggle">
-                                                                    <span class="switch-track"></span>
-                                                                </label>
-                                                                <label class="switch">
-                                                                    <input type="checkbox" id="muscleNoiseToggle">
-                                                                    <span class="switch-track"></span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="setting-row full-span">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title">Arrhythmia level</div>
-                                                                <p class="setting-hint">Off, mild, moderate, or frequent.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Arrhythmia level">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="arrhythmiaLevel" value="off" checked>
-                                                                    <span>Off</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="arrhythmiaLevel" value="mild">
-                                                                    <span>Mild</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="arrhythmiaLevel" value="moderate">
-                                                                    <span>Moderate</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="arrhythmiaLevel" value="frequent">
-                                                                    <span>Frequent</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </details>
                                             </div>
 
                                             <div class="settings-panel is-hidden" id="soundSettings" data-settings-panel-target="sound">

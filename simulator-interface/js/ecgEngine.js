@@ -7,6 +7,20 @@ const DEFAULT_SECONDS_VISIBLE = 6;
 const DEFAULT_SWEEP_SPEED_MM_PER_SEC = 25;
 const CALIPER_THRESHOLD = 4;
 
+const COLOR_PRESETS = {
+    blue: '#1d4ed8',
+    green: '#00e000',
+    red: '#dc2626',
+    white: '#f5f7fa'
+};
+
+const TRACE_COLOR_MAP = {
+    blue: '#1d4ed8',
+    green: '#00e000',
+    red: '#dc2626',
+    white: '#f5f7fa'
+};
+
 const engineState = {
     patientRate: 70,
     pacingRate: 70,
@@ -43,15 +57,22 @@ let displaySettings = {
     gridDensity: '2mm',
     gridIntensity: 55,
     sweepSpeed: DEFAULT_SWEEP_SPEED_MM_PER_SEC,
+    sweepWindow: DEFAULT_SECONDS_VISIBLE,
     amplitudeScaling: 10,
     traceColor: 'green',
     traceThickness: 'normal',
+    hrDisplay: true,
+    hrColor: 'blue',
     leadLabel: true,
+    leadLabelColor: 'blue',
     calibrationMarkers: true,
     rWaveMarkers: false,
     pacingSpikeLabel: true,
+    paceColor: 'green',
     intrinsicBeatLabels: false,
-    colorCodeBeats: true
+    senseColor: 'blue',
+    colorCodeBeats: true,
+    intervalRulers: true
 };
 
 const ledElements = {
@@ -62,7 +83,9 @@ const ledElements = {
 const overlayElements = {
     leadLabel: document.querySelector('.ecg-label'),
     calibration: document.querySelector('.calibration-note'),
-    calibrationValue: document.querySelector('.calibration-note .calibration-value')
+    calibrationValue: document.querySelector('.calibration-note .calibration-value'),
+    hrBlock: document.querySelector('.ecg-vitals .vital-block'),
+    hrValue: document.getElementById('hrValue')
 };
 
 function initEcgEngine() {
@@ -77,6 +100,7 @@ function initEcgEngine() {
     traceCtx = traceCanvas.getContext('2d');
     syncCanvasSize();
     configureTraceStyle();
+    applyAnnotationStyles();
 
     heartRateEngine = createHeartRateEngine(document.getElementById('hrValue'));
 
@@ -141,11 +165,45 @@ function handleWaveformChange(event) {
 function configureTraceStyle() {
     if (!traceCtx) return;
     const thickness = displaySettings.traceThickness;
-    const color = displaySettings.traceColor;
+    const color = getTraceColor(displaySettings.traceColor);
     traceCtx.lineWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 3 : 2;
-    traceCtx.strokeStyle = color === 'white' ? '#e5e7eb' : color === 'blue' ? '#38bdf8' : '#00E000';
+    traceCtx.strokeStyle = color;
     traceCtx.lineJoin = 'round';
     traceCtx.lineCap = 'round';
+}
+
+function getTraceColor(color) {
+    return TRACE_COLOR_MAP[color] || COLOR_PRESETS[color] || color || '#00e000';
+}
+
+function resolveColorValue(color, fallback) {
+    return COLOR_PRESETS[color] || color || fallback || '#00e000';
+}
+
+function applyAnnotationStyles() {
+    if (overlayElements.hrBlock) {
+        overlayElements.hrBlock.hidden = !displaySettings.hrDisplay;
+    }
+
+    const hrColor = resolveColorValue(displaySettings.hrColor, '#9dbcf2');
+    if (overlayElements.hrValue) {
+        overlayElements.hrValue.style.color = hrColor;
+    }
+
+    const leadColor = resolveColorValue(displaySettings.leadLabelColor, '#2563eb');
+    if (overlayElements.leadLabel) {
+        overlayElements.leadLabel.style.color = leadColor;
+    }
+
+    const paceColor = resolveColorValue(displaySettings.paceColor, '#22c55e');
+    if (ledElements.pace) {
+        ledElements.pace.style.setProperty('--led-on-color', paceColor);
+    }
+
+    const senseColor = resolveColorValue(displaySettings.senseColor, '#2563eb');
+    if (ledElements.sense) {
+        ledElements.sense.style.setProperty('--led-on-color', senseColor);
+    }
 }
 
 function mapWaveformId(waveformId) {
@@ -281,7 +339,7 @@ function stepFrame(timestamp) {
     lastFrameTime = timestamp;
 
     if (!isPaused && deltaSeconds > 0) {
-        advanceSweep(deltaSeconds);
+        advanceSweep(deltaSeconds * (displaySettings.sweepSpeed / DEFAULT_SWEEP_SPEED_MM_PER_SEC));
     }
 
     draw();
@@ -457,6 +515,15 @@ function handlePointerDown(event) {
         return;
     }
 
+    if (!displaySettings.intervalRulers) {
+        isPaused = false;
+        caliper = null;
+        pendingCaliper = null;
+        ignoreNextPointerUp = false;
+        draw();
+        return;
+    }
+
     pendingCaliper = {
         startX: x,
         endX: x,
@@ -465,7 +532,7 @@ function handlePointerDown(event) {
 }
 
 function handlePointerMove(event) {
-    if (!isPaused || !pendingCaliper) return;
+    if (!isPaused || !displaySettings.intervalRulers || !pendingCaliper) return;
 
     event.preventDefault();
     const { x } = getPointerPosition(event);
@@ -480,7 +547,7 @@ function handlePointerMove(event) {
 }
 
 function handlePointerUp(event) {
-    if (!isPaused) return;
+    if (!isPaused || !displaySettings.intervalRulers) return;
 
     event?.preventDefault();
 
@@ -511,7 +578,7 @@ function getPointerPosition(event) {
 
 function drawCaliper(width, height) {
     const activeCaliper = pendingCaliper?.active ? pendingCaliper : caliper;
-    if (!isPaused || !activeCaliper || !ctx) return;
+    if (!isPaused || !displaySettings.intervalRulers || !activeCaliper || !ctx) return;
 
     const start = Math.max(0, Math.min(width, activeCaliper.startX));
     const end = Math.max(0, Math.min(width, activeCaliper.endX));
@@ -563,7 +630,10 @@ function drawPauseOverlay(width, height) {
     ctx.font = '600 20px "Inter", sans-serif';
     ctx.fillText('Telemetry paused', width / 2, mainY);
     ctx.font = '14px "Inter", sans-serif';
-    ctx.fillText('Click and drag to place calipers, or tap to resume', width / 2, subY);
+    const subline = displaySettings.intervalRulers
+        ? 'Click and drag to place calipers, or tap to resume'
+        : 'Click anywhere to resume playback';
+    ctx.fillText(subline, width / 2, subY);
     ctx.restore();
 }
 
@@ -572,6 +642,7 @@ function handleDisplaySettings(event) {
     const settings = event.detail ?? {};
     let needsTraceStyle = false;
     let needsSweepReset = false;
+    let needsAnnotationUpdate = false;
 
     if (typeof settings.gridlines === 'boolean' && settings.gridlines !== displaySettings.gridlines) {
         displaySettings.gridlines = settings.gridlines;
@@ -592,6 +663,13 @@ function handleDisplaySettings(event) {
         if (settings.sweepSpeed !== displaySettings.sweepSpeed) {
             displaySettings.sweepSpeed = settings.sweepSpeed;
             gridDirty = true;
+            needsSweepReset = true;
+        }
+    }
+
+    if (Number.isFinite(settings.sweepWindow) && settings.sweepWindow > 0) {
+        if (settings.sweepWindow !== displaySettings.sweepWindow) {
+            displaySettings.sweepWindow = settings.sweepWindow;
             needsSweepReset = true;
         }
     }
@@ -621,6 +699,11 @@ function handleDisplaySettings(event) {
         if (overlayElements.leadLabel) overlayElements.leadLabel.hidden = !settings.leadLabel;
     }
 
+    if (typeof settings.leadLabelColor === 'string') {
+        displaySettings.leadLabelColor = settings.leadLabelColor;
+        needsAnnotationUpdate = true;
+    }
+
     if (typeof settings.calibrationMarkers === 'boolean') {
         displaySettings.calibrationMarkers = settings.calibrationMarkers;
         if (overlayElements.calibration) overlayElements.calibration.hidden = !settings.calibrationMarkers;
@@ -636,9 +719,19 @@ function handleDisplaySettings(event) {
         setCanvasStateFlag('pacelabel', settings.pacingSpikeLabel);
     }
 
+    if (typeof settings.paceColor === 'string') {
+        displaySettings.paceColor = settings.paceColor;
+        needsAnnotationUpdate = true;
+    }
+
     if (typeof settings.intrinsicBeatLabels === 'boolean') {
         displaySettings.intrinsicBeatLabels = settings.intrinsicBeatLabels;
         setCanvasStateFlag('intrinsic', settings.intrinsicBeatLabels);
+    }
+
+    if (typeof settings.senseColor === 'string') {
+        displaySettings.senseColor = settings.senseColor;
+        needsAnnotationUpdate = true;
     }
 
     if (typeof settings.colorCodeBeats === 'boolean') {
@@ -646,8 +739,31 @@ function handleDisplaySettings(event) {
         setCanvasStateFlag('colorcode', settings.colorCodeBeats);
     }
 
+    if (typeof settings.intervalRulers === 'boolean') {
+        displaySettings.intervalRulers = settings.intervalRulers;
+        if (!settings.intervalRulers) {
+            caliper = null;
+            pendingCaliper = null;
+            ignoreNextPointerUp = false;
+        }
+    }
+
+    if (typeof settings.hrDisplay === 'boolean') {
+        displaySettings.hrDisplay = settings.hrDisplay;
+        needsAnnotationUpdate = true;
+    }
+
+    if (typeof settings.hrColor === 'string') {
+        displaySettings.hrColor = settings.hrColor;
+        needsAnnotationUpdate = true;
+    }
+
     if (needsTraceStyle) {
         configureTraceStyle();
+    }
+
+    if (needsAnnotationUpdate) {
+        applyAnnotationStyles();
     }
 
     updateCalibrationNote();
@@ -665,7 +781,7 @@ function setCanvasStateFlag(key, enabled) {
 }
 
 function getSecondsVisible() {
-    return (DEFAULT_SECONDS_VISIBLE * DEFAULT_SWEEP_SPEED_MM_PER_SEC) / displaySettings.sweepSpeed;
+    return displaySettings.sweepWindow;
 }
 
 function updateCalibrationNote() {
