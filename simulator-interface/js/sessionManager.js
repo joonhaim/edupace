@@ -1,3 +1,5 @@
+import { addSessionLog } from './sessionStore.js';
+
 const sessionElements = {
     startBtn: document.getElementById('startSessionBtn'),
     pauseBtn: document.getElementById('pauseSessionBtn'),
@@ -57,7 +59,7 @@ function updateControls() {
 
     if (pauseBtn) {
         pauseBtn.disabled = !(status === 'running' || status === 'paused');
-        pauseBtn.textContent = status === 'paused' ? 'Resume session' : 'Pause session';
+        pauseBtn.textContent = status === 'paused' ? 'Resume' : 'Pause';
     }
 
     if (endBtn) {
@@ -100,17 +102,17 @@ function buildLogPayload() {
     };
 }
 
-function prepareDownload() {
-    const payload = buildLogPayload();
-    if (!payload || !sessionElements.downloadBtn) return;
+function prepareDownload(payload = null) {
+    const payloadToUse = payload ?? buildLogPayload();
+    if (!payloadToUse || !sessionElements.downloadBtn) return;
 
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(payloadToUse, null, 2)], { type: 'application/json' });
     resetDownloadLink();
 
     const url = URL.createObjectURL(blob);
     sessionState.activeLogUrl = url;
     sessionElements.downloadBtn.href = url;
-    sessionElements.downloadBtn.download = `${payload.id}-log.json`;
+    sessionElements.downloadBtn.download = `${payloadToUse.id}-log.json`;
     sessionElements.downloadBtn.classList.remove('is-hidden');
 }
 
@@ -172,8 +174,11 @@ function endSession() {
         scenarioId: sessionState.currentSession.scenarioId
     });
 
+    const payload = buildLogPayload();
+    addSessionLog(payload);
+
     setStatusText('Session ended. Download log available.');
-    prepareDownload();
+    prepareDownload(payload);
     updateControls();
 }
 
