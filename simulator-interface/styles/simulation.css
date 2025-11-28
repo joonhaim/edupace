@@ -880,6 +880,20 @@ body.simulation-light .theme-toggle {
     padding: 0.2rem 0.25rem;
 }
 
+.setting-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.setting-controls-stacked {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
 .setting-copy {
     display: flex;
     flex-direction: column;
@@ -893,6 +907,56 @@ body.simulation-light .theme-toggle {
 .setting-hint {
     color: var(--muted);
     font-size: 0.85rem;
+}
+
+.color-options {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.color-option {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    padding: 0.1rem;
+    border-radius: 12px;
+    transition: background-color 0.15s ease;
+}
+
+.color-option input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.color-swatch {
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: 999px;
+    background: var(--swatch-color, #2563eb);
+    box-shadow: 0 0 0 1px var(--border);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.color-option input:checked + .color-swatch {
+    box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px color-mix(in srgb, var(--swatch-color, #2563eb) 70%, transparent);
+    transform: scale(1.05);
+}
+
+.color-option:hover .color-swatch {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--swatch-color, #2563eb) 60%, var(--border));
+}
+
+.color-label {
+    font-weight: 700;
+    color: var(--deep-navy);
+    font-size: 0.9rem;
 }
 
 .settings-collapsible {

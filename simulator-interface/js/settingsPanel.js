@@ -3,25 +3,22 @@ const defaultSettings = {
     gridDensity: '2mm',
     gridIntensity: 55,
     sweepSpeed: 25,
+    sweepWindow: 6,
     amplitudeScaling: 10,
     traceColor: 'green',
     traceThickness: 'normal',
+    hrDisplay: true,
+    hrColor: 'blue',
+    leadLabel: true,
+    leadLabelColor: 'blue',
+    pacingSpikeLabel: true,
+    paceColor: 'green',
+    intrinsicBeatLabels: false,
+    senseColor: 'blue',
+    intervalRulers: false,
     alarmSound: true,
     buttonBeeps: true,
     soundVolume: 70,
-    leadLabel: true,
-    calibrationMarkers: true,
-    rWaveMarkers: false,
-    pacingSpikeLabel: true,
-    intrinsicBeatLabels: false,
-    colorCodeBeats: true,
-    ecgPreset: 'standard',
-    baselineWander: false,
-    muscleNoise: false,
-    arrhythmiaLevel: 'off',
-    hrDisplay: 'numeric',
-    intervalRulers: false,
-    teachingMode: false,
     qrsBeep: 'classic',
     autoLockKnobs: '60',
     captureDrift: 'off',
@@ -138,28 +135,24 @@ function initSettingsPanel() {
         if (intensityRow) intensityRow.classList.toggle('is-disabled', !isEnabled);
     };
 
-    bindRadios(settingsCard, 'ecgPreset', 'ecgPreset');
     bindToggle(settingsCard, 'gridlinesToggle', 'gridlines', updateGridDependencies);
     bindRadios(settingsCard, 'gridDensity', 'gridDensity');
     bindSlider(settingsCard, 'gridIntensity', 'gridIntensity');
     bindRadios(settingsCard, 'sweepSpeed', 'sweepSpeed', Number);
+    bindRadios(settingsCard, 'sweepWindow', 'sweepWindow', Number);
     bindRadios(settingsCard, 'amplitudeScaling', 'amplitudeScaling', Number);
     bindRadios(settingsCard, 'traceColor', 'traceColor');
     bindRadios(settingsCard, 'traceThickness', 'traceThickness');
-    bindRadios(settingsCard, 'arrhythmiaLevel', 'arrhythmiaLevel');
-    bindRadios(settingsCard, 'hrDisplay', 'hrDisplay');
 
+    bindToggle(settingsCard, 'hrDisplayToggle', 'hrDisplay');
+    bindRadios(settingsCard, 'hrColor', 'hrColor');
     bindToggle(settingsCard, 'leadLabelToggle', 'leadLabel');
-    bindToggle(settingsCard, 'calibrationToggle', 'calibrationMarkers');
-    bindToggle(settingsCard, 'rWaveToggle', 'rWaveMarkers');
+    bindRadios(settingsCard, 'leadLabelColor', 'leadLabelColor');
     bindToggle(settingsCard, 'pacingLabelToggle', 'pacingSpikeLabel');
+    bindRadios(settingsCard, 'paceColor', 'paceColor');
     bindToggle(settingsCard, 'intrinsicLabelToggle', 'intrinsicBeatLabels');
-    bindToggle(settingsCard, 'colorCodeToggle', 'colorCodeBeats');
+    bindRadios(settingsCard, 'senseColor', 'senseColor');
     bindToggle(settingsCard, 'intervalRulersToggle', 'intervalRulers');
-    bindToggle(settingsCard, 'teachingModeToggle', 'teachingMode');
-
-    bindToggle(settingsCard, 'baselineWanderToggle', 'baselineWander');
-    bindToggle(settingsCard, 'muscleNoiseToggle', 'muscleNoise');
 
     bindToggle(settingsCard, 'alarmSoundToggle', 'alarmSound');
     bindToggle(settingsCard, 'buttonBeepsToggle', 'buttonBeeps');
