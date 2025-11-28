@@ -23,6 +23,7 @@
     background: var(--card);
     border: 1px solid var(--border);
     padding: 0.85rem 1rem;
+    padding-right: 2.4rem;
     border-radius: 12px;
     position: relative;
 }
@@ -546,7 +547,7 @@ body.simulation-light .theme-toggle {
     line-height: 1.45;
     opacity: 0;
     transform: translateY(10px);
-    pointer-events: none;
+    pointer-events: auto;
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
@@ -559,6 +560,36 @@ body.simulation-light .theme-toggle {
 .hint-toast.is-visible {
     opacity: 1;
     transform: translateY(0);
+}
+
+.hint-toast-close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.hint-toast-close:hover,
+.hint-toast-close:focus-visible {
+    background: rgba(255, 255, 255, 0.16);
+    outline: none;
+    transform: scale(1.05);
+}
+
+.hint-toast-close:active {
+    transform: scale(0.97);
 }
 
 .power-hold-hint {
