@@ -7,6 +7,7 @@ const ui = {
     rate: document.getElementById('rateValue'),
     output: document.getElementById('outputValue'),
     sensitivity: document.getElementById('sensValue'),
+    sensitivityUnit: document.querySelector('#sensValue + .param-unit'),
     paceMode: document.getElementById('paceMode'),
     paceLed: document.getElementById('paceLed'),
     senseLed: document.getElementById('senseLed'),
@@ -86,6 +87,21 @@ function setBasePaceMode(mode) {
     ui.paceMode.textContent = baseMode;
 }
 
+function formatSensitivityValue(value) {
+    return Number.isFinite(value) ? value.toFixed(1) : '--';
+}
+
+function applySensitivityDisplay({ sensitivity, mode, asynchronous }) {
+    if (!ui.sensitivity) return;
+
+    const asyncMode = isAsyncMode({ sensitivity, mode, asynchronous });
+    ui.sensitivity.textContent = asyncMode ? 'ASYNC' : formatSensitivityValue(sensitivity);
+
+    if (ui.sensitivityUnit) {
+        ui.sensitivityUnit.textContent = asyncMode ? '' : 'mV';
+    }
+}
+
 function isAsyncMode({ sensitivity, mode, asynchronous }) {
     if (typeof asynchronous === 'boolean') {
         return asynchronous;
@@ -158,6 +174,7 @@ function initHardwareIntegration() {
             isPoweredOn = event.detail.power;
         }
         applyAsyncModeIndicator({ sensitivity, mode, asynchronous });
+        applySensitivityDisplay({ sensitivity, mode, asynchronous });
     });
 
     window.edupaceHardware = {
@@ -285,7 +302,6 @@ function handleHardwareMessage(line) {
     }
 
     if (payload.sensitivity !== undefined) {
-        ui.sensitivity.textContent = payload.sensitivity;
         updateParam('sensitivity', payload.sensitivity);
     }
 
@@ -306,9 +322,9 @@ function handleHardwareMessage(line) {
 
     const asyncMode = isAsyncMode(parameterState);
     if (parameterState.asynchronous !== asyncMode) {
-        parameterState.asynchronous = asyncMode;
         parameterChanged = true;
     }
+    parameterState.asynchronous = asyncMode;
 
     if (payload.paceLed) {
         flashLed(ui.paceLed);
@@ -326,6 +342,7 @@ function handleHardwareMessage(line) {
         );
     }
 
+    applySensitivityDisplay(parameterState);
     applyAsyncModeIndicator(parameterState);
 }
 

@@ -32,7 +32,8 @@ function initVirtualController() {
     const display = {
         rate: document.getElementById('rateValue'),
         output: document.getElementById('outputValue'),
-        sensitivity: document.getElementById('sensValue')
+        sensitivity: document.getElementById('sensValue'),
+        sensitivityUnit: document.querySelector('#sensValue + .param-unit')
     };
 
     const powerHoldHint = document.createElement('div');
@@ -85,6 +86,7 @@ function initVirtualController() {
 
     const updateTiles = () => {
         const showValues = controllerState.power;
+        const showAsync = showValues && isAsyncFromSensitivity(controllerState.sensitivity);
 
         if (display.rate) {
             display.rate.textContent = showValues ? formatValue('rate', controllerState.rate) : '--';
@@ -94,8 +96,13 @@ function initVirtualController() {
         }
         if (display.sensitivity) {
             display.sensitivity.textContent = showValues
-                ? formatValue('sensitivity', controllerState.sensitivity)
+                ? showAsync
+                    ? 'ASYNC'
+                    : formatValue('sensitivity', controllerState.sensitivity)
                 : '--';
+        }
+        if (display.sensitivityUnit) {
+            display.sensitivityUnit.textContent = showAsync ? '' : 'mV';
         }
     };
 
