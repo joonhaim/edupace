@@ -257,3 +257,27 @@ body.simulation-light .alarm-normal {
     color: #1f4b99;
     border-color: rgba(31, 75, 153, 0.28);
 }
+
+body.simulation-light .alarm-warning {
+    background: rgba(255, 209, 102, 0.14);
+    color: #7a5400;
+    border-color: rgba(255, 209, 102, 0.40);
+}
+
+body.simulation-dark .alarm-warning {
+    background: rgba(255, 209, 102, 0.14);
+    color: #ffe18a;
+    border-color: rgba(255, 209, 102, 0.5);
+}
+
+body.simulation-light .alarm-critical {
+    background: #ffe2e2;
+    color: #a11a1a;
+    border-color: #f2a0a0;
+}
+
+body.simulation-dark .alarm-critical {
+    background: rgba(255, 123, 123, 0.16);
+    color: #ffc4c4;
+    border-color: rgba(255, 123, 123, 0.52);
+}
