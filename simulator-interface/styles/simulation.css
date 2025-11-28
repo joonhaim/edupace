@@ -720,7 +720,34 @@ body.simulation-light .theme-toggle {
 .settings-window-actions {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.35rem;
+}
+
+.settings-window .btn {
+    padding: 0.45rem 0.85rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    font-weight: 700;
+    border-radius: 10px;
+    box-shadow: none;
+}
+
+.settings-window .btn-primary {
+    background: #112135;
+    color: #f5f7fb;
+    border-color: #0d1928;
+    box-shadow: none;
+}
+
+.settings-window .btn-primary:hover {
+    background: #0c1828;
+}
+
+.settings-window .btn-ghost {
+    background: #f7f9fc;
+    color: #0f172a;
+    border-color: #d9e1ef;
 }
 
 .settings-tabs {

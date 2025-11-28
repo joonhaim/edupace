@@ -267,11 +267,9 @@
                                             <button
                                                 type="button"
                                                 class="btn btn-ghost"
-                                                data-settings-toggle
-                                                aria-label="Close settings"
-                                                aria-controls="ecgSettingsPanel"
+                                                data-settings-reset
                                             >
-                                                Save
+                                                Reset to defaults
                                             </button>
                                         </div>
                                     </div>
@@ -769,7 +767,15 @@
                                     </div>
 
                                     <div class="settings-actions">
-                                        <button type="button" class="btn btn-ghost" data-settings-reset>Reset to defaults</button>
+                                        <button
+                                            type="button"
+                                            class="btn btn-primary"
+                                            data-settings-toggle
+                                            aria-label="Save and close settings"
+                                            aria-controls="ecgSettingsPanel"
+                                        >
+                                            Save
+                                        </button>
                                     </div>
                                 </div>
                             </div>
