@@ -147,8 +147,57 @@ body.simulation-light .theme-toggle {
 .scenario-controls {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.35rem;
     min-width: 220px;
+    align-items: flex-end;
+}
+
+.session-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-end;
+}
+
+.session-cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: flex-end;
+}
+
+.session-chip {
+    padding: 0.35rem 0.85rem;
+    font-size: 0.85rem;
+    text-transform: none;
+    letter-spacing: 0.03em;
+    border-radius: 999px;
+    box-shadow: none;
+}
+
+.session-chip:disabled {
+    opacity: 0.5;
+    transform: none;
+}
+
+.session-chip.session-end {
+    border-color: var(--border);
+    color: #b42318;
+}
+
+.session-chip.btn-primary {
+    box-shadow: none;
+}
+
+.session-status {
+    margin: 0;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.82rem;
+}
+
+.session-download.is-hidden {
+    display: none;
 }
 
 .scenario-label {
