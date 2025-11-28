@@ -264,6 +264,15 @@ function flashLed(element, type) {
     if (type) {
         sendLedCommand(type);
     }
+
+    const kind = type === 'PACE' ? 'pace' : type === 'SENSE' ? 'sense' : 'unknown';
+    if (kind !== 'unknown') {
+        window.dispatchEvent(
+            new CustomEvent('edupace-led-flash', {
+                detail: { kind, source: 'simulation', at: new Date().toISOString() }
+            })
+        );
+    }
 }
 
 function processLedEvents(windowStart, windowEnd) {
@@ -634,6 +643,14 @@ function sampleWaveform(timeSeconds) {
     return leftPoint.value + ratio * (rightPoint.value - leftPoint.value);
 }
 
+function broadcastPauseState(paused) {
+    window.dispatchEvent(
+        new CustomEvent('edupace-telemetry-pause', {
+            detail: { paused }
+        })
+    );
+}
+
 
 function handlePointerDown(event) {
     if (!canvas) return;
@@ -645,6 +662,7 @@ function handlePointerDown(event) {
         caliper = null;
         pendingCaliper = null;
         ignoreNextPointerUp = true;
+        broadcastPauseState(true);
         draw();
         return;
     }
@@ -654,6 +672,7 @@ function handlePointerDown(event) {
         caliper = null;
         pendingCaliper = null;
         ignoreNextPointerUp = false;
+        broadcastPauseState(false);
         draw();
         return;
     }
@@ -700,6 +719,7 @@ function handlePointerUp(event) {
     pendingCaliper = null;
     caliper = null;
     isPaused = false;
+    broadcastPauseState(false);
 }
 
 function getPointerPosition(event) {

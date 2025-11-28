@@ -46,16 +46,44 @@
                     <div class="scenario-banner" role="region" aria-label="Scenario selection">
                         <div class="scenario-banner-text">
                             <span class="scenario-pill">Scenario</span>
-                            <div id="scenarioName" class="scenario-name">No scenario active</div>
+                            <button id="scenarioPicker" class="scenario-name scenario-picker" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                <span id="scenarioPickerLabel">No scenario active</span>
+                                <span class="chevron" aria-hidden="true">▾</span>
+                            </button>
+                            <div id="scenarioMenu" class="scenario-menu" role="listbox" aria-label="Available scenarios"></div>
                             <p id="scenarioText" class="scenario-text">
                                 Select a scenario to begin a training case.
                             </p>
                         </div>
-                        <div class="scenario-controls" aria-label="Scenario controls">
-                            <label for="scenarioSelect" class="scenario-label">Choose scenario</label>
-                            <select id="scenarioSelect" class="scenario-select">
-                                <option value="" disabled selected>Loading scenarios…</option>
-                            </select>
+                        <div class="session-actions" aria-label="Session controls">
+                            <div class="session-cta-row">
+                                <button id="startSessionBtn" class="btn btn-primary session-chip" type="button" disabled>
+                                    <span class="btn-icon" aria-hidden="true">▶</span>
+                                    <span class="btn-label">Start</span>
+                                </button>
+                                <button id="pauseSessionBtn" class="btn btn-ghost session-chip" type="button" disabled>
+                                    <span class="btn-icon" aria-hidden="true">⏸</span>
+                                    <span class="btn-label">Pause</span>
+                                </button>
+                                <button id="endSessionBtn" class="btn btn-ghost session-chip session-end" type="button" disabled>
+                                    <span class="btn-icon" aria-hidden="true">■</span>
+                                    <span class="btn-label">End</span>
+                                </button>
+                                <a
+                                    id="downloadLogBtn"
+                                    class="btn btn-ghost btn-small session-chip session-download is-hidden"
+                                    role="button"
+                                    download
+                                >
+                                    Download log
+                                </a>
+                            </div>
+                            <div class="session-meta">
+                                <p id="sessionStatusText" class="session-status" aria-live="polite">
+                                    Select a scenario to begin.
+                                    <span id="sessionTimerDisplay" class="session-timer-inline"></span>
+                                </p>
+                            </div>
                         </div>
                     </div>
 

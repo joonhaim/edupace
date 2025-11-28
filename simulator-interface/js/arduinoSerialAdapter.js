@@ -260,6 +260,12 @@ function updateConnectionStatus(text, connected, unsupported = false) {
     ui.connectionStatus.classList.toggle('chip-disconnected', !connected && !unsupported);
     ui.connectionStatus.classList.toggle('chip-unsupported', unsupported);
     setUnsupportedHintVisible(unsupported);
+
+    window.dispatchEvent(
+        new CustomEvent('edupace-connection', {
+            detail: { status: text, connected, unsupported }
+        })
+    );
 }
 
 async function readLoop() {
@@ -337,11 +343,11 @@ function handleHardwareMessage(line) {
     parameterState.asynchronous = asyncMode;
 
     if (payload.paceLed) {
-        flashLed(ui.paceLed);
+        flashLed(ui.paceLed, 'pace');
     }
 
     if (payload.senseLed) {
-        flashLed(ui.senseLed);
+        flashLed(ui.senseLed, 'sense');
     }
 
     if (parameterChanged) {
@@ -404,7 +410,7 @@ function parsePayload(line) {
     return payload;
 }
 
-function flashLed(ledElement) {
+function flashLed(ledElement, kind = 'pace') {
     if (!isPoweredOn) {
         return;
     }
@@ -413,15 +419,25 @@ function flashLed(ledElement) {
     setTimeout(() => {
         ledElement.classList.remove('led-on');
     }, 180);
+
+    window.dispatchEvent(
+        new CustomEvent('edupace-led-flash', {
+            detail: {
+                kind,
+                source: serialState.port ? 'hardware' : 'ui',
+                at: new Date().toISOString()
+            }
+        })
+    );
 }
 
 function triggerPaceFlash() {
-    flashLed(ui.paceLed);
+    flashLed(ui.paceLed, 'pace');
     sendLedCommand('PACE');
 }
 
 function triggerSenseFlash() {
-    flashLed(ui.senseLed);
+    flashLed(ui.senseLed, 'sense');
     sendLedCommand('SENSE');
 }
 

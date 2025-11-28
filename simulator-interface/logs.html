@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EduPace – Session logs</title>
+    <meta name="application-name" content="EduPace">
+    <meta name="theme-color" content="#f5f7fa">
+    <link rel="icon" type="image/png" href="/simulator-interface/assets/logos/edupace_logo2.png" sizes="180x180">
+    <link rel="apple-touch-icon" href="/simulator-interface/assets/logos/edupace_logo2.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="styles/main.css">
+    <script src="js/layout.js" defer></script>
+    <script type="module" src="js/navInit.js"></script>
+    <script type="module" src="js/logsPage.js"></script>
+</head>
+<body class="page-logs theme-transition">
+    <div class="app-shell">
+        <div data-partial="nav" data-active-page="logs"></div>
+
+        <main class="screen-stack">
+            <section aria-label="Session logs">
+                <div class="logs-shell">
+                    <div class="logs-header">
+                        <div>
+                            <p class="eyebrow">Recorded sessions</p>
+                            <h1>Session logs</h1>
+                        </div>
+                        <p>Download completed runs as JSON or CSV.</p>
+                    </div>
+
+                    <div class="logs-toolbar" aria-label="Log filters">
+                        <label class="logs-filter">
+                            <span class="filter-label">Search</span>
+                            <input id="logSearch" type="search" placeholder="Scenario, operator, notes" />
+                        </label>
+                        <label class="logs-filter">
+                            <span class="filter-label">Sort by</span>
+                            <select id="logSort">
+                                <option value="newest">Newest first</option>
+                                <option value="oldest">Oldest first</option>
+                                <option value="duration">Longest duration</option>
+                                <option value="events">Most events</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div id="logsEmpty" class="log-empty" role="status">
+                        No sessions have been logged yet. Complete a run to see it here.
+                    </div>
+
+                    <div class="logs-grid">
+                        <div id="logsList" class="log-list" aria-live="polite"></div>
+                        <div id="logDetailPanel" class="log-detail is-hidden" aria-live="polite"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div data-partial="footer"></div>
+    </div>
+</body>
+</html>
