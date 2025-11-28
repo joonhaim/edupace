@@ -30,11 +30,30 @@
                         <p>Download completed runs as JSON or CSV.</p>
                     </div>
 
+                    <div class="logs-toolbar" aria-label="Log filters">
+                        <label class="logs-filter">
+                            <span class="filter-label">Search</span>
+                            <input id="logSearch" type="search" placeholder="Scenario, operator, notes" />
+                        </label>
+                        <label class="logs-filter">
+                            <span class="filter-label">Sort by</span>
+                            <select id="logSort">
+                                <option value="newest">Newest first</option>
+                                <option value="oldest">Oldest first</option>
+                                <option value="duration">Longest duration</option>
+                                <option value="events">Most events</option>
+                            </select>
+                        </label>
+                    </div>
+
                     <div id="logsEmpty" class="log-empty" role="status">
                         No sessions have been logged yet. Complete a run to see it here.
                     </div>
 
-                    <div id="logsList" class="log-list" aria-live="polite"></div>
+                    <div class="logs-grid">
+                        <div id="logsList" class="log-list" aria-live="polite"></div>
+                        <div id="logDetailPanel" class="log-detail is-hidden" aria-live="polite"></div>
+                    </div>
                 </div>
             </section>
         </main>

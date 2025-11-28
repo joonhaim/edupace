@@ -1,8 +1,10 @@
 const ALARM_LEVELS = ['normal', 'warning', 'critical'];
 
 const scenarioElements = {
-    scenarioName: document.getElementById('scenarioName'),
+    scenarioName: document.getElementById('scenarioPickerLabel'),
     scenarioText: document.getElementById('scenarioText'),
+    scenarioPicker: document.getElementById('scenarioPicker'),
+    scenarioMenu: document.getElementById('scenarioMenu'),
     paceMode: document.getElementById('paceMode'),
     alarmBanner: document.getElementById('alarmBanner'),
     alarmText: document.getElementById('alarmText'),
@@ -34,8 +36,30 @@ const defaultTexts = textKeys.reduce((acc, key) => {
 
 const scenarioState = {
     scenarios: [],
-    activeScenario: null
+    activeScenario: null,
+    activeIndex: null
 };
+
+
+function toggleMenu(open = null) {
+    const menu = scenarioElements.scenarioMenu;
+    const trigger = scenarioElements.scenarioPicker;
+    if (!menu || !trigger) return;
+
+    const isOpen = open === null ? !menu.classList.contains('open') : open;
+    menu.classList.toggle('open', isOpen);
+    trigger.setAttribute('aria-expanded', String(isOpen));
+}
+
+function highlightActiveOption() {
+    const menu = scenarioElements.scenarioMenu;
+    if (!menu) return;
+    const options = menu.querySelectorAll('.scenario-option');
+    options.forEach((option) => {
+        const selected = option.dataset.index === String(scenarioState.activeIndex);
+        option.setAttribute('aria-selected', String(selected));
+    });
+}
 
 
 
@@ -76,6 +100,14 @@ function setAlarmLevel(level) {
 function updateAlarm(alarm = null) {
     updateText('alarmText', alarm?.text ?? null);
     setAlarmLevel(alarm?.level ?? 'normal');
+    window.dispatchEvent(
+        new CustomEvent('edupace-alarm', {
+            detail: {
+                level: alarm?.level ?? 'normal',
+                text: alarm?.text ?? null
+            }
+        })
+    );
 }
 
 async function loadScenarios() {
@@ -99,35 +131,44 @@ async function loadScenarios() {
     return scenarioState.scenarios;
 }
 
-function populateScenarioSelect(select, scenarios) {
-    
-    select.innerHTML = '';
+function renderScenarioMenu(menu, scenarios) {
+    if (!menu) return;
+
+    menu.innerHTML = '';
+
+    const list = document.createElement('div');
+    list.className = 'scenario-menu-list';
 
     if (!scenarios.length) {
-        const option = document.createElement('option');
-        option.value = '';
-        option.textContent = 'No scenarios found';
-        option.disabled = true;
-        select.appendChild(option);
-        return;
+        const empty = document.createElement('div');
+        empty.className = 'scenario-option';
+        empty.textContent = 'No scenarios found';
+        empty.setAttribute('aria-disabled', 'true');
+        empty.tabIndex = -1;
+        list.appendChild(empty);
     }
 
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Select a scenario';
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    select.appendChild(placeholder);
-
     scenarios.forEach((scenario, index) => {
-        const option = document.createElement('option');
-        option.value = String(index);
-        option.textContent = scenario.comingSoon
-            ? `${scenario.title} (coming soon)`
-            : scenario.title;
-        option.disabled = Boolean(scenario.comingSoon);
-        select.appendChild(option);
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'scenario-option';
+        option.dataset.index = String(index);
+        option.role = 'option';
+        option.textContent = scenario.title;
+        if (scenario.comingSoon) {
+            option.disabled = true;
+            option.title = 'Coming soon';
+        }
+
+        option.addEventListener('click', () => {
+            startScenario(index);
+            toggleMenu(false);
+        });
+
+        list.appendChild(option);
     });
+
+    menu.appendChild(list);
 }
 
 function applyScenarioText(scenario) {
@@ -180,8 +221,10 @@ function startScenario(index) {
         return;
     }
 
-  scenarioState.activeScenario = scenario;
+    scenarioState.activeScenario = scenario;
+    scenarioState.activeIndex = index;
     applyScenarioText(scenario);
+    highlightActiveOption();
 
     window.dispatchEvent(
         new CustomEvent('edupace-scenario-change', {
@@ -191,31 +234,28 @@ function startScenario(index) {
 }
 
 async function initScenarios() {
-    const select = document.getElementById('scenarioSelect');
+    const menu = scenarioElements.scenarioMenu;
+    const picker = scenarioElements.scenarioPicker;
 
-   if (!select) {
+    if (!menu || !picker) {
         return;
     }
 
     const scenarios = await loadScenarios();
-    populateScenarioSelect(select, scenarios);
+    renderScenarioMenu(menu, scenarios);
+
+    picker.addEventListener('click', () => toggleMenu());
+    document.addEventListener('click', (event) => {
+        if (event.target === picker || menu.contains(event.target)) return;
+        toggleMenu(false);
+    });
 
     window.addEventListener('edupace-rule-effects', (event) => {
         applyRuleEffects(event.detail?.effects ?? {});
     });
 
-    select.addEventListener('change', (event) => {
-        const value = Number(event.target.value);
-        if (Number.isNaN(value)) {
-            return;
-        }
-
-        startScenario(value);
-    });
-
     const firstAvailableIndex = scenarios.findIndex((scenario) => !scenario.comingSoon);
     if (firstAvailableIndex >= 0) {
-        select.value = String(firstAvailableIndex);
         startScenario(firstAvailableIndex);
     }
 }
