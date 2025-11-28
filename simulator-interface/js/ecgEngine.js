@@ -65,6 +65,7 @@ let displaySettings = {
     hrColor: 'blue',
     leadLabel: true,
     leadLabelColor: 'blue',
+    labelSize: 'normal',
     calibrationMarkers: true,
     rWaveMarkers: false,
     pacingSpikeLabel: true,
@@ -81,6 +82,7 @@ const ledElements = {
 };
 
 const overlayElements = {
+    overlay: document.querySelector('.ecg-overlay'),
     leadLabel: document.querySelector('.ecg-label'),
     calibration: document.querySelector('.calibration-note'),
     calibrationValue: document.querySelector('.calibration-note .calibration-value'),
@@ -193,6 +195,10 @@ function applyAnnotationStyles() {
     const leadColor = resolveColorValue(displaySettings.leadLabelColor, '#2563eb');
     if (overlayElements.leadLabel) {
         overlayElements.leadLabel.style.color = leadColor;
+    }
+
+    if (overlayElements.overlay) {
+        overlayElements.overlay.dataset.labelSize = displaySettings.labelSize;
     }
 
     const paceColor = resolveColorValue(displaySettings.paceColor, '#22c55e');
@@ -702,6 +708,16 @@ function handleDisplaySettings(event) {
     if (typeof settings.leadLabelColor === 'string') {
         displaySettings.leadLabelColor = settings.leadLabelColor;
         needsAnnotationUpdate = true;
+    }
+
+    if (typeof settings.labelSize === 'string') {
+        const normalizedSize = ['compact', 'normal', 'large'].includes(settings.labelSize)
+            ? settings.labelSize
+            : 'normal';
+        if (normalizedSize !== displaySettings.labelSize) {
+            displaySettings.labelSize = normalizedSize;
+            needsAnnotationUpdate = true;
+        }
     }
 
     if (typeof settings.calibrationMarkers === 'boolean') {
