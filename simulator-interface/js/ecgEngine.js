@@ -27,6 +27,22 @@ const TRACE_COLOR_MAP = {
 
 const ASYNC_SENSITIVITY_THRESHOLD = 20;
 
+function resolveAsyncMode({ sensitivity, mode, asynchronous }) {
+    if (typeof asynchronous === 'boolean') {
+        return asynchronous;
+    }
+
+    if (typeof mode === 'string' && mode.trim().toUpperCase() === 'ASYNC') {
+        return true;
+    }
+
+    if (typeof sensitivity === 'number') {
+        return sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
+    }
+
+    return false;
+}
+
 const engineState = {
     patientRate: 70,
     pacingRate: 70,
@@ -132,13 +148,19 @@ function initEcgEngine() {
 }
 
 function handleParameterChange(event) {
-    const { rate, output, sensitivity, power } = event.detail ?? {};
+    const { rate, output, sensitivity, power, mode, asynchronous } = event.detail ?? {};
     if (Number.isFinite(rate)) engineState.pacingRate = rate;
     if (Number.isFinite(output)) engineState.output = output;
     if (Number.isFinite(sensitivity)) {
         engineState.sensitivity = sensitivity;
-        engineState.asynchronous = sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
     }
+
+    engineState.asynchronous = resolveAsyncMode({
+        sensitivity: Number.isFinite(sensitivity) ? sensitivity : engineState.sensitivity,
+        mode,
+        asynchronous
+    });
+
     if (typeof power === 'boolean') engineState.poweredOn = power;
     regenerateWaveform();
 }

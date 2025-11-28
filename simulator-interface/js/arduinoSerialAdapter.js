@@ -19,6 +19,7 @@ const ui = {
 };
 
 const defaultPaceMode = ui.paceMode?.textContent ?? '--';
+const ASYNC_SENSITIVITY_THRESHOLD = 20;
 
 const serialState = {
     port: null,
@@ -33,7 +34,10 @@ const decoder = new TextDecoder();
 const parameterState = {
     rate: null,
     output: null,
-    sensitivity: null
+    sensitivity: null,
+    mode: null,
+    power: null,
+    asynchronous: false
 };
 let isPoweredOn = false;
 let unsupportedHintDismissed = false;
@@ -82,11 +86,29 @@ function setBasePaceMode(mode) {
     ui.paceMode.textContent = baseMode;
 }
 
-function applyAsyncModeFromSensitivity(sensitivity) {
+function isAsyncMode({ sensitivity, mode, asynchronous }) {
+    if (typeof asynchronous === 'boolean') {
+        return asynchronous;
+    }
+
+    if (typeof mode === 'string' && mode.trim().toUpperCase() === 'ASYNC') {
+        return true;
+    }
+
+    if (typeof sensitivity === 'number') {
+        return sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
+    }
+
+    return false;
+}
+
+function applyAsyncModeIndicator({ sensitivity, mode, asynchronous }) {
     if (!ui.paceMode) return;
 
     const baseMode = ui.paceMode.dataset.baseMode ?? defaultPaceMode;
-    if (typeof sensitivity === 'number' && sensitivity > 20) {
+    const asyncMode = isAsyncMode({ sensitivity, mode, asynchronous });
+
+    if (asyncMode) {
         ui.paceMode.textContent = 'ASYNC';
     } else {
         ui.paceMode.textContent = baseMode;
@@ -130,10 +152,12 @@ function initHardwareIntegration() {
 
     window.addEventListener('edupace-parameters', (event) => {
         const sensitivity = event.detail?.sensitivity;
+        const mode = event.detail?.mode;
+        const asynchronous = event.detail?.asynchronous;
         if (typeof event.detail?.power === 'boolean') {
             isPoweredOn = event.detail.power;
         }
-        applyAsyncModeFromSensitivity(sensitivity);
+        applyAsyncModeIndicator({ sensitivity, mode, asynchronous });
     });
 
     window.edupaceHardware = {
@@ -242,27 +266,33 @@ function handleHardwareMessage(line) {
     const payload = parsePayload(line);
     let parameterChanged = false;
 
+    const updateParam = (key, value) => {
+        if (value === undefined) return;
+        if (parameterState[key] !== value) {
+            parameterState[key] = value;
+            parameterChanged = true;
+        }
+    };
+
     if (payload.rate !== undefined) {
         ui.rate.textContent = payload.rate;
-        parameterState.rate = payload.rate;
-        parameterChanged = true;
+        updateParam('rate', payload.rate);
     }
 
     if (payload.output !== undefined) {
         ui.output.textContent = payload.output;
-        parameterState.output = payload.output;
-        parameterChanged = true;
+        updateParam('output', payload.output);
     }
 
     if (payload.sensitivity !== undefined) {
         ui.sensitivity.textContent = payload.sensitivity;
-        parameterState.sensitivity = payload.sensitivity;
-        parameterChanged = true;
+        updateParam('sensitivity', payload.sensitivity);
     }
 
     if (payload.power !== undefined) {
         ui.powerStatus.textContent = `Power: ${payload.power}`;
         isPoweredOn = payload.power === 'ON';
+        updateParam('power', isPoweredOn);
     }
 
     if (payload.lock !== undefined) {
@@ -271,6 +301,13 @@ function handleHardwareMessage(line) {
 
     if (payload.mode !== undefined) {
         setBasePaceMode(payload.mode);
+        updateParam('mode', payload.mode);
+    }
+
+    const asyncMode = isAsyncMode(parameterState);
+    if (parameterState.asynchronous !== asyncMode) {
+        parameterState.asynchronous = asyncMode;
+        parameterChanged = true;
     }
 
     if (payload.paceLed) {
@@ -280,7 +317,7 @@ function handleHardwareMessage(line) {
     if (payload.senseLed) {
         flashLed(ui.senseLed);
     }
-    
+
     if (parameterChanged) {
         window.dispatchEvent(
             new CustomEvent('edupace-parameters', {
@@ -289,7 +326,7 @@ function handleHardwareMessage(line) {
         );
     }
 
-    applyAsyncModeFromSensitivity(parameterState.sensitivity);
+    applyAsyncModeIndicator(parameterState);
 }
 
 function parsePayload(line) {

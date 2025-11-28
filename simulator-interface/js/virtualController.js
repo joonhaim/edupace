@@ -1,5 +1,7 @@
 import { knobPresets } from './knobPresets.js';
 
+const ASYNC_SENSITIVITY_THRESHOLD = 20;
+
 const controllerState = {
     rate: getNearestPreset('rate', 80),
     output: getNearestPreset('output', 10),
@@ -7,6 +9,9 @@ const controllerState = {
     power: false,
     locked: false
 };
+
+const isAsyncFromSensitivity = (sensitivity) =>
+    typeof sensitivity === 'number' && sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
 
 function initVirtualController() {
     const parametersCard = document.querySelector('.parameters-card');
@@ -133,7 +138,7 @@ function initVirtualController() {
         refreshDisplay();
         window.dispatchEvent(
             new CustomEvent('edupace-parameters', {
-                detail: { ...controllerState }
+                detail: { ...controllerState, asynchronous: isAsyncFromSensitivity(controllerState.sensitivity) }
             })
         );
     };
