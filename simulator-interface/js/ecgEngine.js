@@ -42,6 +42,7 @@ let waveformDuration = 0;
 let maxWaveAmplitude = 1;
 let sweepX = 0;
 let sweepTime = 0;
+let sweepElapsed = 0;
 let lastFrameTime = null;
 let animationFrameId = null;
 let traceCanvas;
@@ -335,6 +336,7 @@ function regenerateWaveform() {
 function resetSweep() {
     sweepX = 0;
     sweepTime = 0;
+    sweepElapsed = 0;
     lastFrameTime = null;
     heartRateEngine?.reset();
     visibleBeatLabels = [];
@@ -435,6 +437,7 @@ function drawWaveform(width, height) {
 function advanceSweep(deltaSeconds) {
     if (!traceCtx || !traceCanvas || !waveformPoints.length || waveformDuration <= 0) return;
 
+    sweepElapsed += deltaSeconds;
     const width = traceCanvas.width;
     const height = traceCanvas.height;
     const secondsVisible = getSecondsVisible();
@@ -464,23 +467,11 @@ function advanceSweep(deltaSeconds) {
         sweepX = completedSweep ? 0 : endX;
         sweepTime = endTime;
         remainingPixels -= stepPixels;
-
-        if (completedSweep) {
-            traceCtx.clearRect(0, 0, width, height);
-            visibleBeatLabels = [];
-        }
     }
 }
 
 function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height, amplitude, occurrences = []) {
     if (!traceCtx) return;
-    const clearStart = Math.max(0, Math.min(startX, endX));
-    const clearEnd = Math.min(traceCanvas.width, Math.max(startX, endX) + traceCtx.lineWidth * 2);
-    traceCtx.clearRect(clearStart, 0, clearEnd - clearStart, height);
-
-    if (visibleBeatLabels.length && clearEnd > clearStart) {
-        visibleBeatLabels = visibleBeatLabels.filter((label) => label.x < clearStart || label.x > clearEnd);
-    }
 
     const distance = Math.max(1, Math.abs(endX - startX));
     const timeSpan = endTime - startTime;
@@ -525,6 +516,7 @@ function drawBeatLabels(startX, endX, startTime, endTime, height, midY, amplitud
     const timeSpan = endTime - startTime || 1;
     const paceColor = resolveColorValue(displaySettings.paceColor, '#f59e0b');
     const senseColor = resolveColorValue(displaySettings.senseColor, '#f59e0b');
+    const labelLifetime = Math.max(0, getSecondsVisible() - 1);
 
     traceCtx.save();
     traceCtx.font = `600 ${labelSize}px "Inter", sans-serif`;
@@ -532,6 +524,10 @@ function drawBeatLabels(startX, endX, startTime, endTime, height, midY, amplitud
     traceCtx.textBaseline = 'bottom';
     traceCtx.shadowColor = 'rgba(0, 0, 0, 0.35)';
     traceCtx.shadowBlur = 6;
+
+    visibleBeatLabels = visibleBeatLabels.filter((entry) =>
+        typeof entry.expiresAt === 'number' ? entry.expiresAt > sweepElapsed : true
+    );
 
     const newLabels = [];
 
@@ -547,7 +543,7 @@ function drawBeatLabels(startX, endX, startTime, endTime, height, midY, amplitud
 
         const color = isPaced ? paceColor : senseColor;
 
-        newLabels.push({ x, label, color });
+        newLabels.push({ x, label, color, expiresAt: sweepElapsed + labelLifetime });
     });
 
     if (newLabels.length) {
