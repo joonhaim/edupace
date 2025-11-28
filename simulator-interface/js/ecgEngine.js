@@ -8,20 +8,17 @@ const DEFAULT_SWEEP_SPEED_MM_PER_SEC = 25;
 const CALIPER_THRESHOLD = 4;
 
 const COLOR_PRESETS = {
-    amber: '#f59e0b',
-    blue: '#2563eb',
-    green: '#22c55e',
-    purple: '#a855f7',
-    red: '#ef4444',
-    teal: '#0ea5e9',
+    blue: '#1d4ed8',
+    green: '#00e000',
+    red: '#dc2626',
     white: '#f5f7fa'
 };
 
 const TRACE_COLOR_MAP = {
-    amber: '#f59e0b',
-    blue: '#38bdf8',
-    green: '#00E000',
-    white: '#e5e7eb'
+    blue: '#1d4ed8',
+    green: '#00e000',
+    red: '#dc2626',
+    white: '#f5f7fa'
 };
 
 const engineState = {
@@ -74,7 +71,8 @@ let displaySettings = {
     paceColor: 'green',
     intrinsicBeatLabels: false,
     senseColor: 'blue',
-    colorCodeBeats: true
+    colorCodeBeats: true,
+    intervalRulers: true
 };
 
 const ledElements = {
@@ -175,11 +173,11 @@ function configureTraceStyle() {
 }
 
 function getTraceColor(color) {
-    return TRACE_COLOR_MAP[color] || COLOR_PRESETS[color] || color || '#00E000';
+    return TRACE_COLOR_MAP[color] || COLOR_PRESETS[color] || color || '#00e000';
 }
 
 function resolveColorValue(color, fallback) {
-    return COLOR_PRESETS[color] || color || fallback || '#22c55e';
+    return COLOR_PRESETS[color] || color || fallback || '#00e000';
 }
 
 function applyAnnotationStyles() {
@@ -341,7 +339,7 @@ function stepFrame(timestamp) {
     lastFrameTime = timestamp;
 
     if (!isPaused && deltaSeconds > 0) {
-        advanceSweep(deltaSeconds);
+        advanceSweep(deltaSeconds * (displaySettings.sweepSpeed / DEFAULT_SWEEP_SPEED_MM_PER_SEC));
     }
 
     draw();
@@ -517,6 +515,15 @@ function handlePointerDown(event) {
         return;
     }
 
+    if (!displaySettings.intervalRulers) {
+        isPaused = false;
+        caliper = null;
+        pendingCaliper = null;
+        ignoreNextPointerUp = false;
+        draw();
+        return;
+    }
+
     pendingCaliper = {
         startX: x,
         endX: x,
@@ -525,7 +532,7 @@ function handlePointerDown(event) {
 }
 
 function handlePointerMove(event) {
-    if (!isPaused || !pendingCaliper) return;
+    if (!isPaused || !displaySettings.intervalRulers || !pendingCaliper) return;
 
     event.preventDefault();
     const { x } = getPointerPosition(event);
@@ -540,7 +547,7 @@ function handlePointerMove(event) {
 }
 
 function handlePointerUp(event) {
-    if (!isPaused) return;
+    if (!isPaused || !displaySettings.intervalRulers) return;
 
     event?.preventDefault();
 
@@ -571,7 +578,7 @@ function getPointerPosition(event) {
 
 function drawCaliper(width, height) {
     const activeCaliper = pendingCaliper?.active ? pendingCaliper : caliper;
-    if (!isPaused || !activeCaliper || !ctx) return;
+    if (!isPaused || !displaySettings.intervalRulers || !activeCaliper || !ctx) return;
 
     const start = Math.max(0, Math.min(width, activeCaliper.startX));
     const end = Math.max(0, Math.min(width, activeCaliper.endX));
@@ -623,7 +630,10 @@ function drawPauseOverlay(width, height) {
     ctx.font = '600 20px "Inter", sans-serif';
     ctx.fillText('Telemetry paused', width / 2, mainY);
     ctx.font = '14px "Inter", sans-serif';
-    ctx.fillText('Click and drag to place calipers, or tap to resume', width / 2, subY);
+    const subline = displaySettings.intervalRulers
+        ? 'Click and drag to place calipers, or tap to resume'
+        : 'Click anywhere to resume playback';
+    ctx.fillText(subline, width / 2, subY);
     ctx.restore();
 }
 
@@ -727,6 +737,15 @@ function handleDisplaySettings(event) {
     if (typeof settings.colorCodeBeats === 'boolean') {
         displaySettings.colorCodeBeats = settings.colorCodeBeats;
         setCanvasStateFlag('colorcode', settings.colorCodeBeats);
+    }
+
+    if (typeof settings.intervalRulers === 'boolean') {
+        displaySettings.intervalRulers = settings.intervalRulers;
+        if (!settings.intervalRulers) {
+            caliper = null;
+            pendingCaliper = null;
+            ignoreNextPointerUp = false;
+        }
     }
 
     if (typeof settings.hrDisplay === 'boolean') {

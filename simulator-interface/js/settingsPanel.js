@@ -15,7 +15,7 @@ const defaultSettings = {
     paceColor: 'green',
     intrinsicBeatLabels: false,
     senseColor: 'blue',
-    intervalRulers: false,
+    intervalRulers: true,
     alarmSound: true,
     buttonBeeps: true,
     soundVolume: 70,
