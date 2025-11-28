@@ -1,5 +1,6 @@
 const ui = {
     connectionStatus: document.getElementById('connectionStatus'),
+    connectionStatusText: document.querySelector('#connectionStatus .status-text'),
     powerStatus: document.getElementById('powerStatus'),
     lockStatus: document.getElementById('lockStatus'),
     connectBtn: document.getElementById('connectBtn'),
@@ -11,7 +12,10 @@ const ui = {
     senseLed: document.getElementById('senseLed'),
     ledTestPace: document.getElementById('ledTestPace'),
     ledTestSense: document.getElementById('ledTestSense'),
-    inputModeRadios: document.querySelectorAll('input[name="inputMode"]')
+    inputModeRadios: document.querySelectorAll('input[name="inputMode"]'),
+    connectionGroup: document.querySelector('.connection-group'),
+    unsupportedHint: null,
+    unsupportedHintClose: null
 };
 
 const defaultPaceMode = ui.paceMode?.textContent ?? '--';
@@ -32,6 +36,43 @@ const parameterState = {
     sensitivity: null
 };
 let isPoweredOn = false;
+let unsupportedHintDismissed = false;
+
+function createUnsupportedHint() {
+    if (!ui.connectionGroup || ui.unsupportedHint) return;
+
+    const hint = document.createElement('div');
+    hint.className = 'hint-toast connection-unsupported-hint';
+    hint.setAttribute('role', 'alert');
+
+    const text = document.createElement('span');
+    text.textContent =
+        'This browser does not support connection with the EduPace device. Please use Chrome, Edge, or any other browser that supports the Web Serial API.';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'hint-toast-close';
+    closeBtn.setAttribute('aria-label', 'Dismiss unsupported browser notice');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', () => {
+        unsupportedHintDismissed = true;
+        setUnsupportedHintVisible(false);
+    });
+
+    hint.appendChild(text);
+    hint.appendChild(closeBtn);
+
+    ui.connectionGroup.appendChild(hint);
+    ui.unsupportedHint = hint;
+    ui.unsupportedHintClose = closeBtn;
+}
+
+function setUnsupportedHintVisible(visible) {
+    if (!ui.unsupportedHint) return;
+
+    const shouldShow = visible && !unsupportedHintDismissed;
+    ui.unsupportedHint.classList.toggle('is-visible', shouldShow);
+}
 
 function setBasePaceMode(mode) {
     if (!ui.paceMode) return;
@@ -55,6 +96,7 @@ function applyAsyncModeFromSensitivity(sensitivity) {
 function initHardwareIntegration() {
     const supported = 'serial' in navigator;
 
+    createUnsupportedHint();
     setBasePaceMode(defaultPaceMode);
 
     if (!supported) {
@@ -158,10 +200,15 @@ async function disconnectFromHardware() {
 }
 
 function updateConnectionStatus(text, connected, unsupported = false) {
-    ui.connectionStatus.textContent = text;
+    if (ui.connectionStatusText) {
+        ui.connectionStatusText.textContent = text;
+    } else {
+        ui.connectionStatus.textContent = text;
+    }
     ui.connectionStatus.classList.toggle('chip-connected', connected && !unsupported);
     ui.connectionStatus.classList.toggle('chip-disconnected', !connected && !unsupported);
     ui.connectionStatus.classList.toggle('chip-unsupported', unsupported);
+    setUnsupportedHintVisible(unsupported);
 }
 
 async function readLoop() {

@@ -31,15 +31,50 @@ function initVirtualController() {
     };
 
     const powerHoldHint = document.createElement('div');
-    powerHoldHint.className = 'power-hold-hint';
+    powerHoldHint.className = 'hint-toast power-hold-hint';
     powerHoldHint.setAttribute('role', 'alert');
-    powerHoldHint.textContent = 'Hold for 2 seconds to turn off the controller';
+
+    const powerHoldText = document.createElement('span');
+    powerHoldText.textContent = 'Hold for 2 seconds to turn off the controller';
+
+    const powerHoldClose = document.createElement('button');
+    powerHoldClose.type = 'button';
+    powerHoldClose.className = 'hint-toast-close';
+    powerHoldClose.setAttribute('aria-label', 'Dismiss power button hint');
+    powerHoldClose.innerHTML = '&times;';
+
+    powerHoldHint.appendChild(powerHoldText);
+    powerHoldHint.appendChild(powerHoldClose);
     parametersCard.appendChild(powerHoldHint);
 
+    const lockWarning = document.createElement('div');
+    lockWarning.className = 'hint-toast lock-warning';
+    lockWarning.setAttribute('role', 'alert');
+
+    const lockWarningText = document.createElement('span');
+    lockWarningText.textContent = 'Unlock the controller to power it off.';
+
+    const lockWarningClose = document.createElement('button');
+    lockWarningClose.type = 'button';
+    lockWarningClose.className = 'hint-toast-close';
+    lockWarningClose.setAttribute('aria-label', 'Dismiss unlock warning');
+    lockWarningClose.innerHTML = '&times;';
+
+    lockWarning.appendChild(lockWarningText);
+    lockWarning.appendChild(lockWarningClose);
+
+    const lockWarningHost = actionsContainer ?? parametersCard;
+    lockWarningHost.appendChild(lockWarning);
+
     const POWER_OFF_HOLD_MS = 2000;
+    const AUTO_LOCK_DELAY_MS = 60000;
     let powerHoldTimer = null;
     let suppressNextClick = false;
     let hintTimer = null;
+    let lockWarningTimer = null;
+    let powerHintDismissed = false;
+    let autoLockTimer = null;
+    let lastAdjustmentAt = null;
 
     const isVirtualMode = () => Array.from(modeRadios).some((radio) => radio.checked && radio.value === 'virtual');
 
@@ -86,6 +121,12 @@ function initVirtualController() {
         controlGroups.forEach((group) => {
             group.setAttribute('aria-disabled', String(controllerState.locked && virtualMode));
         });
+
+        const lockDisabled = !controllerState.power;
+        if (actionButtons.lock) {
+            actionButtons.lock.toggleAttribute('disabled', lockDisabled);
+            actionButtons.lock.setAttribute('aria-disabled', String(lockDisabled));
+        }
     };
 
     const broadcastParameters = () => {
@@ -98,6 +139,25 @@ function initVirtualController() {
     };
 
     const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+    const scheduleAutoLock = () => {
+        if (autoLockTimer) {
+            clearTimeout(autoLockTimer);
+            autoLockTimer = null;
+        }
+
+        if (!isVirtualMode()) return;
+
+        lastAdjustmentAt = Date.now();
+        autoLockTimer = window.setTimeout(() => {
+            autoLockTimer = null;
+            if (!isVirtualMode() || controllerState.locked || !controllerState.power) return;
+            if (Date.now() - lastAdjustmentAt >= AUTO_LOCK_DELAY_MS) {
+                controllerState.locked = true;
+                broadcastParameters();
+            }
+        }, AUTO_LOCK_DELAY_MS);
+    };
 
     const adjustValue = (key, direction, min, max, step) => {
         if (!isVirtualMode() || controllerState.locked) return;
@@ -113,6 +173,7 @@ function initVirtualController() {
             if (nextValue !== controllerState[key]) {
                 controllerState[key] = nextValue;
                 broadcastParameters();
+                scheduleAutoLock();
             }
             return;
         }
@@ -124,6 +185,7 @@ function initVirtualController() {
         if (rounded !== controllerState[key]) {
             controllerState[key] = rounded;
             broadcastParameters();
+            scheduleAutoLock();
         }
     };
 
@@ -144,23 +206,32 @@ function initVirtualController() {
         increment?.addEventListener('click', () => handleAdjust('up'));
     });
 
-    const clearPowerHint = () => {
+    const clearPowerHintTimer = () => {
         if (hintTimer) {
             clearTimeout(hintTimer);
             hintTimer = null;
         }
-        powerHoldHint.classList.remove('is-visible');
     };
 
-    const showPowerHint = () => {
-        powerHoldHint.classList.add('is-visible');
-        if (hintTimer) {
-            clearTimeout(hintTimer);
+    const setPowerHintVisible = (visible) => {
+        clearPowerHintTimer();
+        if (!visible) {
+            powerHoldHint.classList.remove('is-visible');
+            return;
         }
+
+        powerHoldHint.classList.add('is-visible');
         hintTimer = window.setTimeout(() => {
             powerHoldHint.classList.remove('is-visible');
             hintTimer = null;
         }, 2200);
+    };
+
+    const clearPowerHint = () => setPowerHintVisible(false);
+
+    const showPowerHint = () => {
+        if (powerHintDismissed) return;
+        setPowerHintVisible(true);
     };
 
     const clearPowerHold = () => {
@@ -170,10 +241,32 @@ function initVirtualController() {
         }
     };
 
+    const clearLockWarning = () => {
+        if (lockWarningTimer) {
+            clearTimeout(lockWarningTimer);
+            lockWarningTimer = null;
+        }
+        lockWarning.classList.remove('is-visible');
+    };
+
+    const showLockWarning = () => {
+        clearLockWarning();
+        lockWarning.classList.add('is-visible');
+        lockWarningTimer = window.setTimeout(() => {
+            lockWarning.classList.remove('is-visible');
+            lockWarningTimer = null;
+        }, 2400);
+    };
+
     const handlePowerPointerDown = () => {
         if (!isVirtualMode()) return;
 
         if (!controllerState.power) {
+            return;
+        }
+
+        if (controllerState.locked) {
+            showLockWarning();
             return;
         }
 
@@ -183,6 +276,10 @@ function initVirtualController() {
             controllerState.power = false;
             suppressNextClick = true;
             broadcastParameters();
+            if (autoLockTimer) {
+                clearTimeout(autoLockTimer);
+                autoLockTimer = null;
+            }
             clearPowerHold();
         }, POWER_OFF_HOLD_MS);
     };
@@ -217,11 +314,18 @@ function initVirtualController() {
     };
 
     const toggleLock = () => {
-        if (!isVirtualMode()) return;
+        if (!isVirtualMode() || !controllerState.power) return;
 
         controllerState.locked = !controllerState.locked;
         broadcastParameters();
     };
+
+    powerHoldClose.addEventListener('click', () => {
+        powerHintDismissed = true;
+        setPowerHintVisible(false);
+    });
+
+    lockWarningClose.addEventListener('click', clearLockWarning);
 
     actionButtons.power?.addEventListener('pointerdown', handlePowerPointerDown);
     actionButtons.power?.addEventListener('pointerup', handlePowerPointerUp);
