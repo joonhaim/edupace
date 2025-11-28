@@ -256,6 +256,9 @@ body.simulation-dark .scenario-pill {
 body.simulation-dark .brand {
     color: #e5e8ed;
 }
+body.simulation-dark .brand-mark {
+    background-image: url("../assets/logos/edupace_logo2_neg.png");
+}
 body.simulation-dark .param-tile {
     background: #101827;
     border-color: #1c2738;
