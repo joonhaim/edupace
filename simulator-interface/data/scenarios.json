@@ -26,28 +26,12 @@
       "objective": "Confirm the pacemaker remains inhibited while the patient maintains an intrinsic sinus rate.",
       "feedback": "No pacing spikes should be visible. If pacing occurs, lower the rate below the intrinsic rhythm or verify sensing leads.",
       "rules": [
-        {
-          "id": "uc00-loss-of-capture",
-          "description": "Loss of capture when rate exceeds the intrinsic rhythm without adequate output",
-          "condition": {
-            "rate": [80, 120],
-            "output": [0, 3]
-          },
-          "effects": {
-            "alarm": {
-              "level": "warning",
-              "text": "Loss of capture – increase output"
-            },
-            "feedback": "Increase the pacing output until capture returns, then add a 2 mA safety margin.",
-            "waveformId": "loss-of-capture"
-          }
-        }
       ]
     },
     {
       "id": "UC-01",
       "code": "01",
-      "title": "01 · Symptomatic Ventricular Bradycardia (VVI Setup)",
+      "title": "01 · Symptomatic Ventricular Bradycardia",
       "description": "Patient with symptomatic ventricular bradycardia requiring VVI demand pacing.",
       "summaryLabel": "Bradycardia requiring VVI pacing",
       "primaryRhythm": "Symptomatic ventricular bradycardia",
