@@ -87,6 +87,7 @@ function initVirtualController() {
     const updateTiles = () => {
         const showValues = controllerState.power;
         const showAsync = showValues && isAsyncFromSensitivity(controllerState.sensitivity);
+        const showUnits = showValues && !showAsync;
 
         if (display.rate) {
             display.rate.textContent = showValues ? formatValue('rate', controllerState.rate) : '--';
@@ -102,7 +103,7 @@ function initVirtualController() {
                 : '--';
         }
         if (display.sensitivityUnit) {
-            display.sensitivityUnit.textContent = showAsync ? '' : 'mV';
+            display.sensitivityUnit.textContent = showUnits ? 'mV' : '';
         }
     };
 
@@ -131,7 +132,8 @@ function initVirtualController() {
         parametersCard.classList.toggle('is-locked', virtualMode && controllerState.locked);
 
         controlGroups.forEach((group) => {
-            group.setAttribute('aria-disabled', String(controllerState.locked && virtualMode));
+            const disabled = virtualMode && (controllerState.locked || !controllerState.power);
+            group.setAttribute('aria-disabled', String(disabled));
         });
 
         const lockDisabled = !controllerState.power;
@@ -145,7 +147,10 @@ function initVirtualController() {
         refreshDisplay();
         window.dispatchEvent(
             new CustomEvent('edupace-parameters', {
-                detail: { ...controllerState, asynchronous: isAsyncFromSensitivity(controllerState.sensitivity) }
+                detail: {
+                    ...controllerState,
+                    asynchronous: controllerState.power && isAsyncFromSensitivity(controllerState.sensitivity)
+                }
             })
         );
     };
@@ -172,7 +177,7 @@ function initVirtualController() {
     };
 
     const adjustValue = (key, direction, min, max, step) => {
-        if (!isVirtualMode() || controllerState.locked) return;
+        if (!isVirtualMode() || controllerState.locked || !controllerState.power) return;
 
         const presets = knobPresets[key] ?? [];
 

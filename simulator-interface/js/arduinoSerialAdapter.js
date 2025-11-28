@@ -91,18 +91,28 @@ function formatSensitivityValue(value) {
     return Number.isFinite(value) ? value.toFixed(1) : '--';
 }
 
-function applySensitivityDisplay({ sensitivity, mode, asynchronous }) {
+function applySensitivityDisplay({ sensitivity, mode, asynchronous, power }) {
     if (!ui.sensitivity) return;
 
-    const asyncMode = isAsyncMode({ sensitivity, mode, asynchronous });
-    ui.sensitivity.textContent = asyncMode ? 'ASYNC' : formatSensitivityValue(sensitivity);
+    const powered = typeof power === 'boolean' ? power : isPoweredOn;
+    const asyncMode = powered && isAsyncMode({ sensitivity, mode, asynchronous, power: powered });
+
+    if (powered) {
+        ui.sensitivity.textContent = asyncMode ? 'ASYNC' : formatSensitivityValue(sensitivity);
+    } else {
+        ui.sensitivity.textContent = '--';
+    }
 
     if (ui.sensitivityUnit) {
-        ui.sensitivityUnit.textContent = asyncMode ? '' : 'mV';
+        ui.sensitivityUnit.textContent = powered && !asyncMode ? 'mV' : '';
     }
 }
 
-function isAsyncMode({ sensitivity, mode, asynchronous }) {
+function isAsyncMode({ power, sensitivity, mode, asynchronous }) {
+    if (power === false) {
+        return false;
+    }
+
     if (typeof asynchronous === 'boolean') {
         return asynchronous;
     }
@@ -118,11 +128,11 @@ function isAsyncMode({ sensitivity, mode, asynchronous }) {
     return false;
 }
 
-function applyAsyncModeIndicator({ sensitivity, mode, asynchronous }) {
+function applyAsyncModeIndicator({ sensitivity, mode, asynchronous, power }) {
     if (!ui.paceMode) return;
 
     const baseMode = ui.paceMode.dataset.baseMode ?? defaultPaceMode;
-    const asyncMode = isAsyncMode({ sensitivity, mode, asynchronous });
+    const asyncMode = isAsyncMode({ sensitivity, mode, asynchronous, power });
 
     if (asyncMode) {
         ui.paceMode.textContent = 'ASYNC';
@@ -173,8 +183,8 @@ function initHardwareIntegration() {
         if (typeof event.detail?.power === 'boolean') {
             isPoweredOn = event.detail.power;
         }
-        applyAsyncModeIndicator({ sensitivity, mode, asynchronous });
-        applySensitivityDisplay({ sensitivity, mode, asynchronous });
+        applyAsyncModeIndicator({ sensitivity, mode, asynchronous, power: isPoweredOn });
+        applySensitivityDisplay({ sensitivity, mode, asynchronous, power: isPoweredOn });
     });
 
     window.edupaceHardware = {
