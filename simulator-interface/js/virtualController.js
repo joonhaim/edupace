@@ -1,5 +1,7 @@
 import { knobPresets } from './knobPresets.js';
 
+const ASYNC_SENSITIVITY_THRESHOLD = 20;
+
 const controllerState = {
     rate: getNearestPreset('rate', 80),
     output: getNearestPreset('output', 10),
@@ -7,6 +9,9 @@ const controllerState = {
     power: false,
     locked: false
 };
+
+const isAsyncFromSensitivity = (sensitivity) =>
+    typeof sensitivity === 'number' && sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
 
 function initVirtualController() {
     const parametersCard = document.querySelector('.parameters-card');
@@ -27,7 +32,8 @@ function initVirtualController() {
     const display = {
         rate: document.getElementById('rateValue'),
         output: document.getElementById('outputValue'),
-        sensitivity: document.getElementById('sensValue')
+        sensitivity: document.getElementById('sensValue'),
+        sensitivityUnit: document.querySelector('#sensValue + .param-unit')
     };
 
     const powerHoldHint = document.createElement('div');
@@ -80,6 +86,8 @@ function initVirtualController() {
 
     const updateTiles = () => {
         const showValues = controllerState.power;
+        const showAsync = showValues && isAsyncFromSensitivity(controllerState.sensitivity);
+        const showUnits = showValues && !showAsync;
 
         if (display.rate) {
             display.rate.textContent = showValues ? formatValue('rate', controllerState.rate) : '--';
@@ -89,8 +97,13 @@ function initVirtualController() {
         }
         if (display.sensitivity) {
             display.sensitivity.textContent = showValues
-                ? formatValue('sensitivity', controllerState.sensitivity)
+                ? showAsync
+                    ? 'ASYNC'
+                    : formatValue('sensitivity', controllerState.sensitivity)
                 : '--';
+        }
+        if (display.sensitivityUnit) {
+            display.sensitivityUnit.textContent = showUnits ? 'mV' : '';
         }
     };
 
@@ -119,7 +132,8 @@ function initVirtualController() {
         parametersCard.classList.toggle('is-locked', virtualMode && controllerState.locked);
 
         controlGroups.forEach((group) => {
-            group.setAttribute('aria-disabled', String(controllerState.locked && virtualMode));
+            const disabled = virtualMode && (controllerState.locked || !controllerState.power);
+            group.setAttribute('aria-disabled', String(disabled));
         });
 
         const lockDisabled = !controllerState.power;
@@ -133,7 +147,10 @@ function initVirtualController() {
         refreshDisplay();
         window.dispatchEvent(
             new CustomEvent('edupace-parameters', {
-                detail: { ...controllerState }
+                detail: {
+                    ...controllerState,
+                    asynchronous: controllerState.power && isAsyncFromSensitivity(controllerState.sensitivity)
+                }
             })
         );
     };
@@ -160,7 +177,7 @@ function initVirtualController() {
     };
 
     const adjustValue = (key, direction, min, max, step) => {
-        if (!isVirtualMode() || controllerState.locked) return;
+        if (!isVirtualMode() || controllerState.locked || !controllerState.power) return;
 
         const presets = knobPresets[key] ?? [];
 
