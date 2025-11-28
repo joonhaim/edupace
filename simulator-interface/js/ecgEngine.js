@@ -234,8 +234,10 @@ function flashLed(element, type) {
     }
 }
 
-function processLedEvents(windowStart, windowEnd) {
-    if (!engineState.poweredOn || !waveformDuration || !waveformEvents.length) return;
+function collectEventOccurrences(windowStart, windowEnd) {
+    if (!waveformDuration || !waveformEvents.length) return [];
+
+    const occurrences = [];
 
     waveformEvents.forEach((event) => {
         if (!event || typeof event.time !== 'number') return;
@@ -244,11 +246,21 @@ function processLedEvents(windowStart, windowEnd) {
         const occurrence = event.time + cyclesOffset * waveformDuration;
 
         if (occurrence >= windowStart && occurrence <= windowEnd) {
-            if (event.type === 'pace') {
-                flashLed(ledElements.pace, 'PACE');
-            } else if (event.type === 'sense') {
-                flashLed(ledElements.sense, 'SENSE');
-            }
+            occurrences.push({ ...event, occurrence });
+        }
+    });
+
+    return occurrences;
+}
+
+function processLedEvents(occurrences) {
+    if (!engineState.poweredOn || !occurrences.length) return;
+
+    occurrences.forEach((event) => {
+        if (event.type === 'pace') {
+            flashLed(ledElements.pace, 'PACE');
+        } else if (event.type === 'sense') {
+            flashLed(ledElements.sense, 'SENSE');
         }
     });
 }
@@ -437,8 +449,12 @@ function advanceSweep(deltaSeconds) {
         const startX = sweepX;
         const endX = sweepX + stepPixels;
 
-        processLedEvents(startTime, endTime);
-        drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height);
+        const occurrences = engineState.poweredOn
+            ? collectEventOccurrences(startTime, endTime)
+            : [];
+
+        processLedEvents(occurrences);
+        drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height, occurrences);
 
         sweepX = endX >= width ? 0 : endX;
         sweepTime = endTime;
@@ -446,7 +462,7 @@ function advanceSweep(deltaSeconds) {
     }
 }
 
-function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height) {
+function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height, occurrences = []) {
     if (!traceCtx) return;
     const clearStart = Math.max(0, Math.min(startX, endX));
     const clearEnd = Math.min(traceCanvas.width, Math.max(startX, endX) + traceCtx.lineWidth * 2);
@@ -475,6 +491,49 @@ function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height
     const finalY = valueToY(finalValue, midY, scaleY);
     traceCtx.lineTo(endX, finalY);
     traceCtx.stroke();
+
+    drawBeatLabels(startX, endX, startTime, endTime, height, occurrences);
+}
+
+function drawBeatLabels(startX, endX, startTime, endTime, height, occurrences) {
+    if (!traceCtx || !occurrences.length) return;
+
+    const showPacedLabels = displaySettings.pacingSpikeLabel;
+    const showSenseLabels = displaySettings.intrinsicBeatLabels;
+    if (!showPacedLabels && !showSenseLabels) return;
+
+    const labelSize = displaySettings.labelSize === 'large'
+        ? 18
+        : displaySettings.labelSize === 'compact'
+            ? 14
+            : 16;
+    const labelY = Math.max(20, height - 14);
+    const timeSpan = endTime - startTime || 1;
+    const paceColor = resolveColorValue(displaySettings.paceColor, '#22c55e');
+    const senseColor = resolveColorValue(displaySettings.senseColor, '#2563eb');
+
+    traceCtx.save();
+    traceCtx.font = `600 ${labelSize}px "Inter", sans-serif`;
+    traceCtx.textAlign = 'center';
+    traceCtx.textBaseline = 'bottom';
+    traceCtx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+    traceCtx.shadowBlur = 6;
+
+    occurrences.forEach((event) => {
+        const isPaced = event.type === 'pace';
+        const isSensed = event.type === 'sense';
+
+        if ((isPaced && !showPacedLabels) || (isSensed && !showSenseLabels)) return;
+
+        const ratio = (event.occurrence - startTime) / timeSpan;
+        const x = startX + ratio * (endX - startX);
+        const label = isPaced ? 'VP' : 'VS';
+
+        traceCtx.fillStyle = isPaced ? paceColor : senseColor;
+        traceCtx.fillText(label, x, labelY);
+    });
+
+    traceCtx.restore();
 }
 
 function valueToY(value, midY, scaleY) {
