@@ -24,6 +24,7 @@
     border: 1px solid var(--border);
     padding: 0.85rem 1rem;
     border-radius: 12px;
+    position: relative;
 }
 
 .connection-label {
@@ -533,10 +534,8 @@ body.simulation-light .theme-toggle {
     line-height: 1.6;
 }
 
-.power-hold-hint {
+.hint-toast {
     position: absolute;
-    right: 1rem;
-    bottom: 1rem;
     padding: 0.85rem 1rem;
     background: rgba(12, 20, 34, 0.9);
     color: #ffffff;
@@ -551,18 +550,38 @@ body.simulation-light .theme-toggle {
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.power-hold-hint::before {
+.hint-toast::before {
     content: '';
     position: absolute;
+    border: 8px solid transparent;
+}
+
+.hint-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.power-hold-hint {
+    right: 1rem;
+    bottom: 1rem;
+}
+
+.power-hold-hint::before {
     bottom: -8px;
     right: 22px;
-    border: 8px solid transparent;
     border-top-color: rgba(12, 20, 34, 0.88);
 }
 
-.power-hold-hint.is-visible {
-    opacity: 1;
-    transform: translateY(0);
+.connection-unsupported-hint {
+    top: calc(100% + 0.5rem);
+    right: 0;
+    max-width: 320px;
+}
+
+.connection-unsupported-hint::before {
+    top: -16px;
+    right: 22px;
+    border-bottom-color: rgba(12, 20, 34, 0.88);
 }
 
 .mode-card,

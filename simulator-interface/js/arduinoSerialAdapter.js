@@ -12,7 +12,9 @@ const ui = {
     senseLed: document.getElementById('senseLed'),
     ledTestPace: document.getElementById('ledTestPace'),
     ledTestSense: document.getElementById('ledTestSense'),
-    inputModeRadios: document.querySelectorAll('input[name="inputMode"]')
+    inputModeRadios: document.querySelectorAll('input[name="inputMode"]'),
+    connectionGroup: document.querySelector('.connection-group'),
+    unsupportedHint: null
 };
 
 const defaultPaceMode = ui.paceMode?.textContent ?? '--';
@@ -33,6 +35,25 @@ const parameterState = {
     sensitivity: null
 };
 let isPoweredOn = false;
+
+function createUnsupportedHint() {
+    if (!ui.connectionGroup || ui.unsupportedHint) return;
+
+    const hint = document.createElement('div');
+    hint.className = 'hint-toast connection-unsupported-hint';
+    hint.setAttribute('role', 'alert');
+    hint.textContent =
+        'This browser does not support connection with the EduPace device. Please use Chrome, Edge, or any other browser that supports the Web Serial API.';
+
+    ui.connectionGroup.appendChild(hint);
+    ui.unsupportedHint = hint;
+}
+
+function setUnsupportedHintVisible(visible) {
+    if (!ui.unsupportedHint) return;
+
+    ui.unsupportedHint.classList.toggle('is-visible', visible);
+}
 
 function setBasePaceMode(mode) {
     if (!ui.paceMode) return;
@@ -56,6 +77,7 @@ function applyAsyncModeFromSensitivity(sensitivity) {
 function initHardwareIntegration() {
     const supported = 'serial' in navigator;
 
+    createUnsupportedHint();
     setBasePaceMode(defaultPaceMode);
 
     if (!supported) {
@@ -167,6 +189,7 @@ function updateConnectionStatus(text, connected, unsupported = false) {
     ui.connectionStatus.classList.toggle('chip-connected', connected && !unsupported);
     ui.connectionStatus.classList.toggle('chip-disconnected', !connected && !unsupported);
     ui.connectionStatus.classList.toggle('chip-unsupported', unsupported);
+    setUnsupportedHintVisible(unsupported);
 }
 
 async function readLoop() {
