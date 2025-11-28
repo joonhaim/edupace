@@ -206,14 +206,14 @@ function applyAnnotationStyles() {
         overlayElements.overlay.dataset.labelSize = displaySettings.labelSize;
     }
 
-    const paceColor = resolveColorValue(displaySettings.paceColor, '#22c55e');
+    const paceLedColor = '#22c55e';
     if (ledElements.pace) {
-        ledElements.pace.style.setProperty('--led-on-color', paceColor);
+        ledElements.pace.style.setProperty('--led-on-color', paceLedColor);
     }
 
-    const senseColor = resolveColorValue(displaySettings.senseColor, '#2563eb');
+    const senseLedColor = '#2563eb';
     if (ledElements.sense) {
-        ledElements.sense.style.setProperty('--led-on-color', senseColor);
+        ledElements.sense.style.setProperty('--led-on-color', senseLedColor);
     }
 }
 
