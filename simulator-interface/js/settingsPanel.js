@@ -11,6 +11,7 @@ const defaultSettings = {
     hrColor: 'white',
     leadLabel: true,
     leadLabelColor: 'white',
+    labelSize: 'normal',
     pacingSpikeLabel: true,
     paceColor: 'green',
     intrinsicBeatLabels: false,
@@ -148,6 +149,7 @@ function initSettingsPanel() {
     bindRadios(settingsCard, 'hrColor', 'hrColor');
     bindToggle(settingsCard, 'leadLabelToggle', 'leadLabel');
     bindRadios(settingsCard, 'leadLabelColor', 'leadLabelColor');
+    bindRadios(settingsCard, 'labelSize', 'labelSize');
     bindToggle(settingsCard, 'pacingLabelToggle', 'pacingSpikeLabel');
     bindRadios(settingsCard, 'paceColor', 'paceColor');
     bindToggle(settingsCard, 'intrinsicLabelToggle', 'intrinsicBeatLabels');

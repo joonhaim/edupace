@@ -250,6 +250,7 @@ body.simulation-light .theme-toggle {
     gap: 1.6rem;
     text-align: right;
     padding-right: 0.4rem;
+    margin-left: auto;
 }
 
 .vital-label {
@@ -281,6 +282,54 @@ body.simulation-light .theme-toggle {
 }
 
 .small {
+    font-size: 0.85rem;
+}
+
+.ecg-overlay[data-label-size="compact"] .ecg-label {
+    font-size: 0.9rem;
+}
+
+.ecg-overlay[data-label-size="compact"] .vital-label {
+    font-size: 0.7rem;
+}
+
+.ecg-overlay[data-label-size="compact"] .vital-value {
+    font-size: 1.7rem;
+}
+
+.ecg-overlay[data-label-size="compact"] .hr-value {
+    font-size: 2rem;
+}
+
+.ecg-overlay[data-label-size="compact"] .pace-value {
+    font-size: 1rem;
+}
+
+.ecg-overlay[data-label-size="compact"] .vital-unit {
+    font-size: 0.7rem;
+}
+
+.ecg-overlay[data-label-size="large"] .ecg-label {
+    font-size: 1.2rem;
+}
+
+.ecg-overlay[data-label-size="large"] .vital-label {
+    font-size: 0.9rem;
+}
+
+.ecg-overlay[data-label-size="large"] .vital-value {
+    font-size: 2.2rem;
+}
+
+.ecg-overlay[data-label-size="large"] .hr-value {
+    font-size: 2.6rem;
+}
+
+.ecg-overlay[data-label-size="large"] .pace-value {
+    font-size: 1.3rem;
+}
+
+.ecg-overlay[data-label-size="large"] .vital-unit {
     font-size: 0.85rem;
 }
 
@@ -547,7 +596,7 @@ body.simulation-light .theme-toggle {
     line-height: 1.45;
     opacity: 0;
     transform: translateY(10px);
-    pointer-events: auto;
+    pointer-events: none;
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
@@ -560,6 +609,7 @@ body.simulation-light .theme-toggle {
 .hint-toast.is-visible {
     opacity: 1;
     transform: translateY(0);
+    pointer-events: auto;
 }
 
 .hint-toast-close {
