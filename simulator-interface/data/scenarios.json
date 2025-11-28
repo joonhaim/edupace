@@ -2,7 +2,8 @@
   "scenarios": [
     {
       "id": "UC-00",
-      "title": "UC-00 · Normal Sinus Rhythm",
+      "code": "00",
+      "title": "00 · Normal Sinus Rhythm",
       "description": "Maintain VVI standby pacing while observing intrinsic beats.",
       "summaryLabel": "Normal sinus rhythm monitoring",
       "primaryRhythm": "Normal sinus rhythm",
@@ -29,14 +30,8 @@
           "id": "uc00-loss-of-capture",
           "description": "Loss of capture when rate exceeds the intrinsic rhythm without adequate output",
           "condition": {
-            "rate": [
-              80,
-              120
-            ],
-            "output": [
-              0,
-              3
-            ]
+            "rate": [80, 120],
+            "output": [0, 3]
           },
           "effects": {
             "alarm": {
@@ -51,7 +46,8 @@
     },
     {
       "id": "UC-01",
-      "title": "UC-01 · Symptomatic Ventricular Bradycardia (VVI Setup)",
+      "code": "01",
+      "title": "01 · Symptomatic Ventricular Bradycardia (VVI Setup)",
       "description": "Patient with symptomatic ventricular bradycardia requiring VVI demand pacing.",
       "summaryLabel": "Bradycardia requiring VVI pacing",
       "primaryRhythm": "Symptomatic ventricular bradycardia",
@@ -78,14 +74,8 @@
           "id": "uc01-loss-of-capture",
           "description": "Loss of capture when pacing output is inadequate despite the higher rate",
           "condition": {
-            "rate": [
-              55,
-              80
-            ],
-            "output": [
-              0,
-              4.9
-            ]
+            "rate": [55, 80],
+            "output": [0, 4.9]
           },
           "effects": {
             "alarm": {
@@ -100,18 +90,9 @@
           "id": "uc01-oversensing",
           "description": "Oversensing inhibits pacing when sensitivity is set too low",
           "condition": {
-            "rate": [
-              60,
-              80
-            ],
-            "output": [
-              5,
-              12
-            ],
-            "sensitivity": [
-              0,
-              1.4
-            ]
+            "rate": [60, 80],
+            "output": [5, 12],
+            "sensitivity": [0, 1.4]
           },
           "effects": {
             "alarm": {
@@ -126,18 +107,9 @@
           "id": "uc01-vvi-capture",
           "description": "Stable ventricular capture once rate, output, and sensitivity are set appropriately",
           "condition": {
-            "rate": [
-              60,
-              70
-            ],
-            "output": [
-              5,
-              10
-            ],
-            "sensitivity": [
-              1.5,
-              3
-            ]
+            "rate": [60, 70],
+            "output": [5, 10],
+            "sensitivity": [1.5, 3]
           },
           "effects": {
             "alarm": {
