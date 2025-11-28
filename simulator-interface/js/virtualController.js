@@ -62,7 +62,9 @@ function initVirtualController() {
 
     lockWarning.appendChild(lockWarningText);
     lockWarning.appendChild(lockWarningClose);
-    parametersCard.appendChild(lockWarning);
+
+    const lockWarningHost = actionsContainer ?? parametersCard;
+    lockWarningHost.appendChild(lockWarning);
 
     const POWER_OFF_HOLD_MS = 2000;
     const AUTO_LOCK_DELAY_MS = 60000;

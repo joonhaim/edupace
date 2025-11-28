@@ -431,6 +431,7 @@ body.simulation-light .theme-toggle {
     justify-content: space-between;
     gap: 0.8rem;
     margin-top: 0.8rem;
+    position: relative;
 }
 
 .virtual-action-btn {
@@ -658,6 +659,23 @@ body.simulation-light .theme-toggle {
     bottom: -8px;
     right: 22px;
     border-top-color: rgba(12, 20, 34, 0.88);
+}
+
+.lock-warning {
+    right: 0.25rem;
+    bottom: calc(100% + 0.6rem);
+    transform: translateY(10px);
+    max-width: 260px;
+}
+
+.lock-warning.is-visible {
+    transform: translateY(0);
+}
+
+.lock-warning::before {
+    top: 100%;
+    right: 18px;
+    border-bottom-color: rgba(12, 20, 34, 0.88);
 }
 
 .connection-unsupported-hint {
