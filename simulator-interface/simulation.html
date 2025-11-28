@@ -44,12 +44,24 @@
                     </div>
 
                     <div class="scenario-banner" role="region" aria-label="Scenario selection">
-                        <div class="scenario-banner-text">
+                        <div class="scenario-banner-text" data-scenario-picker-area>
                             <span class="scenario-pill">Scenario</span>
-                            <button id="scenarioPicker" class="scenario-name scenario-picker" type="button" aria-haspopup="listbox" aria-expanded="false">
-                                <span id="scenarioPickerLabel">No scenario active</span>
-                                <span class="chevron" aria-hidden="true">▾</span>
-                            </button>
+                            <div class="scenario-title-row">
+                                <button id="scenarioPicker" class="scenario-name scenario-picker" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                    <span id="scenarioPickerLabel">No scenario active</span>
+                                    <span class="chevron" aria-hidden="true">▾</span>
+                                </button>
+                                <button id="scenarioNextBtn" class="scenario-cycle" type="button" aria-label="Load next scenario" title="Next scenario">
+                                    <span class="scenario-cycle-icon" aria-hidden="true">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+     stroke-linejoin="round">
+  <path d="M5 12h14" />
+  <path d="M13 6l6 6-6 6" />
+</svg>
+</span>
+                                </button>
+                            </div>
                             <div id="scenarioMenu" class="scenario-menu" role="listbox" aria-label="Available scenarios"></div>
                             <p id="scenarioText" class="scenario-text">
                                 Select a scenario to begin a training case.
@@ -61,22 +73,10 @@
                                     <span class="btn-icon" aria-hidden="true">▶</span>
                                     <span class="btn-label">Start</span>
                                 </button>
-                                <button id="pauseSessionBtn" class="btn btn-ghost session-chip" type="button" disabled>
-                                    <span class="btn-icon" aria-hidden="true">⏸</span>
-                                    <span class="btn-label">Pause</span>
-                                </button>
                                 <button id="endSessionBtn" class="btn btn-ghost session-chip session-end" type="button" disabled>
                                     <span class="btn-icon" aria-hidden="true">■</span>
                                     <span class="btn-label">End</span>
                                 </button>
-                                <a
-                                    id="downloadLogBtn"
-                                    class="btn btn-ghost btn-small session-chip session-download is-hidden"
-                                    role="button"
-                                    download
-                                >
-                                    Download log
-                                </a>
                             </div>
                             <div class="session-meta">
                                 <p id="sessionStatusText" class="session-status" aria-live="polite">
