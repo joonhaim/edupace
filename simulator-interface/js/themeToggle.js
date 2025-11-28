@@ -41,7 +41,7 @@ function applyTheme(theme) {
 
 function initThemeToggle() {
     const savedTheme = localStorage.getItem(THEME_KEY);
-    const initialTheme = savedTheme || 'dark';
+    const initialTheme = savedTheme || 'light';
 
     applyTheme(initialTheme);
 

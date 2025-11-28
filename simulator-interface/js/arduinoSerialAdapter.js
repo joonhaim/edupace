@@ -1,5 +1,6 @@
 const ui = {
     connectionStatus: document.getElementById('connectionStatus'),
+    connectionStatusText: document.querySelector('#connectionStatus .status-text'),
     powerStatus: document.getElementById('powerStatus'),
     lockStatus: document.getElementById('lockStatus'),
     connectBtn: document.getElementById('connectBtn'),
@@ -158,7 +159,11 @@ async function disconnectFromHardware() {
 }
 
 function updateConnectionStatus(text, connected, unsupported = false) {
-    ui.connectionStatus.textContent = text;
+    if (ui.connectionStatusText) {
+        ui.connectionStatusText.textContent = text;
+    } else {
+        ui.connectionStatus.textContent = text;
+    }
     ui.connectionStatus.classList.toggle('chip-connected', connected && !unsupported);
     ui.connectionStatus.classList.toggle('chip-disconnected', !connected && !unsupported);
     ui.connectionStatus.classList.toggle('chip-unsupported', unsupported);

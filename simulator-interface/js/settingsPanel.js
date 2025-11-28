@@ -36,6 +36,7 @@ function initSettingsPanel() {
     const settingsLayer = document.querySelector('[data-settings-layer]');
     const tabButtons = Array.from(document.querySelectorAll('[data-settings-tab]'));
     const tabPanels = Array.from(document.querySelectorAll('[data-settings-panel-target]'));
+    const settingsTitle = document.getElementById('settingsTitle');
 
     if (!settingsCard) return;
 
@@ -68,6 +69,16 @@ function initSettingsPanel() {
     });
 
     if (tabButtons.length && tabPanels.length) {
+        const updateTitle = (tabId) => {
+            if (!settingsTitle) return;
+
+            const activeButton = tabButtons.find((button) => button.dataset.settingsTab === tabId);
+            const label = activeButton?.textContent.trim();
+            if (label) {
+                settingsTitle.textContent = `${label} settings`;
+            }
+        };
+
         const activateTab = (tabId) => {
             tabButtons.forEach((button) => {
                 const isActive = button.dataset.settingsTab === tabId;
@@ -78,6 +89,8 @@ function initSettingsPanel() {
             tabPanels.forEach((panel) => {
                 panel.classList.toggle('is-hidden', panel.dataset.settingsPanelTarget !== tabId);
             });
+
+            updateTitle(tabId);
         };
 
         tabButtons.forEach((button) => {
