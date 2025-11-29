@@ -40,8 +40,7 @@ body.simulation-dark .instructions-shell,
 body.simulation-dark .card,
 body.simulation-dark .param-tile,
 body.simulation-dark .scenario-banner,
-body.simulation-dark .connection-group,
-body.simulation-dark .calibration-note {
+body.simulation-dark .connection-group {
     background: #0f1624;
     border-color: #1c2738;
     box-shadow: none;
@@ -78,10 +77,6 @@ body.simulation-dark .chip-unsupported {
 body.simulation-dark .learning-label,
 body.simulation-dark .learning-body {
     color: #e3e9f4;
-}
-
-body.simulation-dark .calibration-note {
-    box-shadow: none;
 }
 
 body.simulation-dark .card-heading p {
@@ -133,6 +128,12 @@ body.simulation-dark .led-pace.led-on {
 
 body.simulation-dark .led-sense.led-on {
     box-shadow: 0 0 12px 3px rgba(96, 165, 250, 0.7);
+}
+
+body.simulation-dark .calibration-inline {
+    background: rgba(15, 23, 42, 0.65);
+    border-color: rgba(148, 163, 184, 0.45);
+    color: #e3e9f4;
 }
 
 
@@ -238,7 +239,6 @@ body.simulation-dark .nav-btn,
 body.simulation-dark .nav-actions,
 body.simulation-dark .scenario-text,
 body.simulation-dark .telemetry-unit,
-body.simulation-dark .calibration-note,
 body.simulation-dark .card-heading p{
     color: #c9d1dc;
 }

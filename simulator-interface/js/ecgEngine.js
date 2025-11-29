@@ -107,8 +107,8 @@ const ledElements = {
 const overlayElements = {
     overlay: document.querySelector('.ecg-overlay'),
     leadLabel: document.querySelector('.ecg-label'),
-    calibration: document.querySelector('.calibration-note'),
-    calibrationValue: document.querySelector('.calibration-note .calibration-value'),
+    calibration: document.querySelector('.calibration-inline'),
+    calibrationValue: document.querySelector('.calibration-inline .calibration-value'),
     hrBlock: document.querySelector('.ecg-vitals .vital-block'),
     hrValue: document.getElementById('hrValue')
 };
@@ -133,7 +133,7 @@ function initEcgEngine() {
     canvas.addEventListener('pointermove', handlePointerMove);
     canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointercancel', handlePointerUp);
-    canvas.addEventListener('pointerleave', handlePointerUp);
+    canvas.addEventListener('pointerleave', handlePointerLeave);
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('edupace-parameters', handleParameterChange);
@@ -720,6 +720,22 @@ function handlePointerUp(event) {
     caliper = null;
     isPaused = false;
     broadcastPauseState(false);
+}
+
+function handlePointerLeave(event) {
+    if (!canvas) return;
+
+    if (!isPaused || !displaySettings.intervalRulers) {
+        handlePointerUp(event);
+        return;
+    }
+
+    if (pendingCaliper?.active) {
+        caliper = { ...pendingCaliper };
+    }
+
+    pendingCaliper = null;
+    draw();
 }
 
 function getPointerPosition(event) {

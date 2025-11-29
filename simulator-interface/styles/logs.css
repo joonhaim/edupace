@@ -177,6 +177,38 @@
     font-size: 0.9rem;
 }
 
+.detail-meta.is-view {
+    gap: 0.7rem;
+}
+
+.meta-row {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 0.75rem;
+    align-items: baseline;
+}
+
+.meta-label {
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.meta-value {
+    margin: 0;
+    color: var(--deep-navy);
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.meta-value.is-placeholder,
+.meta-value.is-muted {
+    color: var(--muted);
+    font-weight: 600;
+}
+
 .detail-meta textarea {
     min-height: 96px;
     resize: vertical;
@@ -186,6 +218,16 @@
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+}
+
+.detail-empty {
+    padding: 1rem;
+    text-align: center;
+    color: var(--muted);
+    font-weight: 600;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    background: rgba(148, 163, 184, 0.08);
 }
 
 .detail-actions .danger {

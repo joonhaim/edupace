@@ -11,6 +11,12 @@ const filterState = {
     selectedId: null
 };
 
+const detailState = {
+    mode: 'view',
+    editingId: null,
+    draft: null
+};
+
 const defaultLogSettings = {
     dateFormat: 'DMY',
     timeFormat: '24h'
@@ -44,6 +50,12 @@ function applyLogSettings(patch = {}) {
     logDisplaySettings = { ...logDisplaySettings, ...patch };
     persistLogSettings();
     renderLogs();
+}
+
+function resetDetailState(mode = 'view') {
+    detailState.mode = mode;
+    detailState.editingId = null;
+    detailState.draft = null;
 }
 
 function initLogSettingsPanel() {
@@ -215,7 +227,44 @@ function formatDate(timestamp) {
 
 function setSelectedLog(id) {
     filterState.selectedId = id;
+    resetDetailState();
     renderLogs();
+}
+
+function buildMetaRow(label, value, options = {}) {
+    const row = document.createElement('div');
+    row.className = 'meta-row';
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'meta-label';
+    labelEl.textContent = label;
+
+    const valueEl = document.createElement('p');
+    valueEl.className = 'meta-value';
+    valueEl.textContent = value || 'Not provided';
+
+    if (!value) {
+        valueEl.classList.add('is-placeholder');
+    }
+
+    if (options.muted) {
+        valueEl.classList.add('is-muted');
+    }
+
+    row.append(labelEl, valueEl);
+    return row;
+}
+
+function getDraftForLog(log) {
+    if (detailState.editingId === log.id && detailState.draft) {
+        return detailState.draft;
+    }
+
+    return {
+        label: log.metadata?.label ?? '',
+        operator: log.metadata?.operator ?? '',
+        notes: log.metadata?.notes ?? ''
+    };
 }
 
 function renderLogCard(log) {
@@ -253,14 +302,16 @@ function renderDetail(log) {
     const panel = document.getElementById('logDetailPanel');
     if (!panel) return;
 
-    if (!log) {
-        panel.classList.add('is-hidden');
-        panel.innerHTML = '';
-        return;
-    }
-
     panel.classList.remove('is-hidden');
     panel.innerHTML = '';
+
+    if (!log) {
+        const empty = document.createElement('div');
+        empty.className = 'detail-empty';
+        empty.textContent = 'Select a session to view its details.';
+        panel.append(empty);
+        return;
+    }
 
     const heading = document.createElement('div');
     heading.className = 'detail-heading';
@@ -276,56 +327,8 @@ function renderDetail(log) {
     const metaList = document.createElement('div');
     metaList.className = 'detail-meta';
 
-    const labelField = document.createElement('label');
-    labelField.textContent = 'Label';
-    const labelInput = document.createElement('input');
-    labelInput.type = 'text';
-    labelInput.value = log.metadata?.label ?? '';
-    labelInput.placeholder = 'e.g., Weekly practice';
-    labelField.appendChild(labelInput);
-
-    const operatorField = document.createElement('label');
-    operatorField.textContent = 'Operator';
-    const operatorInput = document.createElement('input');
-    operatorInput.type = 'text';
-    operatorInput.value = log.metadata?.operator ?? '';
-    operatorInput.placeholder = 'Name of person running the session';
-    operatorField.appendChild(operatorInput);
-
-    const notesField = document.createElement('label');
-    notesField.textContent = 'Notes / annotations';
-    const notesInput = document.createElement('textarea');
-    notesInput.value = log.metadata?.notes ?? '';
-    notesInput.placeholder = 'Observations, alarms, adjustments, etc.';
-    notesField.appendChild(notesInput);
-
-    const persistMetadata = () => {
-        updateSessionLogMetadata(log.id, {
-            operator: operatorInput.value,
-            notes: notesInput.value,
-            label: labelInput.value
-        });
-        renderLogs();
-    };
-
-    labelInput.addEventListener('change', persistMetadata);
-    operatorInput.addEventListener('change', persistMetadata);
-    notesInput.addEventListener('blur', persistMetadata);
-
-    metaList.append(labelField, operatorField, notesField);
-
     const actions = document.createElement('div');
     actions.className = 'detail-actions';
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'btn btn-ghost btn-small danger';
-    deleteBtn.textContent = 'Delete entry';
-    deleteBtn.addEventListener('click', () => {
-        deleteSessionLog(log.id);
-        filterState.selectedId = null;
-        renderLogs();
-    });
 
     const downloadJson = document.createElement('button');
     downloadJson.type = 'button';
@@ -339,7 +342,102 @@ function renderDetail(log) {
     downloadCsv.textContent = 'Download CSV';
     downloadCsv.addEventListener('click', () => downloadLog(log, 'csv'));
 
-    actions.append(downloadJson, downloadCsv, deleteBtn);
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'btn btn-ghost btn-small danger';
+    deleteBtn.textContent = 'Delete entry';
+    deleteBtn.addEventListener('click', () => {
+        deleteSessionLog(log.id);
+        filterState.selectedId = null;
+        resetDetailState();
+        renderLogs();
+    });
+
+    if (detailState.mode === 'edit' && detailState.editingId !== log.id) {
+        resetDetailState('edit');
+    }
+
+    if (detailState.mode === 'edit') {
+        const draft = getDraftForLog(log);
+        detailState.editingId = log.id;
+        detailState.draft = { ...draft };
+        metaList.classList.add('is-edit');
+
+        const labelField = document.createElement('label');
+        labelField.textContent = 'Label';
+        const labelInput = document.createElement('input');
+        labelInput.type = 'text';
+        labelInput.value = draft.label;
+        labelInput.placeholder = 'e.g., Weekly practice';
+        labelInput.addEventListener('input', (event) => {
+            detailState.draft = { ...(detailState.draft ?? draft), label: event.target.value };
+        });
+        labelField.appendChild(labelInput);
+
+        const operatorField = document.createElement('label');
+        operatorField.textContent = 'Operator';
+        const operatorInput = document.createElement('input');
+        operatorInput.type = 'text';
+        operatorInput.value = draft.operator;
+        operatorInput.placeholder = 'Name of person running the session';
+        operatorInput.addEventListener('input', (event) => {
+            detailState.draft = { ...(detailState.draft ?? draft), operator: event.target.value };
+        });
+        operatorField.appendChild(operatorInput);
+
+        const notesField = document.createElement('label');
+        notesField.textContent = 'Notes / annotations';
+        const notesInput = document.createElement('textarea');
+        notesInput.value = draft.notes;
+        notesInput.placeholder = 'Observations, alarms, adjustments, etc.';
+        notesInput.addEventListener('input', (event) => {
+            detailState.draft = { ...(detailState.draft ?? draft), notes: event.target.value };
+        });
+        notesField.appendChild(notesInput);
+
+        metaList.append(labelField, operatorField, notesField);
+
+        const saveBtn = document.createElement('button');
+        saveBtn.type = 'button';
+        saveBtn.className = 'btn btn-primary btn-small';
+        saveBtn.textContent = 'Save';
+        saveBtn.addEventListener('click', () => {
+            updateSessionLogMetadata(log.id, { ...detailState.draft });
+            resetDetailState();
+            renderLogs();
+        });
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn btn-ghost btn-small';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.addEventListener('click', () => {
+            resetDetailState();
+            renderDetail(log);
+        });
+
+        actions.append(saveBtn, cancelBtn, downloadJson, downloadCsv, deleteBtn);
+    } else {
+        metaList.classList.add('is-view');
+        metaList.append(
+            buildMetaRow('Label', log.metadata?.label),
+            buildMetaRow('Operator', log.metadata?.operator),
+            buildMetaRow('Notes', log.metadata?.notes, { muted: true })
+        );
+
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn btn-primary btn-small';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', () => {
+            detailState.mode = 'edit';
+            detailState.editingId = log.id;
+            detailState.draft = getDraftForLog(log);
+            renderDetail(log);
+        });
+
+        actions.append(editBtn, downloadJson, downloadCsv, deleteBtn);
+    }
 
     panel.append(heading, metaList, actions);
 }
@@ -355,6 +453,7 @@ function renderLogs() {
     if (!logs.length) {
         emptyState.style.display = 'block';
         emptyState.textContent = 'No sessions match the current filters yet.';
+        resetDetailState();
         renderDetail(null);
         return;
     }
