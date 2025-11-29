@@ -109,9 +109,13 @@ const overlayElements = {
     leadLabel: document.querySelector('.ecg-label'),
     calibration: document.querySelector('.calibration-inline'),
     calibrationValue: document.querySelector('.calibration-inline .calibration-value'),
+    calibrationToggle: document.querySelector('.calibration-toggle'),
+    frame: document.querySelector('.ecg-frame'),
     hrBlock: document.querySelector('.ecg-vitals .vital-block'),
     hrValue: document.getElementById('hrValue')
 };
+
+let calibrationInfoVisible = false;
 
 function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
@@ -141,6 +145,10 @@ function initEcgEngine() {
     window.addEventListener('edupace-rule-effects', handleRuleEffects);
     window.addEventListener('edupace-waveform-change', handleWaveformChange);
     window.addEventListener('edupace-ecg-settings', handleDisplaySettings);
+
+    overlayElements.calibrationToggle?.addEventListener('click', handleCalibrationToggle);
+    overlayElements.frame?.addEventListener('mouseleave', () => setCalibrationVisibility(false));
+    overlayElements.frame?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
 
     regenerateWaveform();
     startAnimationLoop();
@@ -962,6 +970,18 @@ function setCanvasStateFlag(key, enabled) {
     canvas.dataset[key] = enabled ? 'on' : 'off';
 }
 
+function setCalibrationVisibility(visible) {
+    calibrationInfoVisible = Boolean(visible) && displaySettings.calibrationMarkers;
+    if (overlayElements.calibration) {
+        overlayElements.calibration.hidden = !calibrationInfoVisible;
+    }
+}
+
+function handleCalibrationToggle(event) {
+    event.stopPropagation();
+    setCalibrationVisibility(!calibrationInfoVisible);
+}
+
 function getSecondsVisible() {
     return displaySettings.sweepWindow;
 }
@@ -976,9 +996,7 @@ function updateCalibrationNote() {
         overlayElements.calibrationValue.textContent = `${displaySettings.amplitudeScaling} mm/mV · ${displaySettings.sweepSpeed} mm/s · ${windowText} s window`;
     }
 
-    if (overlayElements.calibration) {
-        overlayElements.calibration.hidden = !displaySettings.calibrationMarkers;
-    }
+    setCalibrationVisibility(calibrationInfoVisible && displaySettings.calibrationMarkers);
 
     if (overlayElements.leadLabel) {
         overlayElements.leadLabel.hidden = !displaySettings.leadLabel;

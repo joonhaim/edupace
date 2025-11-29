@@ -80,7 +80,7 @@
                             </div>
                             <div class="session-meta">
                                 <p id="sessionStatusText" class="session-status" aria-live="polite">
-                                    Select a scenario to begin.
+                                    <span id="sessionStatusLabel">Select a scenario to begin.</span>
                                     <span id="sessionTimerDisplay" class="session-timer-inline"></span>
                                 </p>
                             </div>
@@ -112,10 +112,18 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="calibration-inline" aria-live="polite">
+                                    <div class="calibration-inline" aria-live="polite" hidden>
                                         <span class="calibration-label">Calibration</span>
                                         <span class="calibration-value">10 mm/mV · 25 mm/s · 6 s window</span>
                                     </div>
+                                    <button
+                                        type="button"
+                                        class="calibration-toggle"
+                                        aria-label="Show calibration details"
+                                        title="Show calibration details"
+                                    >
+                                        ⓘ
+                                    </button>
                                 </div>
                             </div>
 

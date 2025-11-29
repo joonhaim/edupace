@@ -4,6 +4,7 @@ const sessionElements = {
     startBtn: document.getElementById('startSessionBtn'),
     endBtn: document.getElementById('endSessionBtn'),
     statusText: document.getElementById('sessionStatusText'),
+    statusLabel: document.getElementById('sessionStatusLabel'),
     timerDisplay: document.getElementById('sessionTimerDisplay'),
     startLabel: document.querySelector('#startSessionBtn .btn-label'),
     startIcon: document.querySelector('#startSessionBtn .btn-icon'),
@@ -38,8 +39,11 @@ const telemetryContext = {
 };
 
 function setStatusText(text) {
-    if (!sessionElements.statusText) return;
-    sessionElements.statusText.textContent = text;
+    if (sessionElements.statusLabel) {
+        sessionElements.statusLabel.textContent = text;
+    } else if (sessionElements.statusText) {
+        sessionElements.statusText.textContent = text;
+    }
 }
 
 function getContextSnapshot() {

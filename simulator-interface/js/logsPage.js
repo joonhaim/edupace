@@ -17,6 +17,8 @@ const detailState = {
     draft: null
 };
 
+let selectionManuallyCleared = false;
+
 const defaultLogSettings = {
     dateFormat: 'DMY',
     timeFormat: '24h'
@@ -226,9 +228,18 @@ function formatDate(timestamp) {
 }
 
 function setSelectedLog(id) {
+    selectionManuallyCleared = false;
     filterState.selectedId = id;
     resetDetailState();
     renderLogs();
+}
+
+function clearSelectedLog() {
+    selectionManuallyCleared = true;
+    filterState.selectedId = null;
+    resetDetailState();
+    renderDetail(null);
+    document.querySelectorAll('.log-card.is-active').forEach((card) => card.classList.remove('is-active'));
 }
 
 function buildMetaRow(label, value, options = {}) {
@@ -455,17 +466,19 @@ function renderLogs() {
         emptyState.textContent = 'No sessions match the current filters yet.';
         resetDetailState();
         renderDetail(null);
+        selectionManuallyCleared = false;
         return;
     }
 
     emptyState.style.display = 'none';
     logs.forEach((log) => list.appendChild(renderLogCard(log)));
 
-    if (!filterState.selectedId || !logs.find((log) => log.id === filterState.selectedId)) {
+    let activeLog = logs.find((log) => log.id === filterState.selectedId) ?? null;
+    if (!activeLog && !selectionManuallyCleared) {
         filterState.selectedId = logs[0].id;
+        activeLog = logs[0];
     }
 
-    const activeLog = logs.find((log) => log.id === filterState.selectedId) ?? logs[0];
     renderDetail(activeLog);
 }
 
@@ -484,10 +497,22 @@ function bindFilters() {
     });
 }
 
+function bindListDeselect() {
+    const list = document.getElementById('logsList');
+    if (!list) return;
+
+    list.addEventListener('click', (event) => {
+        if (!event.target.closest('.log-card')) {
+            clearSelectedLog();
+        }
+    });
+}
+
 function initLogsPage() {
     loadLogSettings();
     initLogSettingsPanel();
     bindFilters();
+    bindListDeselect();
     renderLogs();
 }
 
