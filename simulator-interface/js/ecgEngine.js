@@ -146,7 +146,10 @@ function initEcgEngine() {
     window.addEventListener('edupace-waveform-change', handleWaveformChange);
     window.addEventListener('edupace-ecg-settings', handleDisplaySettings);
 
-    overlayElements.calibrationToggle?.addEventListener('click', handleCalibrationToggle);
+    overlayElements.calibrationToggle?.addEventListener('pointerenter', () => setCalibrationVisibility(true));
+    overlayElements.calibrationToggle?.addEventListener('focus', () => setCalibrationVisibility(true));
+    overlayElements.calibrationToggle?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
+    overlayElements.calibrationToggle?.addEventListener('blur', () => setCalibrationVisibility(false));
     overlayElements.frame?.addEventListener('mouseleave', () => setCalibrationVisibility(false));
     overlayElements.frame?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
 
@@ -894,7 +897,7 @@ function handleDisplaySettings(event) {
 
     if (typeof settings.calibrationMarkers === 'boolean') {
         displaySettings.calibrationMarkers = settings.calibrationMarkers;
-        if (overlayElements.calibration) overlayElements.calibration.hidden = !settings.calibrationMarkers;
+        setCalibrationVisibility(calibrationInfoVisible && displaySettings.calibrationMarkers);
     }
 
     if (typeof settings.rWaveMarkers === 'boolean') {
@@ -975,11 +978,6 @@ function setCalibrationVisibility(visible) {
     if (overlayElements.calibration) {
         overlayElements.calibration.hidden = !calibrationInfoVisible;
     }
-}
-
-function handleCalibrationToggle(event) {
-    event.stopPropagation();
-    setCalibrationVisibility(!calibrationInfoVisible);
 }
 
 function getSecondsVisible() {

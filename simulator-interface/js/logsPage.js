@@ -14,7 +14,8 @@ const filterState = {
 const detailState = {
     mode: 'view',
     editingId: null,
-    draft: null
+    draft: null,
+    focusField: null
 };
 
 let selectionManuallyCleared = false;
@@ -58,6 +59,7 @@ function resetDetailState(mode = 'view') {
     detailState.mode = mode;
     detailState.editingId = null;
     detailState.draft = null;
+    detailState.focusField = null;
 }
 
 function initLogSettingsPanel() {
@@ -262,6 +264,16 @@ function buildMetaRow(label, value, options = {}) {
         valueEl.classList.add('is-muted');
     }
 
+    if (options.field) {
+        row.dataset.field = options.field;
+    }
+
+    if (typeof options.onActivate === 'function') {
+        row.classList.add('is-activatable');
+        row.addEventListener('dblclick', options.onActivate);
+        row.setAttribute('title', 'Double-click to edit');
+    }
+
     row.append(labelEl, valueEl);
     return row;
 }
@@ -276,6 +288,14 @@ function getDraftForLog(log) {
         operator: log.metadata?.operator ?? '',
         notes: log.metadata?.notes ?? ''
     };
+}
+
+function enterEditMode(log, focusField) {
+    detailState.mode = 'edit';
+    detailState.editingId = log.id;
+    detailState.draft = getDraftForLog(log);
+    detailState.focusField = focusField ?? null;
+    renderDetail(log);
 }
 
 function renderLogCard(log) {
@@ -326,6 +346,8 @@ function renderDetail(log) {
 
     const heading = document.createElement('div');
     heading.className = 'detail-heading';
+    const headingText = document.createElement('div');
+    headingText.className = 'detail-heading-text';
     const title = document.createElement('h2');
     title.textContent = log.scenarioTitle || 'Unknown scenario';
     const sub = document.createElement('p');
@@ -333,7 +355,16 @@ function renderDetail(log) {
     sub.textContent = `${formatDate(log.startedAt)} • ${formatDuration(log.durationSeconds)} • ${
         log.events?.length ?? 0
     } events`;
-    heading.append(title, sub);
+    headingText.append(title, sub);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'detail-close';
+    closeBtn.setAttribute('aria-label', 'Close session details');
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', clearSelectedLog);
+
+    heading.append(headingText, closeBtn);
 
     const metaList = document.createElement('div');
     metaList.className = 'detail-meta';
@@ -380,6 +411,7 @@ function renderDetail(log) {
         labelInput.type = 'text';
         labelInput.value = draft.label;
         labelInput.placeholder = 'e.g., Weekly practice';
+        labelInput.dataset.field = 'label';
         labelInput.addEventListener('input', (event) => {
             detailState.draft = { ...(detailState.draft ?? draft), label: event.target.value };
         });
@@ -391,6 +423,7 @@ function renderDetail(log) {
         operatorInput.type = 'text';
         operatorInput.value = draft.operator;
         operatorInput.placeholder = 'Name of person running the session';
+        operatorInput.dataset.field = 'operator';
         operatorInput.addEventListener('input', (event) => {
             detailState.draft = { ...(detailState.draft ?? draft), operator: event.target.value };
         });
@@ -401,12 +434,19 @@ function renderDetail(log) {
         const notesInput = document.createElement('textarea');
         notesInput.value = draft.notes;
         notesInput.placeholder = 'Observations, alarms, adjustments, etc.';
+        notesInput.dataset.field = 'notes';
         notesInput.addEventListener('input', (event) => {
             detailState.draft = { ...(detailState.draft ?? draft), notes: event.target.value };
         });
         notesField.appendChild(notesInput);
 
         metaList.append(labelField, operatorField, notesField);
+        const primaryActions = document.createElement('div');
+        primaryActions.className = 'detail-actions-group';
+        const exportActions = document.createElement('div');
+        exportActions.className = 'detail-actions-group';
+        const dangerActions = document.createElement('div');
+        dangerActions.className = 'detail-actions-group';
 
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
@@ -427,13 +467,36 @@ function renderDetail(log) {
             renderDetail(log);
         });
 
-        actions.append(saveBtn, cancelBtn, downloadJson, downloadCsv, deleteBtn);
+        primaryActions.append(saveBtn, cancelBtn);
+        exportActions.append(downloadJson, downloadCsv);
+        dangerActions.append(deleteBtn);
+        actions.append(primaryActions, exportActions, dangerActions);
+
+        const focusTarget = detailState.focusField;
+        const focusMap = { label: labelInput, operator: operatorInput, notes: notesInput };
+        if (focusTarget && focusMap[focusTarget]) {
+            focusMap[focusTarget].focus({ preventScroll: true });
+            if (focusMap[focusTarget].select) {
+                focusMap[focusTarget].select();
+            }
+        }
+        detailState.focusField = null;
     } else {
         metaList.classList.add('is-view');
         metaList.append(
-            buildMetaRow('Label', log.metadata?.label),
-            buildMetaRow('Operator', log.metadata?.operator),
-            buildMetaRow('Notes', log.metadata?.notes, { muted: true })
+            buildMetaRow('Label', log.metadata?.label, {
+                field: 'label',
+                onActivate: () => enterEditMode(log, 'label')
+            }),
+            buildMetaRow('Operator', log.metadata?.operator, {
+                field: 'operator',
+                onActivate: () => enterEditMode(log, 'operator')
+            }),
+            buildMetaRow('Notes', log.metadata?.notes, {
+                muted: true,
+                field: 'notes',
+                onActivate: () => enterEditMode(log, 'notes')
+            })
         );
 
         const editBtn = document.createElement('button');
@@ -441,13 +504,20 @@ function renderDetail(log) {
         editBtn.className = 'btn btn-primary btn-small';
         editBtn.textContent = 'Edit';
         editBtn.addEventListener('click', () => {
-            detailState.mode = 'edit';
-            detailState.editingId = log.id;
-            detailState.draft = getDraftForLog(log);
-            renderDetail(log);
+            enterEditMode(log);
         });
 
-        actions.append(editBtn, downloadJson, downloadCsv, deleteBtn);
+        const primaryActions = document.createElement('div');
+        primaryActions.className = 'detail-actions-group';
+        const exportActions = document.createElement('div');
+        exportActions.className = 'detail-actions-group';
+        const dangerActions = document.createElement('div');
+        dangerActions.className = 'detail-actions-group';
+
+        primaryActions.append(editBtn);
+        exportActions.append(downloadJson, downloadCsv);
+        dangerActions.append(deleteBtn);
+        actions.append(primaryActions, exportActions, dangerActions);
     }
 
     panel.append(heading, metaList, actions);
@@ -508,11 +578,25 @@ function bindListDeselect() {
     });
 }
 
+function bindBackgroundDeselect() {
+    const grid = document.querySelector('.logs-grid');
+    if (!grid) return;
+
+    grid.addEventListener('click', (event) => {
+        const inListCard = event.target.closest('.log-card');
+        const inDetail = event.target.closest('.log-detail');
+        if (!inListCard && !inDetail) {
+            clearSelectedLog();
+        }
+    });
+}
+
 function initLogsPage() {
     loadLogSettings();
     initLogSettingsPanel();
     bindFilters();
     bindListDeselect();
+    bindBackgroundDeselect();
     renderLogs();
 }
 

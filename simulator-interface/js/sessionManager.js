@@ -149,7 +149,7 @@ function updateTimerDisplay() {
     const hasSession = Boolean(sessionState.currentSession);
     sessionElements.timerDisplay.textContent = hasSession ? formatTimer(elapsed) : '';
     sessionElements.timerDisplay.classList.toggle('is-active', hasSession);
-    sessionElements.timerDisplay.toggleAttribute('hidden', !hasSession);
+    sessionElements.timerDisplay.removeAttribute('hidden');
 }
 
 function startTimer() {
