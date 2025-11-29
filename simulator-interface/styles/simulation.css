@@ -377,7 +377,6 @@ body.simulation-light .theme-toggle {
     gap: 0.35rem;
     padding: 0.18rem 0.6rem;
     border-radius: 999px;
-    background: var(--card-alt, #e2e8f0);
     border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
