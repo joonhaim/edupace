@@ -251,11 +251,12 @@
                             </div>
 
                             <div class="card control-stack">
-                                <div class="control-inline">
-                                    <div class="card-heading compact">
-                                        <p class="eyebrow">Control source</p>
-                                    </div>
-                                    <div class="mode-toggle is-compact" role="radiogroup" aria-label="Input source">
+                            <div class="card-heading inline control-heading">
+                                <div>
+                                    <p class="eyebrow">Control</p>
+                                    <h3 class="card-title">Input source</h3>
+                                </div>
+                                <div class="mode-toggle is-compact" role="radiogroup" aria-label="Input source">
                                     <label class="mode-pill">
                                         <input type="radio" name="inputMode" value="hardware" checked>
                                         <span>Hardware</span>
@@ -264,12 +265,14 @@
                                         <input type="radio" name="inputMode" value="virtual">
                                         <span>Virtual</span>
                                     </label>
-                                    </div>
                                 </div>
-                                <p class="muted control-caption">Toggle between hardware and on-screen control.</p>
-
-                                <div class="stack-divider" aria-hidden="true"></div>
                             </div>
+
+                            <p class="muted control-caption">
+                                Choose whether the simulator follows the physical EduPace device or on-screen controls.
+                            </p>
+                        </div>
+
 
                             <div class="settings-launch">
                                 <button
