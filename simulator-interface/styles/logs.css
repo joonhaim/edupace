@@ -314,6 +314,8 @@
     border: 1px dashed var(--border);
     border-radius: 12px;
     background: rgba(148, 163, 184, 0.08);
+    align-content: center;
+justify-content: center;
 }
 
 .detail-actions .danger {
