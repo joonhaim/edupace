@@ -80,7 +80,7 @@
                             </div>
                             <div class="session-meta">
                                 <p id="sessionStatusText" class="session-status" aria-live="polite">
-                                    Select a scenario to begin.
+                                    <span id="sessionStatusLabel">Select a scenario to begin.</span>
                                     <span id="sessionTimerDisplay" class="session-timer-inline"></span>
                                 </p>
                             </div>
@@ -98,26 +98,33 @@
                             <div class="ecg-frame">
                                 <canvas id="ecgCanvas" width="1200" height="550"></canvas>
                                 <div class="ecg-overlay">
-                                    <div class="ecg-label" aria-live="polite">Lead II</div>
-                                    <div class="ecg-vitals">
-                                        <div class="vital-block">
-                                            <span class="vital-label">HR</span>
-                                            <span id="hrValue" class="vital-value hr-value">--</span>
-                                            <span class="vital-unit">ppm</span>
-                                        </div>
-                                        <div class="vital-block pace-block" aria-hidden="true">
-                                            <span class="vital-label">PACE</span>
-                                            <span id="paceMode" class="vital-value pace-value small">--</span>
+                                    <div class="ecg-overlay-top">
+                                        <div class="ecg-label" aria-live="polite">Lead II</div>
+                                        <div class="ecg-vitals">
+                                            <div class="vital-block">
+                                                <span class="vital-label">HR</span>
+                                                <span id="hrValue" class="vital-value hr-value">--</span>
+                                                <span class="vital-unit">ppm</span>
+                                            </div>
+                                            <div class="vital-block pace-block" aria-hidden="true">
+                                                <span class="vital-label">PACE</span>
+                                                <span id="paceMode" class="vital-value pace-value small">--</span>
+                                            </div>
                                         </div>
                                     </div>
+                                    <div class="calibration-inline" aria-live="polite" hidden>
+                                        <span class="calibration-label">Calibration</span>
+                                        <span class="calibration-value">10 mm/mV · 25 mm/s · 6 s window</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="calibration-toggle"
+                                        aria-label="Show calibration details"
+                                        title="Show calibration details"
+                                    >
+                                        ⓘ
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div class="calibration-note">
-                                <span class="calibration-label">Calibration</span>
-                                <span class="calibration-value">
-                                    10 mm/mV · 25 mm/s · 6 s window
-                                </span>
                             </div>
 
                             <div class="card performance-card calibration-performance">
