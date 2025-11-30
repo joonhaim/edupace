@@ -328,10 +328,10 @@ body.simulation-light .theme-toggle {
 }
 
 .session-chip.btn-primary {
-    background: linear-gradient(120deg, #1f4b99, #2f6db5);
+    background: linear-gradient(120deg, #1f4b99, #255da9);
     color: #f8fafc;
-    border: 1px solid rgba(31, 75, 153, 0.35);
-    box-shadow: 0 10px 24px rgba(31, 75, 153, 0.18);
+    border: 1px solid rgba(31, 75, 153, 0.28);
+    box-shadow: 0 8px 18px rgba(31, 75, 153, 0.14);
 }
 
 .session-chip.btn-ghost {
@@ -1421,11 +1421,13 @@ body.simulation-light .theme-toggle {
 }
 
 .pill-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.4rem;
     justify-content: flex-end;
     width: 100%;
+    max-width: 360px;
+    margin-left: auto;
 }
 
 .pill-option {
@@ -1615,6 +1617,9 @@ body.simulation-light .theme-toggle {
     font-weight: 700;
     pointer-events: none;
     text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.16s ease, visibility 0.16s ease;
 }
 
 .calibration-label {
@@ -1662,6 +1667,11 @@ body.simulation-light .theme-toggle {
 
 .calibration-toggle:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+.calibration-inline.is-visible {
+    opacity: 1;
+    visibility: visible;
 }
 
 .parameters-card {
