@@ -977,6 +977,11 @@ function setCalibrationVisibility(visible) {
     calibrationInfoVisible = Boolean(visible) && displaySettings.calibrationMarkers;
     if (overlayElements.calibration) {
         overlayElements.calibration.hidden = !calibrationInfoVisible;
+        overlayElements.calibration.classList.toggle('is-visible', calibrationInfoVisible);
+    }
+
+    if (overlayElements.calibrationToggle) {
+        overlayElements.calibrationToggle.setAttribute('aria-expanded', calibrationInfoVisible ? 'true' : 'false');
     }
 }
 

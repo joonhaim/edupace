@@ -366,6 +366,32 @@ function renderDetail(log) {
 
     heading.append(headingText, closeBtn);
 
+    const summary = document.createElement('div');
+    summary.className = 'detail-summary';
+
+    const summaryItems = [
+        { label: 'Session ID', value: log.id },
+        { label: 'Started', value: formatDate(log.startedAt) },
+        { label: 'Duration', value: formatDuration(log.durationSeconds) },
+        { label: 'Events', value: `${log.events?.length ?? 0} events` }
+    ];
+
+    summaryItems.forEach((item) => {
+        const block = document.createElement('div');
+        block.className = 'detail-summary-item';
+
+        const labelEl = document.createElement('span');
+        labelEl.className = 'detail-summary-label';
+        labelEl.textContent = item.label;
+
+        const valueEl = document.createElement('span');
+        valueEl.className = 'detail-summary-value';
+        valueEl.textContent = item.value || '—';
+
+        block.append(labelEl, valueEl);
+        summary.append(block);
+    });
+
     const metaList = document.createElement('div');
     metaList.className = 'detail-meta';
 
@@ -503,7 +529,8 @@ function renderDetail(log) {
         editBtn.type = 'button';
         editBtn.className = 'btn btn-primary btn-small';
         editBtn.textContent = 'Edit';
-        editBtn.addEventListener('click', () => {
+        editBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
             enterEditMode(log);
         });
 
@@ -520,7 +547,7 @@ function renderDetail(log) {
         actions.append(primaryActions, exportActions, dangerActions);
     }
 
-    panel.append(heading, metaList, actions);
+    panel.append(heading, summary, metaList, actions);
 }
 
 function renderLogs() {
