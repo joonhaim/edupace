@@ -80,7 +80,7 @@
                             </div>
                             <div class="session-meta">
                                 <p id="sessionStatusText" class="session-status" aria-live="polite">
-                                    Select a scenario to begin.
+                                    <span id="sessionStatusLabel">Select a scenario to begin.</span>
                                     <span id="sessionTimerDisplay" class="session-timer-inline"></span>
                                 </p>
                             </div>
@@ -98,36 +98,42 @@
                             <div class="ecg-frame">
                                 <canvas id="ecgCanvas" width="1200" height="550"></canvas>
                                 <div class="ecg-overlay">
-                                    <div class="ecg-label" aria-live="polite">Lead II</div>
-                                    <div class="ecg-vitals">
-                                        <div class="vital-block">
-                                            <span class="vital-label">HR</span>
-                                            <span id="hrValue" class="vital-value hr-value">--</span>
-                                            <span class="vital-unit">ppm</span>
-                                        </div>
-                                        <div class="vital-block pace-block" aria-hidden="true">
-                                            <span class="vital-label">PACE</span>
-                                            <span id="paceMode" class="vital-value pace-value small">--</span>
+                                    <div class="ecg-overlay-top">
+                                        <div class="ecg-label" aria-live="polite">Lead II</div>
+                                        <div class="ecg-vitals">
+                                            <div class="vital-block">
+                                                <span class="vital-label">HR</span>
+                                                <span id="hrValue" class="vital-value hr-value">--</span>
+                                                <span class="vital-unit">ppm</span>
+                                            </div>
+                                            <div class="vital-block pace-block" aria-hidden="true">
+                                                <span class="vital-label">PACE</span>
+                                                <span id="paceMode" class="vital-value pace-value small">--</span>
+                                            </div>
                                         </div>
                                     </div>
+                                    <div class="calibration-inline" aria-live="polite" hidden>
+                                        <span class="calibration-label">Calibration</span>
+                                        <span class="calibration-value">10 mm/mV · 25 mm/s · 6 s window</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="calibration-toggle"
+                                        aria-label="Show calibration details"
+                                        title="Show calibration details"
+                                    >
+                                        ⓘ
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div class="calibration-note">
-                                <span class="calibration-label">Calibration</span>
-                                <span class="calibration-value">
-                                    10 mm/mV · 25 mm/s · 6 s window
-                                </span>
                             </div>
 
                             <div class="card performance-card calibration-performance">
                                 <div class="card-heading compact">
-                                    <p class="eyebrow">Learning</p>
-                                    <h3 class="card-title">Current objective</h3>
+<!--                                    <p class="eyebrow">Learning</p>-->
                                 </div>
                                 <div class="learning-details">
                                     <div class="learning-item">
-                                        <p class="learning-label">Objective</p>
+                                        <p class="learning-label">Current Objective</p>
                                         <p id="objectiveTextSecondary" class="learning-body">–</p>
                                     </div>
                                     <div class="learning-item">
@@ -244,11 +250,12 @@
                             </div>
 
                             <div class="card control-stack">
-                                <div class="control-inline">
-                                    <div class="card-heading compact">
-                                        <p class="eyebrow">Control source</p>
-                                    </div>
-                                    <div class="mode-toggle is-compact" role="radiogroup" aria-label="Input source">
+                            <div class="card-heading inline control-heading">
+                                <div>
+                                    <p class="eyebrow">Control</p>
+                                    <h3 class="card-title">Input source</h3>
+                                </div>
+                                <div class="mode-toggle is-compact" role="radiogroup" aria-label="Input source">
                                     <label class="mode-pill">
                                         <input type="radio" name="inputMode" value="hardware" checked>
                                         <span>Hardware</span>
@@ -257,12 +264,14 @@
                                         <input type="radio" name="inputMode" value="virtual">
                                         <span>Virtual</span>
                                     </label>
-                                    </div>
                                 </div>
-                                <p class="muted control-caption">Toggle between hardware and on-screen control.</p>
-
-                                <div class="stack-divider" aria-hidden="true"></div>
                             </div>
+
+                            <p class="muted control-caption">
+                                Choose whether the simulator follows the physical EduPace device or on-screen controls.
+                            </p>
+                        </div>
+
 
                             <div class="settings-launch">
                                 <button
