@@ -1235,6 +1235,7 @@ body.simulation-light .theme-toggle {
 }
 
 .setting-controls {
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -1243,9 +1244,11 @@ body.simulation-light .theme-toggle {
 }
 
 .setting-controls-stacked {
+    display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 0.5rem;
+    width: 100%;
 }
 
 .setting-copy {
@@ -1421,7 +1424,7 @@ body.simulation-light .theme-toggle {
 }
 
 .pill-group {
-    display: grid;
+    display: flex;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 0.4rem;
     justify-content: flex-end;
@@ -1712,4 +1715,3 @@ body.simulation-light .theme-toggle {
     text-align: center;
     color: var(--muted);
 }
-
