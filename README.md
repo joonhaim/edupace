@@ -38,7 +38,6 @@ EduPace was developed to replicate the behavior of the Medtronic 53401 Temporary
 
 ---
 ## Repository Structure
-## Repository Structure
 
 ```text
 edupace/
@@ -56,7 +55,6 @@ edupace/
 │   └── README.md
 │
 ├── docs/                       # Documentation, figures, reports
-│   └── README.md
 │
 ├── simulator-interface/        # Browser-based pacing & ECG simulator
 │   ├── assets/
