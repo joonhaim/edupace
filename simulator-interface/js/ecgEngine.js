@@ -51,7 +51,8 @@ const engineState = {
     regularity: 'Regular',
     asynchronous: false,
     baseSignal: 'Normal',
-    poweredOn: false
+    poweredOn: false,
+    waveformId: 'normal-sinus'
 };
 
 let canvas;
@@ -185,8 +186,9 @@ function handleScenarioChange(event) {
         engineState.poweredOn = false;
     }
     if (event.detail?.waveformId) {
-        engineState.baseSignal = mapWaveformId(event.detail.waveformId);
-    }
+    engineState.waveformId = event.detail.waveformId;
+    engineState.baseSignal = mapWaveformId(event.detail.waveformId);
+}
     regenerateWaveform();
 }
 
@@ -194,17 +196,20 @@ function handleRuleEffects(event) {
     const hr = event.detail?.effects?.vitals?.hr;
     if (Number.isFinite(hr)) engineState.patientRate = hr;
     if (event.detail?.effects?.waveformId) {
-        engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
-    }
+    engineState.waveformId = event.detail.effects.waveformId;
+    engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
+}
     regenerateWaveform();
 }
 
 function handleWaveformChange(event) {
     const waveformId = event.detail?.waveformId;
     if (waveformId) {
-        engineState.baseSignal = mapWaveformId(waveformId);
-        regenerateWaveform();
-    }
+    engineState.waveformId = waveformId;
+    engineState.baseSignal = mapWaveformId(waveformId);
+    regenerateWaveform();
+}
+
 }
 
 function configureTraceStyle() {
@@ -257,15 +262,53 @@ function applyAnnotationStyles() {
 
 function mapWaveformId(waveformId) {
     switch (waveformId) {
-        case 'loss-of-capture':
-            return 'Ventricular pacing';
+        // Baseline intrinsic rhythms
+        case 'normal-sinus':
+            return 'Normal';
+        case 'brady-escape':
+            return 'BradyNarrow';
+
+        // Paced rhythms
         case 'ventricular-paced':
             return 'Ventricular pacing';
-        case 'normal-sinus':
+
+        // Capture problems
+        case 'loss-of-capture':
+            // show pacing spike without QRS
+            return 'SpikeOnly';
+        case 'intermittent-capture':
+            // baseline is still paced; alternation is handled by pacemaker logic,
+            // but visually this gives you a wide paced morphology
+            return 'Ventricular pacing';
+
+        // Ectopy / mixed
+        case 'paced-with-ectopy':
+            // baseline paced; PVCs injected by scenario logic later if you wish
+            return 'Ventricular pacing';
+        case 'mixed-wide-narrow':
+            // baseline sinus; pacemaker logic creates wide paced beats over it
+            return 'Normal';
+        case 'pvc':
+            return 'PVC';
+
+        // Oversensing / slow intrinsic
+        case 'oversensing':
+            // slow underlying rhythm with missing paced beats
+            return 'BradyNarrow';
+
+        // Random mode: start from sinus by default
+        case 'random-mode':
+            return 'Normal';
+
+        case 'undersensing':
+            return 'Normal'; // or a dedicated template later
+
+        // Fallback
         default:
             return 'Normal';
     }
 }
+
 
 function flashLed(element, type) {
     if (!element) return;
@@ -396,14 +439,18 @@ function regenerateWaveform() {
     const pacingAsync = pacingEnabled ? engineState.asynchronous : false;
 
     const { x, y, events } = stitchBeatsNew(
-        ecgFunc,
-        gap,
-        engineState.regularity,
-        engineState.sensitivity,
-        pacingRate,
-        pacingOutput,
-        pacingAsync
-    );
+    ecgFunc,
+    gap,
+    engineState.regularity,
+    engineState.sensitivity,
+    pacingRate,
+    pacingOutput,
+    pacingAsync,
+    {
+        waveformId: engineState.waveformId
+    }
+);
+
 
     waveformDuration = Math.max(...x, 0);
     waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
