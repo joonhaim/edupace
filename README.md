@@ -20,8 +20,8 @@ EduPace was developed to replicate the behavior of the Medtronic 53401 Temporary
 
 ## Installation & Setup
 ### **Requirements**
-- Arduino **GIGA R1 WiFi**
-- Arduino **GIGA Display Shield**
+- Arduino GIGA R1 WiFi
+- Arduino GIGA Display Shield
 - Google Chrome / Edge (WebSerial support)
 - USB-C cable
 
@@ -78,18 +78,18 @@ edupace/
 
 ___
 
-## 👥 Contributors
+## Contributors
 
 - **Minor BME 2025 Team:** Ashley Jacobi, Süheyla Nurlu, Adrien Joon-Ha Im, Cees Vlasman  
-- **Reinier de Graaf Hospital:** Paul Verschuren (Clinical Supervisor)
+- **Clinical Supervisor:** Paul Verschuren, Reinier de Graaf Hospital
 
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 EduPace is **for educational use only** and **not a medical device**.
 
 ---
 
 ## License
-TBD
+MIT License
