@@ -15,7 +15,7 @@ EduPace replicates the behavior of the **Medtronic 53401 Temporary External Pace
 
 ---
 
-## 🧩 System
+## 🧩 System Overview
 
 | Component | Function |
 |------------|-----------|
@@ -23,6 +23,22 @@ EduPace replicates the behavior of the **Medtronic 53401 Temporary External Pace
 | **Software** | Real-time ECG and pacemaker interaction (TBD) |
 
 ---
+
+## Installation & Setup
+### **Requirements**
+- Arduino **GIGA R1 WiFi**
+- Arduino **GIGA Display Shield**
+- Google Chrome / Edge (WebSerial support)
+- USB-C cable
+
+### **Setup**
+1. Clone this repository  
+2. Upload `hardware/EduPace2025.ino` to the GIGA  
+3. Open the EduPace UI in your browser  
+4. Connect via WebSerial  
+5. Begin a training scenario  
+
+___
 
 ## 👥 Contributors
 
@@ -34,3 +50,8 @@ EduPace replicates the behavior of the **Medtronic 53401 Temporary External Pace
 ## ⚠️ Disclaimer
 
 EduPace is **for educational use only** and **not a medical device**.
+
+---
+
+## License
+TBD
