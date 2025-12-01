@@ -15,7 +15,7 @@ Output Format: PACE=80.00,OUTPUT=10.00,SENSE=2.00 */
 LV_IMG_DECLARE(key);
 LV_FONT_DECLARE(digital)
 
-Arduino_H7_Video          Display(480, 800, GigaDisplayShield); /* Arduino_H7_Video Display(1024, 768, USBCVideo); */
+Arduino_H7_Video          Display(480, 800, GigaDisplayShield); 
 Arduino_GigaDisplayTouch  TouchDetector;
 
 //Lock button 
@@ -28,10 +28,6 @@ bool autoLocked = false;
 //Led States
 bool greenState = false;  // current state of green LED
 bool blueState  = false;  // current state of blue LED
-
-// unsigned long lastFlickerTime = 0;
-// bool flickerOn = false;    // current flicker state (on/off)
-// const int flickerInterval = 300; // ms between flicker states
 
 //Encoder values (Default values: Pace 80, output 10, sensen 2.0)
 float pace = 80;
