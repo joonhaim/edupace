@@ -9,12 +9,14 @@ Developed within the TU Delft Minor Biomedical Engineering in collaboration with
 
 EduPace was developed to replicate the behavior of the Medtronic 53401 Temporary External Pacemaker using:
 - A software-based ECG simulator  
-- A physical control unit with knobs, LEDs, and display  
+- A physical control unit with knobs, LEDs, and display
 
-| Component | Function |
-|------------|-----------|
-| **Hardware** | Arduino GIGA R1 WiFi + Display Shield |
-| **Software** | Real-time ECG and pacemaker interaction (TBD) |
+[📄 Full Project Report](docs/report.pdf)
+
+---
+## Project Motivation & Problem Statement
+
+TBD
 
 ---
 
@@ -116,7 +118,11 @@ Paul Verschuren, Reinier de Graaf Hospital
 - Structured the scenario engine and front-end simulator architecture
 
 ---
+## Limitations & Future Work
 
+TBD
+
+---
 ## Disclaimer
 
 EduPace is **for educational use only** and **not a medical device**.
