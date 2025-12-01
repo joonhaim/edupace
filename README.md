@@ -80,8 +80,12 @@ ___
 
 ## Contributors
 
-- **Minor BME 2025 Team:** Ashley Jacobi, Süheyla Nurlu, Adrien Joon-Ha Im, Cees Vlasman  
-- **Clinical Supervisor:** Paul Verschuren, Reinier de Graaf Hospital
+**Minor BME 2025 Team:** 
+Ashley Jacobi, Süheyla Nurlu, Adrien Joon-Ha Im, Cees Vlasman  
+
+
+**Clinical Supervisor:** 
+Paul Verschuren, Reinier de Graaf Hospital
 
 ---
 
