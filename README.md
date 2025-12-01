@@ -1,8 +1,7 @@
 # EduPace — External Temporary Pacemaker Training Simulator
 
-**EduPace** is an educational simulator that trains nurses and students to configure a **temporary external single-chamber pacemaker** safely and realistically. It allows users to practice pacing, sensing, and threshold adjustments.
-
-Developed within the **TU Delft Minor Biomedical Engineering (2025)** in collaboration with the **Reinier de Graaf Hospital (Delft)**.
+**EduPace** is an educational simulator that trains nurses and students to configure a temporary external single-chamber pacemaker. It allows users to practice pacing, sensing, and threshold adjustments.
+Developed within the TU Delft Minor Biomedical Engineering in collaboration with the Reinier de Graaf Hospital (Delft, Netherlands).
 
 ---
 
