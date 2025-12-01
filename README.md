@@ -5,16 +5,15 @@ Developed within the TU Delft Minor Biomedical Engineering in collaboration with
 
 ---
 
-## 🔧 Overview
+## Overview
 
-EduPace replicates the behavior of the **Medtronic 53401 Temporary External Pacemaker** using:
-
+EduPace was developed to replicate the behavior of the Medtronic 53401 Temporary External Pacemaker using:
 - A software-based ECG simulator  
 - A physical control unit with knobs, LEDs, and display  
 
 ---
 
-## 🧩 System Overview
+## System Overview
 
 | Component | Function |
 |------------|-----------|
@@ -36,6 +35,43 @@ EduPace replicates the behavior of the **Medtronic 53401 Temporary External Pace
 3. Open the EduPace UI in your browser  
 4. Connect via WebSerial  
 5. Begin a training scenario  
+
+---
+## Repository Structure
+edupace/
+│
+├── arduino/                    # Arduino firmware and hardware logic
+│   ├── Dial.ino
+│   ├── Display.ino
+│   ├── EduPace2025.ino
+│   ├── Key_Button.ino
+│   ├── Leds.ino
+│   ├── Serial_communication.ino
+│   ├── digital.c / key.c / l_conf.h ...
+│   └── README.md
+│
+├── docs/                       # Proposal, documentation, manuals
+│   └── README.md
+│
+├── simulator-interface/        # Main web-based simulator
+│   ├── assets/
+│   │   ├── audio/
+│   │   ├── icons/
+│   │   └── logos/
+│   ├── data/
+│   │   └── scenarios.json      # Scenario configuration
+│   ├── ecg/
+│   │   ├── ecg_core.py         # Python ECG prototyping
+│   │   ├── ecgCore.js          # Main ECG engine
+│   │   ├── ecgCore_old.js
+│   │   └── ECG simulation notebooks
+│   ├── js/                     # Pacemaker & UI logic
+│   ├── partials/               # Reusable HTML components
+│   ├── styles/                 # CSS (layout, theme)
+│   ├── index.html              # Landing page
+│   └── simulation.html         # ECG monitor + pacemaker interface
+│
+└── misc/                       # Logs, temp files, internal assets
 
 ___
 
