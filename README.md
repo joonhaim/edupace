@@ -38,6 +38,9 @@ EduPace was developed to replicate the behavior of the Medtronic 53401 Temporary
 
 ---
 ## Repository Structure
+## Repository Structure
+
+```text
 edupace/
 │
 ├── arduino/                    # Arduino firmware and hardware logic
@@ -47,31 +50,37 @@ edupace/
 │   ├── Key_Button.ino
 │   ├── Leds.ino
 │   ├── Serial_communication.ino
-│   ├── digital.c / key.c / l_conf.h ...
+│   ├── digital.c
+│   ├── key.c
+│   ├── l_conf.h
 │   └── README.md
 │
-├── docs/                       # Proposal, documentation, manuals
+├── docs/                       # Documentation, figures, reports
 │   └── README.md
 │
-├── simulator-interface/        # Main web-based simulator
+├── simulator-interface/        # Browser-based pacing & ECG simulator
 │   ├── assets/
 │   │   ├── audio/
 │   │   ├── icons/
 │   │   └── logos/
 │   ├── data/
-│   │   └── scenarios.json      # Scenario configuration
+│   │   └── scenarios.json
 │   ├── ecg/
-│   │   ├── ecg_core.py         # Python ECG prototyping
-│   │   ├── ecgCore.js          # Main ECG engine
+│   │   ├── ecg_core.py
+│   │   ├── ecgCore.js
 │   │   ├── ecgCore_old.js
-│   │   └── ECG simulation notebooks
-│   ├── js/                     # Pacemaker & UI logic
-│   ├── partials/               # Reusable HTML components
-│   ├── styles/                 # CSS (layout, theme)
-│   ├── index.html              # Landing page
-│   └── simulation.html         # ECG monitor + pacemaker interface
+│   │   ├── ECG simulation.ipynb
+│   │   └── ECG simulation - organised version.ipynb
+│   ├── js/
+│   ├── partials/
+│   ├── styles/
+│   ├── index.html
+│   └── simulation.html
 │
-└── misc/                       # Logs, temp files, internal assets
+└── misc/                       # Logs, prototypes, temporary assets
+    ├── logs.html
+    └── ...
+```
 
 ___
 
