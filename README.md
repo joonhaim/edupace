@@ -81,11 +81,39 @@ ___
 ## Contributors
 
 **Minor BME 2025 Team:** 
-Ashley Jacobi, Süheyla Nurlu, Adrien Joon-Ha Im, Cees Vlasman  
+Ashley Jacobi, Süheyla Nurlu, Cees Vlasman, Adrien Joon-Ha Im
 
 
 **Clinical Supervisor:** 
 Paul Verschuren, Reinier de Graaf Hospital
+
+---
+
+### Contributions
+
+**Ashley Jacobi**
+- Researched physiological ECG morphology and clinical requirements
+- Designed ECG generation engine (real-time Bézier-based cycles)
+- Developed pacemaker timing system (sensing, inhibition, capture logic)
+- Led documentation work and coordinated communication with the hospital and clinical supervisors
+
+
+**Süheyla Nurlu**
+- Implemented Arduino-side functionality (encoders, knobs, buttons, LEDs)
+- Developed hardware interaction logic and Serial communication routines
+- Managed wiring, pin mapping, and microcontroller integration
+
+**Cees Vlasman**
+- Designed enclosure components and mechanical layout (CAD modeling)
+- Executed 3D printing, hardware assembly, and fit verification
+- Ensured ergonomic alignment of knobs, display, and casing
+  
+**Adrien Joon-Ha Im**
+- Designed and implemented the UI/UX flow, layout system, and visual interface
+- Integrated UI components: pacing/sensing indicators, alarms, waveform rendering
+- Built WebSerial communication protocol between Arduino and simulator
+- Implemented PVC/PAC logic, QRS width modulation, and threshold drift
+- Structured the scenario engine and front-end simulator architecture
 
 ---
 
