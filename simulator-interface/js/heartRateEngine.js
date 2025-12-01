@@ -1,113 +1,200 @@
+
+// -----------------------------------------------------------------------------
+// Tunable constants
+// -----------------------------------------------------------------------------
+
+// How many seconds of peaks to keep in the window for HR calculation
 const HR_MEASUREMENT_WINDOW_SECONDS = 8;
+
+// Minimum allowed time between detected peaks (seconds) to avoid double-counting
+// ~0.3 s => max ~200 bpm
 const MIN_PEAK_INTERVAL_SECONDS = 0.3;
+
+// Peak detection threshold relative to max amplitude
 const MIN_PEAK_FRACTION = 0.45;
+
+// Absolute minimum peak amplitude (in normalized units) to be considered real
 const MIN_PEAK_ABSOLUTE = 0.5;
 
+// Physiologic range for output BPM (clamped)
+const MIN_VALID_BPM = 20;
+const MAX_VALID_BPM = 220;
+
+// -----------------------------------------------------------------------------
+// Heart rate engine
+// -----------------------------------------------------------------------------
+
 function createHeartRateEngine(displayElement) {
-    const heartRateState = {
-        peaks: [],
+    const state = {
+        peaks: [],              // array of times (seconds) of detected peaks
         lastPeakTime: -Infinity,
         previousMagnitude: null,
         previousSlope: null,
         previousSampleTime: null,
-        ppm: null
+        lastSampleTime: null,
+
+        bpm: null,             // current computed BPM (this window)
+        lastValidBpm: null      // last non-null, in-range BPM
     };
 
     let maxWaveAmplitude = 1;
 
-    function reset() {
-        heartRateState.peaks = [];
-        heartRateState.lastPeakTime = -Infinity;
-        heartRateState.previousMagnitude = null;
-        heartRateState.previousSlope = null;
-        heartRateState.previousSampleTime = null;
-        heartRateState.ppm = null;
-        updateDisplay();
-    }
+    // -----------------------------
+    // Internal helpers
+    // -----------------------------
 
     function setMaxWaveAmplitude(value) {
         maxWaveAmplitude = Math.max(1, Math.abs(value) || 1);
-    }
-
-    function updateDisplay() {
-        if (!displayElement) return;
-
-        const text = Number.isFinite(heartRateState.ppm)
-            ? heartRateState.ppm.toString()
-            : '--';
-        displayElement.textContent = text;
     }
 
     function getPeakThreshold() {
         return Math.max(MIN_PEAK_ABSOLUTE, maxWaveAmplitude * MIN_PEAK_FRACTION);
     }
 
+    function updateDisplay() {
+        if (!displayElement) return;
+
+        const valueToShow = Number.isFinite(state.bpm)
+            ? state.bpm
+            : Number.isFinite(state.lastValidBpm)
+                ? state.lastValidBpm
+                : null;
+
+        displayElement.textContent = Number.isFinite(valueToShow)
+            ? valueToShow.toString()
+            : '--';
+    }
+
+    function reset() {
+        // Soft reset: clear recent dynamic state, keep lastValidBpm for continuity
+        state.peaks = [];
+        state.lastPeakTime = -Infinity;
+        state.previousMagnitude = null;
+        state.previousSlope = null;
+        state.previousSampleTime = null;
+        state.lastSampleTime = null;
+        state.bpm = null;
+        updateDisplay();
+    }
+
     function purgeOldPeaks(currentTime) {
         const cutoff = currentTime - HR_MEASUREMENT_WINDOW_SECONDS;
-        heartRateState.peaks = heartRateState.peaks.filter((peakTime) => peakTime >= cutoff);
+        state.peaks = state.peaks.filter((t) => t >= cutoff);
 
-        if (heartRateState.peaks.length < 2) {
-            heartRateState.ppm = null;
+        // If we have truly no peaks within a long time, clear current bpm (but keep lastValidBpm)
+        if (state.peaks.length === 0) {
+            state.bpm = null;
             updateDisplay();
         }
     }
 
     function updateFromPeaks() {
-        if (heartRateState.peaks.length < 2) {
-            heartRateState.ppm = null;
+        if (state.peaks.length < 2) {
+            // Not enough information to compute a new BPM; keep lastValidBpm
+            state.bpm = null;
             updateDisplay();
             return;
         }
 
+        // Compute RR intervals
         const intervals = [];
-        for (let i = 1; i < heartRateState.peaks.length; i++) {
-            const delta = heartRateState.peaks[i] - heartRateState.peaks[i - 1];
-            if (delta > 0) intervals.push(delta);
+        for (let i = 1; i < state.peaks.length; i++) {
+            const delta = state.peaks[i] - state.peaks[i - 1];
+            if (delta > 0) {
+                intervals.push(delta);
+            }
         }
 
         if (!intervals.length) {
-            heartRateState.ppm = null;
+            state.bpm = null;
             updateDisplay();
             return;
         }
 
-        const total = intervals.reduce((acc, value) => acc + value, 0);
-        const averageIntervalSeconds = total / intervals.length;
-        heartRateState.ppm = Math.round(60 / averageIntervalSeconds);
+        // Basic outlier rejection: keep intervals corresponding roughly to 20–220 bpm
+        const filtered = intervals.filter((rr) => {
+            const bpm = 60 / rr;
+            return bpm >= MIN_VALID_BPM && bpm <= MAX_VALID_BPM;
+        });
+
+        const rrList = filtered.length ? filtered : intervals;
+        if (!rrList.length) {
+            state.bpm = null;
+            updateDisplay();
+            return;
+        }
+
+        // Use median RR for stability
+        const sorted = rrList.slice().sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        const medianRR =
+            sorted.length % 2 === 0
+                ? 0.5 * (sorted[mid - 1] + sorted[mid])
+                : sorted[mid];
+
+        if (medianRR <= 0) {
+            state.bpm = null;
+            updateDisplay();
+            return;
+        }
+
+        let bpm = 60 / medianRR;
+        bpm = Math.round(Math.min(Math.max(bpm, MIN_VALID_BPM), MAX_VALID_BPM));
+
+        state.bpm = bpm;
+        state.lastValidBpm = bpm;
+
         updateDisplay();
     }
 
     function recordPeak(timeSeconds) {
-        heartRateState.lastPeakTime = timeSeconds;
-        heartRateState.peaks.push(timeSeconds);
+        state.lastPeakTime = timeSeconds;
+        state.peaks.push(timeSeconds);
         purgeOldPeaks(timeSeconds);
         updateFromPeaks();
     }
 
+    // -----------------------------
+    // Public-facing sample processing
+    // -----------------------------
+
     function processSample(timeSeconds, value) {
+        if (!Number.isFinite(timeSeconds)) return;
+
         const magnitude = Math.abs(value);
+        state.lastSampleTime = timeSeconds;
 
-        if (heartRateState.previousMagnitude !== null) {
-            const slope = magnitude - heartRateState.previousMagnitude;
-            const previousSlope = heartRateState.previousSlope;
+        if (state.previousMagnitude !== null) {
+            const slope = magnitude - state.previousMagnitude;
+            const previousSlope = state.previousSlope;
 
-            if (previousSlope !== null && previousSlope > 0 && slope <= 0 && heartRateState.previousMagnitude >= getPeakThreshold()) {
-                const isSeparated =
-                    (timeSeconds - heartRateState.lastPeakTime) >= MIN_PEAK_INTERVAL_SECONDS;
+            // Detect a local maximum in |value| that crosses the peak threshold
+            if (
+                previousSlope !== null &&
+                previousSlope > 0 &&
+                slope <= 0 &&
+                state.previousMagnitude >= getPeakThreshold()
+            ) {
+                const separated =
+                    (timeSeconds - state.lastPeakTime) >= MIN_PEAK_INTERVAL_SECONDS;
 
-                if (isSeparated) {
-                    recordPeak(heartRateState.previousSampleTime ?? timeSeconds);
+                if (separated) {
+                    const peakTime = state.previousSampleTime ?? timeSeconds;
+                    recordPeak(peakTime);
                 }
             }
 
-            heartRateState.previousSlope = slope;
+            state.previousSlope = slope;
         }
 
-        heartRateState.previousMagnitude = magnitude;
-        heartRateState.previousSampleTime = timeSeconds;
+        state.previousMagnitude = magnitude;
+        state.previousSampleTime = timeSeconds;
+
+        // Periodically clean old peaks
         purgeOldPeaks(timeSeconds);
     }
 
+    // Initial display state
     updateDisplay();
 
     return {
