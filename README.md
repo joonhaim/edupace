@@ -11,7 +11,7 @@ EduPace was developed to replicate the behavior of the Medtronic 53401 Temporary
 - A software-based ECG simulator  
 - A physical control unit with knobs, LEDs, and display
 
-[📄 Full Project Report](docs/report.pdf)
+[**EduPace Project Report**](docs/report.pdf)
 
 ---
 ## Project Motivation & Problem Statement
