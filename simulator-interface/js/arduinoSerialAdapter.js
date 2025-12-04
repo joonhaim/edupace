@@ -38,10 +38,12 @@ const parameterState = {
     sensitivity: null,
     mode: null,
     power: null,
+    locked: null,
     asynchronous: false
 };
 let isPoweredOn = false;
 let unsupportedHintDismissed = false;
+const resettableParameterKeys = Object.keys(parameterState);
 
 function createUnsupportedHint() {
     if (!ui.connectionGroup || ui.unsupportedHint) return;
@@ -141,6 +143,34 @@ function applyAsyncModeIndicator({ sensitivity, mode, asynchronous, power }) {
     }
 }
 
+function applyParameterDisplay({ rate, output, sensitivity, power, asynchronous, mode, locked }) {
+    const powered = typeof power === 'boolean' ? power : isPoweredOn;
+
+    if (ui.rate) {
+        ui.rate.textContent = powered && Number.isFinite(rate) ? `${Math.round(rate)}` : '--';
+    }
+
+    if (ui.output) {
+        ui.output.textContent = powered && Number.isFinite(output) ? output.toFixed(1) : '--';
+    }
+
+    applySensitivityDisplay({ sensitivity, mode, asynchronous, power: powered });
+
+    const parametersCard = document.querySelector('.parameters-card');
+    const controlGroups = parametersCard?.querySelectorAll('[data-virtual-control]') ?? [];
+
+    if (parametersCard) {
+        parametersCard.classList.toggle('is-powered-off', !powered);
+        parametersCard.classList.toggle('is-locked', Boolean(powered && locked));
+    }
+
+    controlGroups.forEach((group) => {
+        const disabled = Boolean(!powered || locked);
+        group.setAttribute('aria-disabled', String(disabled));
+    });
+}
+
+
 function initHardwareIntegration() {
     const supported = 'serial' in navigator;
 
@@ -184,7 +214,7 @@ function initHardwareIntegration() {
             isPoweredOn = event.detail.power;
         }
         applyAsyncModeIndicator({ sensitivity, mode, asynchronous, power: isPoweredOn });
-        applySensitivityDisplay({ sensitivity, mode, asynchronous, power: isPoweredOn });
+        applyParameterDisplay({ ...event.detail, power: isPoweredOn });
     });
 
     window.edupaceHardware = {
@@ -195,6 +225,16 @@ function initHardwareIntegration() {
         sendLedCommand
     };
 }
+
+function resetParameters() {
+    resettableParameterKeys.forEach((key) => {
+        parameterState[key] = key === 'asynchronous' ? false : null;
+    });
+    isPoweredOn = false;
+    applyParameterDisplay(parameterState);
+    applyAsyncModeIndicator(parameterState);
+}
+
 
 async function connectToHardware() {
     if (!('serial' in navigator)) {
@@ -245,6 +285,8 @@ async function disconnectFromHardware() {
     serialState.reader = null;
     serialState.writer = null;
     serialState.buffer = '';
+    resetParameters();
+
 
     updateConnectionStatus('DISCONNECTED', false);
     ui.connectBtn.textContent = 'Connect';
@@ -299,6 +341,20 @@ function handleHardwareMessage(line) {
     const payload = parsePayload(line);
     let parameterChanged = false;
 
+    const inferPower = () => {
+        if (payload.power !== undefined) {
+            return payload.power.toUpperCase() === 'ON';
+        }
+        if (
+            parameterState.power === null &&
+            (payload.rate !== undefined || payload.output !== undefined || payload.sensitivity !== undefined)
+        ) {
+            return true;
+        }
+        return parameterState.power;
+    };
+
+
     const updateParam = (key, value) => {
         if (value === undefined) return;
         if (parameterState[key] !== value) {
@@ -323,12 +379,13 @@ function handleHardwareMessage(line) {
 
     if (payload.power !== undefined) {
         ui.powerStatus.textContent = `Power: ${payload.power}`;
-        isPoweredOn = payload.power === 'ON';
+        isPoweredOn = payload.power.toUpperCase() === 'ON';
         updateParam('power', isPoweredOn);
     }
 
     if (payload.lock !== undefined) {
         ui.lockStatus.textContent = `Lock: ${payload.lock ? 'ON' : 'OFF'}`;
+        updateParam('locked', payload.lock);
     }
 
     if (payload.mode !== undefined) {
@@ -336,11 +393,18 @@ function handleHardwareMessage(line) {
         updateParam('mode', payload.mode);
     }
 
-    const asyncMode = isAsyncMode(parameterState);
+    const nextPowerState = inferPower();
+    if (parameterState.power !== nextPowerState) {
+        parameterChanged = true;
+        parameterState.power = nextPowerState;
+        isPoweredOn = Boolean(nextPowerState);
+    }
+
+    const asyncMode = isAsyncMode({ ...parameterState, power: nextPowerState });
     if (parameterState.asynchronous !== asyncMode) {
         parameterChanged = true;
+        parameterState.asynchronous = asyncMode;
     }
-    parameterState.asynchronous = asyncMode;
 
     if (payload.paceLed) {
         flashLed(ui.paceLed, 'pace');
@@ -358,7 +422,7 @@ function handleHardwareMessage(line) {
         );
     }
 
-    applySensitivityDisplay(parameterState);
+    applyParameterDisplay(parameterState);
     applyAsyncModeIndicator(parameterState);
 }
 
