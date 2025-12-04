@@ -17,7 +17,8 @@
   USER INTERACTION
   ------------------------------------------------------------
   ► Power Button:
-    – Hold > 2 seconds  → Toggle ON/OFF
+    – Hold > 2 seconds  → Toggle ON → OFF
+    – Short press  → Toggle OFF → ON
     – ignored when locked
 
   ► Key Button:
