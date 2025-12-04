@@ -16,6 +16,7 @@
 ## Features
 
 - Touch-enabled lock button
+- Touch-enabled power button
 - Real-time display of Pace, Output, and Sense parameters
 - Rotary encoder input for adjusting values
 - LED indicators for status feedback
@@ -24,11 +25,33 @@
 - Flickering LED effect to simulate device activity
 
 ## Serial Communication
+- Setial Baud rate: 115200
+### Communication Format
+► Incoming Serial Commands:
+- GREEN_ON
+- GREEN_OFF
+- BLUE_ON
+- BLUE_OFF
+  
+► Outgoing Serial Messages:
+- PACE=< value >, OUTPUT=< value >, SENSE=< value >
+- POWER_ON
+- POWER_OFF
 
-- Baud rate: 115200
-- Input Commands: GREEN_ON / GREEN_OFF / BLUE_ON / BLUE_OFF
-- Output Format: PACE=80.00,OUTPUT=10.00,SENSE=2.00
-
+### User Interaction
+► Power Button:
+   - Hold > 2 seconds  → Toggle ON → OFF
+   - Single press      → Toggle OFF → ON
+   - ignored when locked
+     
+► Key Button:
+- Single press  → Lock / Unlock
+- If no value (pace, output, sense) has changed for more than 60 seconds, the system automatically locks.
+  
+► Encoder Knobs:
+- Rotate to adjust PACE, OUTPUT, or SENSE
+- Rotation ignored when locked
+   
 ## Pin Connections
 | Component    | Signal   | Arduino Pin | Notes                 |
 |-------------|---------|------------|----------------------|
