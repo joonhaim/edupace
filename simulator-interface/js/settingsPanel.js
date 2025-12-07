@@ -10,7 +10,7 @@ const defaultSettings = {
     hrDisplay: true,
     hrColor: 'white',
     leadLabel: true,
-    leadLabelColor: 'white',
+    leadLabelColor: 'green',
     labelSize: 'large',
     sensitivityGuide: false,
     pacingSpikeLabel: false,
