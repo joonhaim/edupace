@@ -1,9 +1,9 @@
 {
   "scenarios": [
     {
-      "id": "UC-00",
-      "code": "00",
-      "title": "00 · Normal Sinus",
+      "id": "M0",
+      "code": "M0",
+      "title": "M0 · Normal Sinus",
       "description": "Maintain VVI standby pacing while observing intrinsic beats.",
       "summaryLabel": "Normal sinus rhythm monitoring",
       "primaryRhythm": "Normal sinus rhythm",
@@ -28,9 +28,9 @@
       "rules": []
     },
     {
-      "id": "UC-01",
-      "code": "01",
-      "title": "01 · Symptomatic Bradycardia",
+      "id": "M1",
+      "code": "M1",
+      "title": "M1 · Symptomatic Bradycardia",
       "description": "Patient with symptomatic ventricular bradycardia requiring VVI demand pacing.",
       "summaryLabel": "Bradycardia requiring VVI pacing",
       "primaryRhythm": "Symptomatic ventricular bradycardia",
@@ -110,9 +110,9 @@
       ]
     },
     {
-      "id": "UC-02",
-      "code": "02",
-      "title": "02 · Capture Threshold Test",
+      "id": "M2",
+      "code": "M2",
+      "title": "M2 · Capture Threshold Test",
       "description": "Determine the ventricular capture threshold and program an appropriate safety margin.",
       "summaryLabel": "Capture threshold testing",
       "primaryRhythm": "Sinus rhythm with ventricular pacing",
@@ -190,9 +190,9 @@
       ]
     },
     {
-      "id": "UC-03",
-      "code": "03",
-      "title": "03 · Sensing & Undersensing",
+      "id": "M3",
+      "code": "M3",
+      "title": "M3 · Sensing & Undersensing",
       "description": "Determine the ventricular sensing threshold and correct undersensing.",
       "summaryLabel": "Sensing threshold and undersensing",
       "primaryRhythm": "Intrinsic sinus rhythm with intermittent pacing",
@@ -252,9 +252,9 @@
       ]
     },
     {
-      "id": "UC-04",
-      "code": "04",
-      "title": "04 · Oversensing & Inhibition",
+      "id": "M4",
+      "code": "M4",
+      "title": "M4 · Oversensing & Inhibition",
       "description": "Recognize oversensing that leads to inappropriate inhibition of pacing and correct it.",
       "summaryLabel": "Oversensing and pauses",
       "primaryRhythm": "Bradycardia with paced support",
@@ -318,9 +318,9 @@
       ]
     },
     {
-      "id": "UC-05",
-      "code": "05",
-      "title": "05 · Threshold Drift & LOC",
+      "id": "M5",
+      "code": "M5",
+      "title": "M5 · Threshold Drift & LOC",
       "description": "Recognize evolving loss of capture and readjust output after threshold drift or lead-related changes.",
       "summaryLabel": "Threshold drift and loss of capture",
       "primaryRhythm": "Ventricular pacing with evolving loss of capture",
@@ -398,9 +398,9 @@
       ]
     },
     {
-      "id": "UC-06",
-      "code": "06",
-      "title": "06 · PVCs & PACs in VVI",
+      "id": "M6",
+      "code": "M6",
+      "title": "M6 · PVCs & PACs in VVI",
       "description": "Recognize PVCs and PACs on the ECG during VVI pacing and understand their interaction with pacemaker timing.",
       "summaryLabel": "Ectopy recognition during pacing",
       "primaryRhythm": "Ventricular pacing with PVCs and PACs",
@@ -443,9 +443,9 @@
       ]
     },
     {
-      "id": "UC-07",
-      "code": "07",
-      "title": "07 · Wide vs Narrow QRS",
+      "id": "M7",
+      "code": "M7",
+      "title": "M7 · Wide vs Narrow QRS",
       "description": "Differentiate intrinsic narrow QRS complexes from wide QRS paced beats and PVCs.",
       "summaryLabel": "QRS morphology interpretation",
       "primaryRhythm": "Mixed intrinsic and paced beats",
@@ -488,10 +488,10 @@
       ]
     },
     {
-      "id": "CC-01",
-      "code": "CC01",
+      "id": "C1",
+      "code": "C1",
       "category": "clinical",
-      "title": "CC01 · Third-degree AV Block",
+      "title": "C1 · Third-degree AV Block",
       "description": "Placeholder clinical case that mirrors a complete heart block with minimal prompts.",
       "summaryLabel": "Complete heart block, minimal guidance",
       "primaryRhythm": "Third-degree atrioventricular block",
@@ -516,9 +516,9 @@
       "rules": []
     },
     {
-      "id": "UC-08",
-      "code": "08",
-      "title": "08 · Random Mode",
+      "id": "M8",
+      "code": "M8",
+      "title": "M8 · Random Mode",
       "description": "Mixed scenario that combines elements of all previous cases with randomised rhythm, sensing, and capture patterns.",
       "summaryLabel": "Random mixed case",
       "primaryRhythm": "Mixed intrinsic, paced, and ectopic beats",
