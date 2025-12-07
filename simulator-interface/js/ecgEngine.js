@@ -97,7 +97,8 @@ let displaySettings = {
     intrinsicBeatLabels: true,
     senseColor: 'amber',
     colorCodeBeats: true,
-    intervalRulers: true
+    intervalRulers: true,
+    sensitivityGuide: false
 };
 
 const ledElements = {
@@ -555,6 +556,7 @@ function draw() {
 
     drawGrid(width, height, pixelsPerMm);
     drawWaveform(width, height);
+    drawSensitivityGuide(width, height);
     drawBeatLabels(width, height);
     drawCaliper(width, height);
     drawPauseOverlay(width, height);
@@ -610,6 +612,55 @@ function drawWaveform(width, height) {
     ctx.drawImage(traceCanvas, 0, 0, width, height);
 }
 
+function drawSensitivityGuide(width, height) {
+    if (!ctx || !displaySettings.sensitivityGuide) return;
+    if (!Number.isFinite(engineState.sensitivity)) return;
+
+    const { midY, scaleY } = getWaveformGeometry(height);
+    if (!scaleY) return;
+
+    const y = clamp(valueToY(engineState.sensitivity, midY, scaleY), 0, height);
+    const label = `${engineState.sensitivity.toFixed(1)} mV`;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(244, 114, 182, 0.85)';
+    ctx.setLineDash([10, 6]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+    ctx.strokeStyle = 'rgba(244, 114, 182, 0.9)';
+    ctx.lineWidth = 1;
+    ctx.font = '600 12px "Inter", sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+    const paddingX = 8;
+    const paddingY = 4;
+    const textMetrics = ctx.measureText(label);
+    const boxWidth = Math.max(60, textMetrics.width + paddingX * 2);
+    const boxHeight = Math.max(18, (textMetrics.actualBoundingBoxAscent || 8) + (textMetrics.actualBoundingBoxDescent || 4) + paddingY * 2);
+    const boxX = Math.min(width - boxWidth - 8, 12);
+    const boxY = clamp(y - boxHeight / 2, 6, height - boxHeight - 6);
+
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 6);
+    } else {
+        ctx.rect(boxX, boxY, boxWidth, boxHeight);
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillText(label, boxX + paddingX, boxY + boxHeight / 2 + 0.5);
+    ctx.restore();
+}
+
 function pruneExpiredBeatLabels(currentTime) {
     activeBeatLabels = activeBeatLabels.filter((label) => label.expiresAt > currentTime);
 }
@@ -661,9 +712,7 @@ function advanceSweep(deltaSeconds) {
     const height = traceCanvas.height;
     const secondsVisible = getSecondsVisible();
     const pixelsPerSecond = width / secondsVisible;
-    const amplitude = height * 0.18 * (displaySettings.amplitudeScaling / 10);
-    const scaleY = amplitude / maxWaveAmplitude;
-    const midY = height * 0.55;
+    const { midY, scaleY } = getWaveformGeometry(height);
 
     let remainingPixels = deltaSeconds * pixelsPerSecond;
 
@@ -718,6 +767,13 @@ function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height
 
 function valueToY(value, midY, scaleY) {
     return midY - value * scaleY;
+}
+
+function getWaveformGeometry(height) {
+    const amplitude = height * 0.18 * (displaySettings.amplitudeScaling / 10);
+    const scaleY = amplitude / maxWaveAmplitude;
+    const midY = height * 0.55;
+    return { amplitude, scaleY, midY };
 }
 
 function sampleWaveform(timeSeconds) {
@@ -1030,6 +1086,10 @@ function handleDisplaySettings(event) {
             pendingCaliper = null;
             ignoreNextPointerUp = false;
         }
+    }
+
+    if (typeof settings.sensitivityGuide === 'boolean') {
+        displaySettings.sensitivityGuide = settings.sensitivityGuide;
     }
 
     if (typeof settings.hrDisplay === 'boolean') {
