@@ -1842,7 +1842,7 @@ body.simulation-light .theme-toggle {
     font-variant-numeric: tabular-nums;
 }
 
-.ecg-floating-btn {
+.ecg-floating-btn,
 .ecg-overlay-actions {
     position: absolute;
     bottom: 0.9rem;
@@ -1909,7 +1909,7 @@ body.simulation-light .theme-toggle {
 }
 
 .ecg-frame:hover .ecg-floating-btn,
-.ecg-floating-btn:focus-visible {
+.ecg-floating-btn:focus-visible,
 .ecg-frame:hover .overlay-action,
 .overlay-action:focus-visible {
     opacity: 1;
@@ -1918,7 +1918,7 @@ body.simulation-light .theme-toggle {
     outline: none;
 }
 
-.ecg-floating-btn:focus-visible {
+.ecg-floating-btn:focus-visible,
 .overlay-action:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
 }
