@@ -488,6 +488,34 @@
       ]
     },
     {
+      "id": "CC-01",
+      "code": "CC01",
+      "category": "clinical",
+      "title": "CC01 · Third-degree AV Block",
+      "description": "Placeholder clinical case that mirrors a complete heart block with minimal prompts.",
+      "summaryLabel": "Complete heart block, minimal guidance",
+      "primaryRhythm": "Third-degree atrioventricular block",
+      "location": "Telemetry",
+      "waveformId": "brady-escape",
+      "vitals": {
+        "hr": 32,
+        "bp": "82/48",
+        "spo2": 94,
+        "temp": 36.5
+      },
+      "pacing": {
+        "mode": "VVI (demand)",
+        "poweredOn": false
+      },
+      "alarm": {
+        "level": "warning",
+        "text": "Complete heart block – stabilise the patient"
+      },
+      "objective": "Stabilise a patient with complete heart block by establishing reliable ventricular pacing and improving perfusion.",
+      "feedback": "Look for dissociated P waves with a slow ventricular escape rhythm. Initiate pacing with adequate rate and output, then reassess perfusion.",
+      "rules": []
+    },
+    {
       "id": "UC-08",
       "code": "08",
       "title": "08 · Random Mode",

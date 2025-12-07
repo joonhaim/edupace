@@ -71,7 +71,7 @@ edupace/
 │   ├── partials/
 │   ├── styles/
 │   ├── index.html
-│   └── simulation.html
+│   └── training.html
 │
 └── misc/                       # Logs, prototypes, temporary assets
     ├── logs.html
