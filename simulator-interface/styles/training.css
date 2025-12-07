@@ -1941,13 +1941,19 @@ body.simulation-light .theme-toggle {
 
 .ecg-frame:fullscreen .ecg-overlay,
 .ecg-frame.is-fullscreen .ecg-overlay {
-    padding: 1.5rem 2.2rem 1.3rem;
+    padding: 2rem 2.75rem 1.8rem;
 }
 
 .ecg-frame:fullscreen canvas,
 .ecg-frame.is-fullscreen canvas {
     width: 100% !important;
     height: 100% !important;
+}
+
+.ecg-frame:fullscreen .calibration-inline,
+.ecg-frame.is-fullscreen .calibration-inline {
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
 }
 
 .calibration-inline.is-visible {
@@ -1971,6 +1977,12 @@ body.simulation-light .theme-toggle {
     cursor: pointer;
     pointer-events: auto;
     transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ecg-frame:fullscreen .caliper-unit-toggle,
+.ecg-frame.is-fullscreen .caliper-unit-toggle {
+    right: 1.4rem;
+    bottom: 3.6rem;
 }
 
 .caliper-unit-toggle:hover,

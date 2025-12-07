@@ -1010,8 +1010,18 @@ function toggleCaliperUnit() {
     draw();
 }
 
-function updateCaliperUnitControl() {
+function shouldShowCaliperUnitToggle() {
+    const activeCaliper = pendingCaliper?.active ? pendingCaliper : caliper;
+    return Boolean(isPaused && displaySettings.intervalRulers && activeCaliper);
+}
+
+function updateCaliperUnitControl(options = {}) {
     if (!overlayElements.caliperUnitToggle) return;
+
+    const shouldShow = options.visible ?? shouldShowCaliperUnitToggle();
+    overlayElements.caliperUnitToggle.hidden = !shouldShow;
+    overlayElements.caliperUnitToggle.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+    overlayElements.caliperUnitToggle.tabIndex = shouldShow ? 0 : -1;
 
     const isPpm = caliperUnit === 'ppm';
     const label = isPpm ? 'Show calipers in milliseconds' : 'Show calipers in paces per minute';
@@ -1024,7 +1034,10 @@ function updateCaliperUnitControl() {
 
 function drawCaliper(width, height) {
     const activeCaliper = pendingCaliper?.active ? pendingCaliper : caliper;
-    if (!isPaused || !displaySettings.intervalRulers || !activeCaliper || !ctx) return;
+    const shouldShowToggle = Boolean(isPaused && displaySettings.intervalRulers && activeCaliper);
+    updateCaliperUnitControl({ visible: shouldShowToggle });
+
+    if (!shouldShowToggle || !ctx) return;
 
     const start = Math.max(0, Math.min(width, activeCaliper.startX));
     const end = Math.max(0, Math.min(width, activeCaliper.endX));
@@ -1297,6 +1310,10 @@ function handleFullscreenChange() {
 
     syncCanvasSize();
     resetSweep();
+    requestAnimationFrame(() => {
+        syncCanvasSize();
+        resetSweep();
+    });
 }
 
 function getSecondsVisible() {
