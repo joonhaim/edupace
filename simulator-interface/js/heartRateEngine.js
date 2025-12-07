@@ -10,6 +10,9 @@ const HR_MEASUREMENT_WINDOW_SECONDS = 8;
 // ~0.3 s => max ~200 bpm
 const MIN_PEAK_INTERVAL_SECONDS = 0.3;
 
+// Path to the R-wave beep audio asset
+const RWAVE_BEEP_SRC = 'assets/audio/r-wave-beep.wav';
+
 // Peak detection threshold relative to max amplitude
 const MIN_PEAK_FRACTION = 0.45;
 
@@ -37,6 +40,12 @@ function createHeartRateEngine(displayElement) {
         lastValidBpm: null      // last non-null, in-range BPM
     };
 
+    const audioState = {
+        muted: false,
+        mode: 'classic',
+        audioElement: null
+    };
+
     let maxWaveAmplitude = 1;
 
     // -----------------------------
@@ -49,6 +58,37 @@ function createHeartRateEngine(displayElement) {
 
     function getPeakThreshold() {
         return Math.max(MIN_PEAK_ABSOLUTE, maxWaveAmplitude * MIN_PEAK_FRACTION);
+    }
+
+    function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+    }
+
+    function getBeepVolume() {
+        if (audioState.muted || audioState.mode === 'off') return 0;
+        const modeVolume = audioState.mode === 'soft' ? 0.55 : 0.85;
+        return clamp(modeVolume, 0, 1);
+    }
+
+    function ensureAudioElement() {
+        if (audioState.audioElement) return audioState.audioElement;
+
+        const audio = new Audio(RWAVE_BEEP_SRC);
+        audio.preload = 'auto';
+        audioState.audioElement = audio;
+        return audio;
+    }
+
+    function playBeep() {
+        const baseVolume = getBeepVolume();
+        if (baseVolume <= 0) return;
+
+        const baseAudio = ensureAudioElement();
+        if (!baseAudio) return;
+
+        const player = baseAudio.cloneNode(true);
+        player.volume = baseVolume;
+        player.play().catch(() => {});
     }
 
     function updateDisplay() {
@@ -75,6 +115,18 @@ function createHeartRateEngine(displayElement) {
         state.lastSampleTime = null;
         state.bpm = null;
         updateDisplay();
+    }
+
+    function setBeepMode(mode) {
+        if (typeof mode !== 'string') return;
+
+        const normalized = ['classic', 'soft', 'off'].includes(mode) ? mode : 'classic';
+        audioState.mode = normalized;
+        audioState.muted = normalized === 'off';
+    }
+
+    function setBeepMuted(muted) {
+        audioState.muted = Boolean(muted);
     }
 
     function purgeOldPeaks(currentTime) {
@@ -151,6 +203,7 @@ function createHeartRateEngine(displayElement) {
         state.lastPeakTime = timeSeconds;
         state.peaks.push(timeSeconds);
         purgeOldPeaks(timeSeconds);
+        playBeep();
         updateFromPeaks();
     }
 
@@ -200,7 +253,9 @@ function createHeartRateEngine(displayElement) {
     return {
         processSample,
         reset,
-        setMaxWaveAmplitude
+        setMaxWaveAmplitude,
+        setBeepMode,
+        setBeepMuted
     };
 }
 

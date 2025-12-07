@@ -22,6 +22,7 @@ const defaultSettings = {
     buttonBeeps: true,
     soundVolume: 70,
     qrsBeep: 'classic',
+    qrsBeepMuted: false,
     autoLockKnobs: '60',
     captureDrift: 'off',
     actionLog: true,
@@ -161,6 +162,7 @@ function initSettingsPanel() {
     bindToggle(settingsCard, 'alarmSoundToggle', 'alarmSound');
     bindToggle(settingsCard, 'buttonBeepsToggle', 'buttonBeeps');
     bindRadios(settingsCard, 'qrsBeep', 'qrsBeep');
+    bindToggle(settingsCard, 'qrsBeepToggle', 'qrsBeepMuted');
     bindSlider(settingsCard, 'soundVolume', 'soundVolume');
 
     bindRadios(settingsCard, 'autoLockKnobs', 'autoLockKnobs');

@@ -98,8 +98,9 @@ let displaySettings = {
     senseColor: 'amber',
     colorCodeBeats: true,
     intervalRulers: true,
-    sensitivityGuide: false
-};
+    sensitivityGuide: false,
+    qrsBeep: 'classic',
+    qrsBeepMuted: false};
 
 const ledElements = {
     pace: document.getElementById('paceLed'),
@@ -1100,6 +1101,19 @@ function handleDisplaySettings(event) {
     if (typeof settings.hrColor === 'string') {
         displaySettings.hrColor = settings.hrColor;
         needsAnnotationUpdate = true;
+    }
+
+     if (typeof settings.qrsBeep === 'string') {
+        const normalizedBeep = ['classic', 'soft', 'off'].includes(settings.qrsBeep)
+            ? settings.qrsBeep
+            : 'classic';
+        displaySettings.qrsBeep = normalizedBeep;
+        heartRateEngine?.setBeepMode(normalizedBeep);
+    }
+
+    if (typeof settings.qrsBeepMuted === 'boolean') {
+        displaySettings.qrsBeepMuted = settings.qrsBeepMuted;
+        heartRateEngine?.setBeepMuted(settings.qrsBeepMuted);
     }
 
     if (needsTraceStyle) {
