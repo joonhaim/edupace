@@ -89,7 +89,7 @@ let displaySettings = {
     hrColor: 'blue',
     leadLabel: true,
     leadLabelColor: 'blue',
-    labelSize: 'normal',
+    labelSize: 'large',
     calibrationMarkers: true,
     rWaveMarkers: false,
     pacingSpikeLabel: true,
