@@ -115,17 +115,19 @@ const overlayElements = {
     leadLabel: document.querySelector('.ecg-label'),
     calibration: document.querySelector('.calibration-inline'),
     calibrationValue: document.querySelector('.calibration-inline .calibration-value'),
-    calibrationToggle: document.querySelector('.calibration-toggle'),
+    calibrationToggles: Array.from(document.querySelectorAll('.calibration-toggle')),
     qrsMuteToggle: document.querySelector('.ecg-audio-toggle'),
     qrsMuteIconOn: document.querySelector('.ecg-audio-toggle [data-sound-icon="on"]'),
     qrsMuteIconOff: document.querySelector('.ecg-audio-toggle [data-sound-icon="off"]'),
     fullscreenToggle: document.querySelector('.fullscreen-toggle'),
+    caliperUnitToggle: document.querySelector('.caliper-unit-toggle'),
     frame: document.querySelector('.ecg-frame'),
     hrBlock: document.querySelector('.ecg-vitals .vital-block'),
     hrValue: document.getElementById('hrValue')
 };
 
 let calibrationInfoVisible = false;
+let caliperUnit = 'ms';
 
 function applyQrsMuteState(muted) {
     const isMuted = Boolean(muted);
@@ -186,13 +188,16 @@ function initEcgEngine() {
     window.addEventListener('edupace-waveform-change', handleWaveformChange);
     window.addEventListener('edupace-ecg-settings', handleDisplaySettings);
 
-    overlayElements.calibrationToggle?.addEventListener('pointerenter', () => setCalibrationVisibility(true));
-    overlayElements.calibrationToggle?.addEventListener('focus', () => setCalibrationVisibility(true));
-    overlayElements.calibrationToggle?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
-    overlayElements.calibrationToggle?.addEventListener('blur', () => setCalibrationVisibility(false));
+    overlayElements.calibrationToggles?.forEach((toggle) => {
+        toggle.addEventListener('pointerenter', () => setCalibrationVisibility(true));
+        toggle.addEventListener('focus', () => setCalibrationVisibility(true));
+        toggle.addEventListener('pointerleave', () => setCalibrationVisibility(false));
+        toggle.addEventListener('blur', () => setCalibrationVisibility(false));
+    });
     overlayElements.frame?.addEventListener('mouseleave', () => setCalibrationVisibility(false));
     overlayElements.frame?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
     overlayElements.fullscreenToggle?.addEventListener('click', handleFullscreenToggle);
+    overlayElements.caliperUnitToggle?.addEventListener('click', toggleCaliperUnit);
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     handleFullscreenChange();
@@ -204,6 +209,7 @@ function initEcgEngine() {
     regenerateWaveform();
     startAnimationLoop();
     updateCalibrationNote();
+    updateCaliperUnitControl();
 }
 
 function handleParameterChange(event) {
@@ -263,7 +269,7 @@ function configureTraceStyle() {
     if (!traceCtx) return;
     const thickness = displaySettings.traceThickness;
     const color = getTraceColor(displaySettings.traceColor);
-    const baseWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 3 : 2;
+    const baseWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 4.5 : 3;
     traceCtx.lineWidth = getScaledLineWidth(baseWidth);
     traceCtx.strokeStyle = color;
     traceCtx.lineJoin = 'round';
@@ -447,8 +453,15 @@ function processBeatLabelEvents(windowStart, windowEnd, startX, endX, height, se
 function syncCanvasSize() {
     if (!canvas || !traceCanvas || !gridCanvas) return;
     const rect = canvas.getBoundingClientRect();
-    const newWidth = Math.max(Math.round(rect.width || canvas.clientWidth || canvas.width || 1), 1);
-    const newHeight = Math.max(Math.round(rect.height || canvas.clientHeight || canvas.height || 1), 1);
+    const frameSize = getFrameContentSize();
+    const newWidth = Math.max(
+        Math.round(frameSize?.width ?? rect.width ?? canvas.clientWidth ?? canvas.width ?? 1),
+        1
+    );
+    const newHeight = Math.max(
+        Math.round(frameSize?.height ?? rect.height ?? canvas.clientHeight ?? canvas.height ?? 1),
+        1
+    );
     const prevPixelRatio = devicePixelRatioScale;
     const pixelRatio = Math.max(window.devicePixelRatio || 1, 1);
     const renderWidth = Math.max(Math.round(newWidth * pixelRatio), 1);
@@ -491,6 +504,21 @@ function syncCanvasSize() {
     if (resizedGrid || pixelRatioChanged) {
         gridDirty = true;
     }
+}
+
+function getFrameContentSize() {
+    const frame = overlayElements.frame;
+    if (!frame) return null;
+
+    const style = window.getComputedStyle(frame);
+    const paddingX =
+        parseFloat(style.paddingLeft || '0') + parseFloat(style.paddingRight || '0');
+    const paddingY = parseFloat(style.paddingTop || '0') + parseFloat(style.paddingBottom || '0');
+
+    return {
+        width: Math.max(frame.clientWidth - paddingX, 1),
+        height: Math.max(frame.clientHeight - paddingY, 1)
+    };
 }
 
 function handleResize() {
@@ -976,6 +1004,24 @@ function getPointerPosition(event) {
     };
 }
 
+function toggleCaliperUnit() {
+    caliperUnit = caliperUnit === 'ms' ? 'ppm' : 'ms';
+    updateCaliperUnitControl();
+    draw();
+}
+
+function updateCaliperUnitControl() {
+    if (!overlayElements.caliperUnitToggle) return;
+
+    const isPpm = caliperUnit === 'ppm';
+    const label = isPpm ? 'Show calipers in milliseconds' : 'Show calipers in paces per minute';
+
+    overlayElements.caliperUnitToggle.textContent = isPpm ? 'ppm' : 'ms';
+    overlayElements.caliperUnitToggle.setAttribute('aria-pressed', isPpm ? 'true' : 'false');
+    overlayElements.caliperUnitToggle.setAttribute('aria-label', label);
+    overlayElements.caliperUnitToggle.setAttribute('title', label);
+}
+
 function drawCaliper(width, height) {
     const activeCaliper = pendingCaliper?.active ? pendingCaliper : caliper;
     if (!isPaused || !displaySettings.intervalRulers || !activeCaliper || !ctx) return;
@@ -1007,7 +1053,10 @@ function drawCaliper(width, height) {
 
     const diffSeconds = ((right - left) / width) * getSecondsVisible();
     const diffMs = Math.max(0, diffSeconds * 1000);
-    const label = `${diffMs.toFixed(0)} ms`;
+    const label =
+        caliperUnit === 'ppm'
+            ? `${diffSeconds > 0 ? (60 / diffSeconds).toFixed(0) : '0'} ppm`
+            : `${diffMs.toFixed(0)} ms`;
     const textX = (left + right) / 2;
 
     ctx.font = '600 18px "IBM Plex Mono", monospace';
@@ -1216,9 +1265,9 @@ function setCalibrationVisibility(visible) {
         overlayElements.calibration.classList.toggle('is-visible', calibrationInfoVisible);
     }
 
-    if (overlayElements.calibrationToggle) {
-        overlayElements.calibrationToggle.setAttribute('aria-expanded', calibrationInfoVisible ? 'true' : 'false');
-    }
+    overlayElements.calibrationToggles?.forEach((toggle) => {
+        toggle.setAttribute('aria-expanded', calibrationInfoVisible ? 'true' : 'false');
+    });
 }
 
 function handleFullscreenToggle() {
@@ -1247,6 +1296,7 @@ function handleFullscreenChange() {
     }
 
     syncCanvasSize();
+    resetSweep();
 }
 
 function getSecondsVisible() {
