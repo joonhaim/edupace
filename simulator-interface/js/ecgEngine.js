@@ -76,6 +76,9 @@ let ignoreNextPointerUp = false;
 let heartRateEngine = null;
 let waveformEvents = [];
 let activeBeatLabels = [];
+let devicePixelRatioScale = 1;
+let canvasDisplayWidth = 0;
+let canvasDisplayHeight = 0;
 let displaySettings = {
     gridlines: false,
     gridDensity: '2mm',
@@ -223,7 +226,8 @@ function configureTraceStyle() {
     if (!traceCtx) return;
     const thickness = displaySettings.traceThickness;
     const color = getTraceColor(displaySettings.traceColor);
-    traceCtx.lineWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 3 : 2;
+    const baseWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 3 : 2;
+    traceCtx.lineWidth = getScaledLineWidth(baseWidth);
     traceCtx.strokeStyle = color;
     traceCtx.lineJoin = 'round';
     traceCtx.lineCap = 'round';
@@ -406,26 +410,50 @@ function processBeatLabelEvents(windowStart, windowEnd, startX, endX, height, se
 function syncCanvasSize() {
     if (!canvas || !traceCanvas || !gridCanvas) return;
     const rect = canvas.getBoundingClientRect();
-    const newWidth = Math.max(Math.round(rect.width || canvas.width || 1), 1);
-    const newHeight = Math.max(Math.round(rect.height || canvas.height || 1), 1);
+    const newWidth = Math.max(Math.round(rect.width || canvas.clientWidth || canvas.width || 1), 1);
+    const newHeight = Math.max(Math.round(rect.height || canvas.clientHeight || canvas.height || 1), 1);
+    const prevPixelRatio = devicePixelRatioScale;
+    const pixelRatio = Math.max(window.devicePixelRatio || 1, 1);
+    const renderWidth = Math.max(Math.round(newWidth * pixelRatio), 1);
+    const renderHeight = Math.max(Math.round(newHeight * pixelRatio), 1);
 
-    if (canvas.width !== newWidth || canvas.height !== newHeight) {
-        canvas.width = newWidth;
-        canvas.height = newHeight;
+    const resizedCanvas = canvas.width !== renderWidth || canvas.height !== renderHeight;
+    const resizedTrace = traceCanvas.width !== renderWidth || traceCanvas.height !== renderHeight;
+    const resizedGrid = gridCanvas.width !== renderWidth || gridCanvas.height !== renderHeight;
+    const pixelRatioChanged = pixelRatio !== prevPixelRatio;
+
+    devicePixelRatioScale = pixelRatio;
+    canvasDisplayWidth = newWidth;
+    canvasDisplayHeight = newHeight;
+
+    if (resizedCanvas || canvas.style.width !== `${newWidth}px` || canvas.style.height !== `${newHeight}px`) {
+        canvas.width = renderWidth;
+        canvas.height = renderHeight;
+        canvas.style.width = `${newWidth}px`;
+        canvas.style.height = `${newHeight}px`;
     }
 
-    if (traceCanvas.width !== newWidth || traceCanvas.height !== newHeight) {
-        traceCanvas.width = newWidth;
-        traceCanvas.height = newHeight;
+    if (resizedTrace) {
+        traceCanvas.width = renderWidth;
+        traceCanvas.height = renderHeight;
+    }
+
+    if (resizedGrid) {
+        gridCanvas.width = renderWidth;
+        gridCanvas.height = renderHeight;
+    }
+
+    ctx?.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    traceCtx?.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    gridCtx?.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+    if (resizedTrace || pixelRatioChanged) {
         configureTraceStyle();
     }
 
-    if (gridCanvas.width !== newWidth || gridCanvas.height !== newHeight) {
-        gridCanvas.width = newWidth;
-        gridCanvas.height = newHeight;
+    if (resizedGrid || pixelRatioChanged) {
+        gridDirty = true;
     }
-
-    gridDirty = true;
 }
 
 function handleResize() {
@@ -523,7 +551,8 @@ function resetSweep() {
     heartRateEngine?.reset();
     clearBeatLabels();
     if (traceCtx && traceCanvas) {
-        traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
+        const { width, height } = getDisplaySize();
+        traceCtx.clearRect(0, 0, width, height);
         configureTraceStyle();
     }
     draw();
@@ -555,7 +584,7 @@ function stepFrame(timestamp) {
 function draw() {
     if (!ctx || !canvas) return;
 
-    const { width, height } = canvas;
+    const { width, height } = getDisplaySize();
     const secondsVisible = getSecondsVisible();
     const pixelsPerSecond = width / secondsVisible;
     const pixelsPerMm = pixelsPerSecond / displaySettings.sweepSpeed;
@@ -572,36 +601,36 @@ function drawGrid(width, height, pixelsPerMm) {
     if (!pixelsPerMm || !gridCtx || !gridCanvas) return;
 
     if (gridDirty) {
-        gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+        gridCtx.clearRect(0, 0, width, height);
         gridCtx.save();
         gridCtx.fillStyle = '#000';
-        gridCtx.fillRect(0, 0, gridCanvas.width, gridCanvas.height);
+        gridCtx.fillRect(0, 0, width, height);
         if (displaySettings.gridlines && displaySettings.gridDensity !== 'none') {
             const intensity = clamp(displaySettings.gridIntensity / 100, 0, 1);
             const spacingMm = displaySettings.gridDensity === '1mm' ? 1 : 2;
             const spacingPx = Math.max(pixelsPerMm * spacingMm, 1);
             const majorEvery = 5;
-            gridCtx.lineWidth = 1;
+            gridCtx.lineWidth = getScaledLineWidth(1);
 
-            for (let x = 0; x <= gridCanvas.width; x += spacingPx) {
+            for (let x = 0; x <= width; x += spacingPx) {
                 const isMajor = Math.round(x / spacingPx) % majorEvery === 0;
                 gridCtx.strokeStyle = isMajor
                     ? `rgba(255, 255, 255, ${0.32 * intensity})`
                     : `rgba(255, 255, 255, ${0.12 * intensity})`;
                 gridCtx.beginPath();
                 gridCtx.moveTo(Math.floor(x) + 0.5, 0);
-                gridCtx.lineTo(Math.floor(x) + 0.5, gridCanvas.height);
+                gridCtx.lineTo(Math.floor(x) + 0.5, height);
                 gridCtx.stroke();
             }
 
-            for (let y = 0; y <= gridCanvas.height; y += spacingPx) {
+            for (let y = 0; y <= height; y += spacingPx) {
                 const isMajor = Math.round(y / spacingPx) % majorEvery === 0;
                 gridCtx.strokeStyle = isMajor
                     ? `rgba(255, 255, 255, ${0.32 * intensity})`
                     : `rgba(255, 255, 255, ${0.12 * intensity})`;
                 gridCtx.beginPath();
                 gridCtx.moveTo(0, Math.floor(y) + 0.5);
-                gridCtx.lineTo(gridCanvas.width, Math.floor(y) + 0.5);
+                gridCtx.lineTo(width, Math.floor(y) + 0.5);
                 gridCtx.stroke();
             }
         }
@@ -631,7 +660,7 @@ function drawSensitivityGuide(width, height) {
     ctx.save();
     ctx.strokeStyle = 'rgba(244, 114, 182, 0.85)';
     ctx.setLineDash([10, 6]);
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = getScaledLineWidth(1.5);
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(width, y);
@@ -640,7 +669,7 @@ function drawSensitivityGuide(width, height) {
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
     ctx.strokeStyle = 'rgba(244, 114, 182, 0.9)';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = getScaledLineWidth(1);
     ctx.font = '600 12px "Inter", sans-serif';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
@@ -698,7 +727,7 @@ function drawBeatLabels(width, height) {
 
         ctx.fillStyle = 'rgba(2, 6, 23, 0.75)';
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = getScaledLineWidth(1);
         ctx.fillRect(bgX, bgY, boxWidth, boxHeight);
         ctx.strokeRect(bgX, bgY, boxWidth, boxHeight);
 
@@ -714,8 +743,7 @@ function drawBeatLabels(width, height) {
 function advanceSweep(deltaSeconds) {
     if (!traceCtx || !traceCanvas || !waveformPoints.length || waveformDuration <= 0) return;
 
-    const width = traceCanvas.width;
-    const height = traceCanvas.height;
+    const { width, height } = getDisplaySize();
     const secondsVisible = getSecondsVisible();
     const pixelsPerSecond = width / secondsVisible;
     const { midY, scaleY } = getWaveformGeometry(height);
@@ -732,7 +760,7 @@ function advanceSweep(deltaSeconds) {
 
         processLedEvents(startTime, endTime);
         processBeatLabelEvents(startTime, endTime, startX, endX, height, secondsVisible);
-        drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height);
+        drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, width, height);
 
         sweepX = endX >= width ? 0 : endX;
         sweepTime = endTime;
@@ -740,10 +768,10 @@ function advanceSweep(deltaSeconds) {
     }
 }
 
-function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height) {
+function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, width, height) {
     if (!traceCtx) return;
     const clearStart = Math.max(0, Math.min(startX, endX));
-    const clearEnd = Math.min(traceCanvas.width, Math.max(startX, endX) + traceCtx.lineWidth * 2);
+    const clearEnd = Math.min(width, Math.max(startX, endX) + traceCtx.lineWidth * 2);
     traceCtx.clearRect(clearStart, 0, clearEnd - clearStart, height);
 
     const distance = Math.max(1, Math.abs(endX - startX));
@@ -923,7 +951,7 @@ function drawCaliper(width, height) {
     ctx.save();
     ctx.strokeStyle = '#f97316';
     ctx.fillStyle = 'rgba(249, 115, 22, 0.8)';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = getScaledLineWidth(1.5);
     ctx.setLineDash([6, 4]);
 
     ctx.beginPath();
@@ -1185,6 +1213,17 @@ function handleFullscreenChange() {
 
 function getSecondsVisible() {
     return displaySettings.sweepWindow;
+}
+
+function getDisplaySize() {
+    return {
+        width: canvasDisplayWidth || canvas?.clientWidth || canvas?.width || 0,
+        height: canvasDisplayHeight || canvas?.clientHeight || canvas?.height || 0
+    };
+}
+
+function getScaledLineWidth(value) {
+    return devicePixelRatioScale > 0 ? value / devicePixelRatioScale : value;
 }
 
 function updateCalibrationNote() {
