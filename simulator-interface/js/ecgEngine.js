@@ -114,7 +114,8 @@ const overlayElements = {
     calibrationValue: document.querySelector('.calibration-inline .calibration-value'),
     calibrationToggle: document.querySelector('.calibration-toggle'),
     qrsMuteToggle: document.querySelector('.ecg-audio-toggle'),
-    qrsMuteIcon: document.querySelector('.ecg-audio-toggle [data-sound-icon]'),
+    qrsMuteIconOn: document.querySelector('.ecg-audio-toggle [data-sound-icon="on"]'),
+    qrsMuteIconOff: document.querySelector('.ecg-audio-toggle [data-sound-icon="off"]'),
     frame: document.querySelector('.ecg-frame'),
     hrBlock: document.querySelector('.ecg-vitals .vital-block'),
     hrValue: document.getElementById('hrValue')
@@ -135,9 +136,19 @@ function applyQrsMuteState(muted) {
         overlayElements.qrsMuteToggle.title = label;
     }
 
-    if (overlayElements.qrsMuteIcon) {
-        overlayElements.qrsMuteIcon.textContent = isMuted ? '🔇' : '🔊';
+    if (overlayElements.qrsMuteIconOn && overlayElements.qrsMuteIconOff) {
+        overlayElements.qrsMuteIconOn.hidden = isMuted;
+        overlayElements.qrsMuteIconOff.hidden = !isMuted;
     }
+}
+
+function updateQrsControlVisibility() {
+    if (!overlayElements.qrsMuteToggle) return;
+
+    const isBeepOff = displaySettings.qrsBeep === 'off';
+    overlayElements.qrsMuteToggle.hidden = isBeepOff;
+    overlayElements.qrsMuteToggle.setAttribute('aria-hidden', isBeepOff ? 'true' : 'false');
+    overlayElements.qrsMuteToggle.tabIndex = isBeepOff ? -1 : 0;
 }
 
 function initEcgEngine() {
@@ -156,6 +167,7 @@ function initEcgEngine() {
 
     heartRateEngine = createHeartRateEngine(document.getElementById('hrValue'));
     applyQrsMuteState(displaySettings.qrsBeepMuted);
+    updateQrsControlVisibility();
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -1129,12 +1141,13 @@ function handleDisplaySettings(event) {
         needsAnnotationUpdate = true;
     }
 
-     if (typeof settings.qrsBeep === 'string') {
+    if (typeof settings.qrsBeep === 'string') {
         const normalizedBeep = ['classic', 'soft', 'off'].includes(settings.qrsBeep)
             ? settings.qrsBeep
             : 'classic';
         displaySettings.qrsBeep = normalizedBeep;
         heartRateEngine?.setBeepMode(normalizedBeep);
+        updateQrsControlVisibility();
     }
 
     if (typeof settings.qrsBeepMuted === 'boolean') {

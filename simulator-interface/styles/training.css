@@ -1873,6 +1873,31 @@ body.simulation-light .theme-toggle {
     color: #0f172a;
 }
 
+.sound-icon {
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+}
+
+.sound-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.sound-icon-off {
+    display: none;
+}
+
+.ecg-audio-toggle.is-muted .sound-icon-on {
+    display: none;
+}
+
+.ecg-audio-toggle.is-muted .sound-icon-off {
+    display: inline-flex;
+}
+
 .ecg-frame:hover .ecg-floating-btn,
 .ecg-floating-btn:focus-visible {
     opacity: 1;
