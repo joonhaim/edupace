@@ -11,7 +11,7 @@ const defaultSettings = {
     hrColor: 'white',
     leadLabel: true,
     leadLabelColor: 'white',
-    labelSize: 'normal',
+    labelSize: 'large',
     sensitivityGuide: false,
     pacingSpikeLabel: false,
     paceColor: 'amber',
