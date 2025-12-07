@@ -113,6 +113,7 @@ const overlayElements = {
     calibration: document.querySelector('.calibration-inline'),
     calibrationValue: document.querySelector('.calibration-inline .calibration-value'),
     calibrationToggle: document.querySelector('.calibration-toggle'),
+    fullscreenToggle: document.querySelector('.fullscreen-toggle'),
     frame: document.querySelector('.ecg-frame'),
     hrBlock: document.querySelector('.ecg-vitals .vital-block'),
     hrValue: document.getElementById('hrValue')
@@ -155,6 +156,10 @@ function initEcgEngine() {
     overlayElements.calibrationToggle?.addEventListener('blur', () => setCalibrationVisibility(false));
     overlayElements.frame?.addEventListener('mouseleave', () => setCalibrationVisibility(false));
     overlayElements.frame?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
+    overlayElements.fullscreenToggle?.addEventListener('click', handleFullscreenToggle);
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    handleFullscreenChange();
 
     regenerateWaveform();
     startAnimationLoop();
@@ -1148,6 +1153,34 @@ function setCalibrationVisibility(visible) {
     if (overlayElements.calibrationToggle) {
         overlayElements.calibrationToggle.setAttribute('aria-expanded', calibrationInfoVisible ? 'true' : 'false');
     }
+}
+
+function handleFullscreenToggle() {
+    const target = overlayElements.frame;
+    if (!target) return;
+
+    if (document.fullscreenElement === target) {
+        document.exitFullscreen?.();
+    } else {
+        target.requestFullscreen?.();
+    }
+}
+
+function handleFullscreenChange() {
+    const isFullscreen = document.fullscreenElement === overlayElements.frame;
+
+    overlayElements.frame?.classList.toggle('is-fullscreen', isFullscreen);
+    document.body.classList.toggle('ecg-fullscreen-active', isFullscreen);
+
+    if (overlayElements.fullscreenToggle) {
+        const label = isFullscreen ? 'Exit full screen' : 'Enter full screen';
+        overlayElements.fullscreenToggle.setAttribute('aria-label', label);
+        overlayElements.fullscreenToggle.setAttribute('title', label);
+        overlayElements.fullscreenToggle.setAttribute('aria-pressed', String(isFullscreen));
+        overlayElements.fullscreenToggle.textContent = isFullscreen ? '⤡' : '⛶';
+    }
+
+    syncCanvasSize();
 }
 
 function getSecondsVisible() {

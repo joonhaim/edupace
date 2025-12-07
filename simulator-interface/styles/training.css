@@ -1804,6 +1804,10 @@ body.simulation-light .theme-toggle {
         0 0 12px 3px rgba(37, 99, 235, 0.9);
 }
 
+.ecg-fullscreen-active .led-row {
+    display: none;
+}
+
 .led-test-group {
     margin-left: auto;
     gap: 0.6rem;
@@ -1838,10 +1842,15 @@ body.simulation-light .theme-toggle {
     font-variant-numeric: tabular-nums;
 }
 
-.calibration-toggle {
+.ecg-overlay-actions {
     position: absolute;
     right: 0.9rem;
     bottom: 0.9rem;
+    display: flex;
+    gap: 0.4rem;
+}
+
+.overlay-action {
     width: 26px;
     height: 26px;
     border-radius: 50%;
@@ -1860,16 +1869,39 @@ body.simulation-light .theme-toggle {
     pointer-events: none;
 }
 
-.ecg-frame:hover .calibration-toggle,
-.calibration-toggle:focus-visible {
+.ecg-frame:hover .overlay-action,
+.overlay-action:focus-visible {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(-1px);
     outline: none;
 }
 
-.calibration-toggle:focus-visible {
+.overlay-action:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+.ecg-frame:fullscreen,
+.ecg-frame.is-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    padding: 1.25rem;
+    box-sizing: border-box;
+    background: linear-gradient(180deg, #0b1b2b 0%, #0f2438 100%);
+}
+
+.ecg-frame:fullscreen .ecg-overlay,
+.ecg-frame.is-fullscreen .ecg-overlay {
+    padding: 1rem 1.4rem;
+}
+
+.ecg-frame:fullscreen canvas,
+.ecg-frame.is-fullscreen canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .calibration-inline.is-visible {
