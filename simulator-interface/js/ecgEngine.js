@@ -27,6 +27,9 @@ const TRACE_COLOR_MAP = {
 
 const ASYNC_SENSITIVITY_THRESHOLD = 20;
 
+let baseCanvasAspectRatio = null;
+
+
 function resolveAsyncMode({ sensitivity, mode, asynchronous }) {
     if (typeof asynchronous === 'boolean') {
         return asynchronous;
@@ -76,6 +79,9 @@ let ignoreNextPointerUp = false;
 let heartRateEngine = null;
 let waveformEvents = [];
 let activeBeatLabels = [];
+let devicePixelRatioScale = 1;
+let canvasDisplayWidth = 0;
+let canvasDisplayHeight = 0;
 let displaySettings = {
     gridlines: false,
     gridDensity: '2mm',
@@ -89,7 +95,7 @@ let displaySettings = {
     hrColor: 'blue',
     leadLabel: true,
     leadLabelColor: 'blue',
-    labelSize: 'normal',
+    labelSize: 'large',
     calibrationMarkers: true,
     rWaveMarkers: false,
     pacingSpikeLabel: true,
@@ -98,8 +104,9 @@ let displaySettings = {
     senseColor: 'amber',
     colorCodeBeats: true,
     intervalRulers: true,
-    sensitivityGuide: false
-};
+    sensitivityGuide: false,
+    qrsBeep: 'classic',
+    qrsBeepMuted: false};
 
 const ledElements = {
     pace: document.getElementById('paceLed'),
@@ -111,18 +118,58 @@ const overlayElements = {
     leadLabel: document.querySelector('.ecg-label'),
     calibration: document.querySelector('.calibration-inline'),
     calibrationValue: document.querySelector('.calibration-inline .calibration-value'),
-    calibrationToggle: document.querySelector('.calibration-toggle'),
+    calibrationToggles: Array.from(document.querySelectorAll('.calibration-toggle')),
+    qrsMuteToggle: document.querySelector('.ecg-audio-toggle'),
+    qrsMuteIconOn: document.querySelector('.ecg-audio-toggle [data-sound-icon="on"]'),
+    qrsMuteIconOff: document.querySelector('.ecg-audio-toggle [data-sound-icon="off"]'),
+    fullscreenToggle: document.querySelector('.fullscreen-toggle'),
+    caliperUnitToggle: document.querySelector('.caliper-unit-toggle'),
     frame: document.querySelector('.ecg-frame'),
     hrBlock: document.querySelector('.ecg-vitals .vital-block'),
     hrValue: document.getElementById('hrValue')
 };
 
 let calibrationInfoVisible = false;
+let caliperUnit = 'ms';
+
+function applyQrsMuteState(muted) {
+    const isMuted = Boolean(muted);
+    displaySettings.qrsBeepMuted = isMuted;
+    heartRateEngine?.setBeepMuted(isMuted);
+
+    const label = isMuted ? 'Unmute QRS beep' : 'Mute QRS beep';
+    if (overlayElements.qrsMuteToggle) {
+        overlayElements.qrsMuteToggle.classList.toggle('is-muted', isMuted);
+        overlayElements.qrsMuteToggle.setAttribute('aria-pressed', isMuted ? 'true' : 'false');
+        overlayElements.qrsMuteToggle.setAttribute('aria-label', label);
+        overlayElements.qrsMuteToggle.title = label;
+    }
+
+    if (overlayElements.qrsMuteIconOn && overlayElements.qrsMuteIconOff) {
+        overlayElements.qrsMuteIconOn.hidden = isMuted;
+        overlayElements.qrsMuteIconOff.hidden = !isMuted;
+    }
+}
+
+function updateQrsControlVisibility() {
+    if (!overlayElements.qrsMuteToggle) return;
+
+    const isBeepOff = displaySettings.qrsBeep === 'off';
+    overlayElements.qrsMuteToggle.hidden = isBeepOff;
+    overlayElements.qrsMuteToggle.setAttribute('aria-hidden', isBeepOff ? 'true' : 'false');
+    overlayElements.qrsMuteToggle.tabIndex = isBeepOff ? -1 : 0;
+}
 
 function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
     if (!canvas) return;
     ctx = canvas.getContext('2d');
+
+    if (!baseCanvasAspectRatio) {
+        const attrWidth = Number(canvas.getAttribute('width')) || canvas.width || 1200;
+        const attrHeight = Number(canvas.getAttribute('height')) || canvas.height || 550;
+        baseCanvasAspectRatio = attrWidth / attrHeight;
+    }
 
     gridCanvas = document.createElement('canvas');
     gridCtx = gridCanvas.getContext('2d');
@@ -134,6 +181,8 @@ function initEcgEngine() {
     applyAnnotationStyles();
 
     heartRateEngine = createHeartRateEngine(document.getElementById('hrValue'));
+    applyQrsMuteState(displaySettings.qrsBeepMuted);
+    updateQrsControlVisibility();
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -148,16 +197,28 @@ function initEcgEngine() {
     window.addEventListener('edupace-waveform-change', handleWaveformChange);
     window.addEventListener('edupace-ecg-settings', handleDisplaySettings);
 
-    overlayElements.calibrationToggle?.addEventListener('pointerenter', () => setCalibrationVisibility(true));
-    overlayElements.calibrationToggle?.addEventListener('focus', () => setCalibrationVisibility(true));
-    overlayElements.calibrationToggle?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
-    overlayElements.calibrationToggle?.addEventListener('blur', () => setCalibrationVisibility(false));
+    overlayElements.calibrationToggles?.forEach((toggle) => {
+        toggle.addEventListener('pointerenter', () => setCalibrationVisibility(true));
+        toggle.addEventListener('focus', () => setCalibrationVisibility(true));
+        toggle.addEventListener('pointerleave', () => setCalibrationVisibility(false));
+        toggle.addEventListener('blur', () => setCalibrationVisibility(false));
+    });
     overlayElements.frame?.addEventListener('mouseleave', () => setCalibrationVisibility(false));
     overlayElements.frame?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
+    overlayElements.fullscreenToggle?.addEventListener('click', handleFullscreenToggle);
+    overlayElements.caliperUnitToggle?.addEventListener('click', toggleCaliperUnit);
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    handleFullscreenChange();
+
+    overlayElements.qrsMuteToggle?.addEventListener('click', () => {
+        applyQrsMuteState(!displaySettings.qrsBeepMuted);
+    });
 
     regenerateWaveform();
     startAnimationLoop();
     updateCalibrationNote();
+    updateCaliperUnitControl();
 }
 
 function handleParameterChange(event) {
@@ -217,7 +278,8 @@ function configureTraceStyle() {
     if (!traceCtx) return;
     const thickness = displaySettings.traceThickness;
     const color = getTraceColor(displaySettings.traceColor);
-    traceCtx.lineWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 3 : 2;
+    const baseWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 4.5 : 3;
+    traceCtx.lineWidth = getScaledLineWidth(baseWidth);
     traceCtx.strokeStyle = color;
     traceCtx.lineJoin = 'round';
     traceCtx.lineCap = 'round';
@@ -397,29 +459,130 @@ function processBeatLabelEvents(windowStart, windowEnd, startX, endX, height, se
     });
 }
 
+const BASE_CANVAS_WIDTH  = 1200;
+const BASE_CANVAS_HEIGHT = 550;
+const BASE_ASPECT = BASE_CANVAS_WIDTH / BASE_CANVAS_HEIGHT; // ≈ 2.18
+
 function syncCanvasSize() {
     if (!canvas || !traceCanvas || !gridCanvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const newWidth = Math.max(Math.round(rect.width || canvas.width || 1), 1);
-    const newHeight = Math.max(Math.round(rect.height || canvas.height || 1), 1);
 
-    if (canvas.width !== newWidth || canvas.height !== newHeight) {
-        canvas.width = newWidth;
-        canvas.height = newHeight;
+    const frame = overlayElements.frame;
+    const rect = canvas.getBoundingClientRect();
+    const frameSize = getFrameContentSize();
+    const isFullscreen =
+        document.fullscreenElement === frame ||
+        frame?.classList.contains('is-fullscreen');
+
+    // Layout width always comes from the frame
+    const newWidth = Math.max(
+        Math.round(
+            frameSize?.width ??
+            rect.width ??
+            canvas.clientWidth ??
+            canvas.width ??
+            1
+        ),
+        1
+    );
+
+    // Height: fullscreen = fill frame, normal = flat strip aspect ratio
+    let newHeight;
+    if (isFullscreen) {
+        newHeight = Math.max(
+            Math.round(
+                frameSize?.height ??
+                rect.height ??
+                canvas.clientHeight ??
+                canvas.height ??
+                1
+            ),
+            1
+        );
+    } else {
+        newHeight = Math.max(
+            Math.round(newWidth / BASE_ASPECT),
+            1
+        );
     }
 
-    if (traceCanvas.width !== newWidth || traceCanvas.height !== newHeight) {
-        traceCanvas.width = newWidth;
-        traceCanvas.height = newHeight;
+    const prevPixelRatio = devicePixelRatioScale;
+    const pixelRatio = Math.max(window.devicePixelRatio || 1, 1);
+
+    const renderWidth  = Math.max(Math.round(newWidth  * pixelRatio), 1);
+    const renderHeight = Math.max(Math.round(newHeight * pixelRatio), 1);
+
+    const resizedCanvas =
+        canvas.width !== renderWidth || canvas.height !== renderHeight;
+    const resizedTrace =
+        traceCanvas.width !== renderWidth || traceCanvas.height !== renderHeight;
+    const resizedGrid =
+        gridCanvas.width !== renderWidth || gridCanvas.height !== renderHeight;
+    const pixelRatioChanged = pixelRatio !== prevPixelRatio;
+
+    devicePixelRatioScale = pixelRatio;
+    canvasDisplayWidth = newWidth;
+    canvasDisplayHeight = newHeight;
+
+    if (
+        resizedCanvas ||
+        resizedTrace ||
+        resizedGrid ||
+        // when we are in fullscreen we may need to update inline styles
+        (isFullscreen &&
+            (canvas.style.width !== `${newWidth}px` ||
+             canvas.style.height !== `${newHeight}px`))
+    ) {
+        // update drawing buffers
+        canvas.width = renderWidth;
+        canvas.height = renderHeight;
+
+        traceCanvas.width = renderWidth;
+        traceCanvas.height = renderHeight;
+
+        gridCanvas.width = renderWidth;
+        gridCanvas.height = renderHeight;
+
+        // layout styles:
+        if (isFullscreen) {
+            // in fullscreen we explicitly lock to the frame size
+            canvas.style.width = `${newWidth}px`;
+            canvas.style.height = `${newHeight}px`;
+        } else {
+            // in normal mode we let CSS control layout size
+            canvas.style.width = '';
+            canvas.style.height = '';
+        }
+    }
+
+    ctx?.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    traceCtx?.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    gridCtx?.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+    if (resizedTrace || pixelRatioChanged) {
         configureTraceStyle();
     }
 
-    if (gridCanvas.width !== newWidth || gridCanvas.height !== newHeight) {
-        gridCanvas.width = newWidth;
-        gridCanvas.height = newHeight;
+    if (resizedGrid || pixelRatioChanged) {
+        gridDirty = true;
     }
+}
 
-    gridDirty = true;
+
+
+
+function getFrameContentSize() {
+    const frame = overlayElements.frame;
+    if (!frame) return null;
+
+    const style = window.getComputedStyle(frame);
+    const paddingX =
+        parseFloat(style.paddingLeft || '0') + parseFloat(style.paddingRight || '0');
+    const paddingY = parseFloat(style.paddingTop || '0') + parseFloat(style.paddingBottom || '0');
+
+    return {
+        width: Math.max(frame.clientWidth - paddingX, 1),
+        height: Math.max(frame.clientHeight - paddingY, 1)
+    };
 }
 
 function handleResize() {
@@ -517,7 +680,8 @@ function resetSweep() {
     heartRateEngine?.reset();
     clearBeatLabels();
     if (traceCtx && traceCanvas) {
-        traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
+        const { width, height } = getDisplaySize();
+        traceCtx.clearRect(0, 0, width, height);
         configureTraceStyle();
     }
     draw();
@@ -549,7 +713,7 @@ function stepFrame(timestamp) {
 function draw() {
     if (!ctx || !canvas) return;
 
-    const { width, height } = canvas;
+    const { width, height } = getDisplaySize();
     const secondsVisible = getSecondsVisible();
     const pixelsPerSecond = width / secondsVisible;
     const pixelsPerMm = pixelsPerSecond / displaySettings.sweepSpeed;
@@ -566,36 +730,36 @@ function drawGrid(width, height, pixelsPerMm) {
     if (!pixelsPerMm || !gridCtx || !gridCanvas) return;
 
     if (gridDirty) {
-        gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+        gridCtx.clearRect(0, 0, width, height);
         gridCtx.save();
         gridCtx.fillStyle = '#000';
-        gridCtx.fillRect(0, 0, gridCanvas.width, gridCanvas.height);
+        gridCtx.fillRect(0, 0, width, height);
         if (displaySettings.gridlines && displaySettings.gridDensity !== 'none') {
             const intensity = clamp(displaySettings.gridIntensity / 100, 0, 1);
             const spacingMm = displaySettings.gridDensity === '1mm' ? 1 : 2;
             const spacingPx = Math.max(pixelsPerMm * spacingMm, 1);
             const majorEvery = 5;
-            gridCtx.lineWidth = 1;
+            gridCtx.lineWidth = getScaledLineWidth(1);
 
-            for (let x = 0; x <= gridCanvas.width; x += spacingPx) {
+            for (let x = 0; x <= width; x += spacingPx) {
                 const isMajor = Math.round(x / spacingPx) % majorEvery === 0;
                 gridCtx.strokeStyle = isMajor
                     ? `rgba(255, 255, 255, ${0.32 * intensity})`
                     : `rgba(255, 255, 255, ${0.12 * intensity})`;
                 gridCtx.beginPath();
                 gridCtx.moveTo(Math.floor(x) + 0.5, 0);
-                gridCtx.lineTo(Math.floor(x) + 0.5, gridCanvas.height);
+                gridCtx.lineTo(Math.floor(x) + 0.5, height);
                 gridCtx.stroke();
             }
 
-            for (let y = 0; y <= gridCanvas.height; y += spacingPx) {
+            for (let y = 0; y <= height; y += spacingPx) {
                 const isMajor = Math.round(y / spacingPx) % majorEvery === 0;
                 gridCtx.strokeStyle = isMajor
                     ? `rgba(255, 255, 255, ${0.32 * intensity})`
                     : `rgba(255, 255, 255, ${0.12 * intensity})`;
                 gridCtx.beginPath();
                 gridCtx.moveTo(0, Math.floor(y) + 0.5);
-                gridCtx.lineTo(gridCanvas.width, Math.floor(y) + 0.5);
+                gridCtx.lineTo(width, Math.floor(y) + 0.5);
                 gridCtx.stroke();
             }
         }
@@ -615,6 +779,7 @@ function drawWaveform(width, height) {
 function drawSensitivityGuide(width, height) {
     if (!ctx || !displaySettings.sensitivityGuide) return;
     if (!Number.isFinite(engineState.sensitivity)) return;
+    if (engineState.asynchronous) return;
 
     const { midY, scaleY } = getWaveformGeometry(height);
     if (!scaleY) return;
@@ -625,7 +790,7 @@ function drawSensitivityGuide(width, height) {
     ctx.save();
     ctx.strokeStyle = 'rgba(244, 114, 182, 0.85)';
     ctx.setLineDash([10, 6]);
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = getScaledLineWidth(1.5);
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(width, y);
@@ -634,7 +799,7 @@ function drawSensitivityGuide(width, height) {
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
     ctx.strokeStyle = 'rgba(244, 114, 182, 0.9)';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = getScaledLineWidth(1);
     ctx.font = '600 12px "Inter", sans-serif';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
@@ -692,7 +857,7 @@ function drawBeatLabels(width, height) {
 
         ctx.fillStyle = 'rgba(2, 6, 23, 0.75)';
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = getScaledLineWidth(1);
         ctx.fillRect(bgX, bgY, boxWidth, boxHeight);
         ctx.strokeRect(bgX, bgY, boxWidth, boxHeight);
 
@@ -708,8 +873,7 @@ function drawBeatLabels(width, height) {
 function advanceSweep(deltaSeconds) {
     if (!traceCtx || !traceCanvas || !waveformPoints.length || waveformDuration <= 0) return;
 
-    const width = traceCanvas.width;
-    const height = traceCanvas.height;
+    const { width, height } = getDisplaySize();
     const secondsVisible = getSecondsVisible();
     const pixelsPerSecond = width / secondsVisible;
     const { midY, scaleY } = getWaveformGeometry(height);
@@ -726,7 +890,7 @@ function advanceSweep(deltaSeconds) {
 
         processLedEvents(startTime, endTime);
         processBeatLabelEvents(startTime, endTime, startX, endX, height, secondsVisible);
-        drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height);
+        drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, width, height);
 
         sweepX = endX >= width ? 0 : endX;
         sweepTime = endTime;
@@ -734,10 +898,10 @@ function advanceSweep(deltaSeconds) {
     }
 }
 
-function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, height) {
+function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, width, height) {
     if (!traceCtx) return;
     const clearStart = Math.max(0, Math.min(startX, endX));
-    const clearEnd = Math.min(traceCanvas.width, Math.max(startX, endX) + traceCtx.lineWidth * 2);
+    const clearEnd = Math.min(width, Math.max(startX, endX) + traceCtx.lineWidth * 2);
     traceCtx.clearRect(clearStart, 0, clearEnd - clearStart, height);
 
     const distance = Math.max(1, Math.abs(endX - startX));
@@ -904,9 +1068,40 @@ function getPointerPosition(event) {
     };
 }
 
+function toggleCaliperUnit() {
+    caliperUnit = caliperUnit === 'ms' ? 'ppm' : 'ms';
+    updateCaliperUnitControl();
+    draw();
+}
+
+function shouldShowCaliperUnitToggle() {
+    const activeCaliper = pendingCaliper?.active ? pendingCaliper : caliper;
+    return Boolean(isPaused && displaySettings.intervalRulers && activeCaliper);
+}
+
+function updateCaliperUnitControl(options = {}) {
+    if (!overlayElements.caliperUnitToggle) return;
+
+    const shouldShow = options.visible ?? shouldShowCaliperUnitToggle();
+    overlayElements.caliperUnitToggle.hidden = !shouldShow;
+    overlayElements.caliperUnitToggle.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+    overlayElements.caliperUnitToggle.tabIndex = shouldShow ? 0 : -1;
+
+    const isPpm = caliperUnit === 'ppm';
+    const label = isPpm ? 'Show calipers in milliseconds' : 'Show calipers in paces per minute';
+
+    overlayElements.caliperUnitToggle.textContent = isPpm ? 'ppm' : 'ms';
+    overlayElements.caliperUnitToggle.setAttribute('aria-pressed', isPpm ? 'true' : 'false');
+    overlayElements.caliperUnitToggle.setAttribute('aria-label', label);
+    overlayElements.caliperUnitToggle.setAttribute('title', label);
+}
+
 function drawCaliper(width, height) {
     const activeCaliper = pendingCaliper?.active ? pendingCaliper : caliper;
-    if (!isPaused || !displaySettings.intervalRulers || !activeCaliper || !ctx) return;
+    const shouldShowToggle = Boolean(isPaused && displaySettings.intervalRulers && activeCaliper);
+    updateCaliperUnitControl({ visible: shouldShowToggle });
+
+    if (!shouldShowToggle || !ctx) return;
 
     const start = Math.max(0, Math.min(width, activeCaliper.startX));
     const end = Math.max(0, Math.min(width, activeCaliper.endX));
@@ -917,7 +1112,7 @@ function drawCaliper(width, height) {
     ctx.save();
     ctx.strokeStyle = '#f97316';
     ctx.fillStyle = 'rgba(249, 115, 22, 0.8)';
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = getScaledLineWidth(1.5);
     ctx.setLineDash([6, 4]);
 
     ctx.beginPath();
@@ -935,7 +1130,10 @@ function drawCaliper(width, height) {
 
     const diffSeconds = ((right - left) / width) * getSecondsVisible();
     const diffMs = Math.max(0, diffSeconds * 1000);
-    const label = `${diffMs.toFixed(0)} ms`;
+    const label =
+        caliperUnit === 'ppm'
+            ? `${diffSeconds > 0 ? (60 / diffSeconds).toFixed(0) : '0'} ppm`
+            : `${diffMs.toFixed(0)} ms`;
     const textX = (left + right) / 2;
 
     ctx.font = '600 18px "IBM Plex Mono", monospace';
@@ -1102,6 +1300,19 @@ function handleDisplaySettings(event) {
         needsAnnotationUpdate = true;
     }
 
+    if (typeof settings.qrsBeep === 'string') {
+        const normalizedBeep = ['classic', 'soft', 'off'].includes(settings.qrsBeep)
+            ? settings.qrsBeep
+            : 'classic';
+        displaySettings.qrsBeep = normalizedBeep;
+        heartRateEngine?.setBeepMode(normalizedBeep);
+        updateQrsControlVisibility();
+    }
+
+    if (typeof settings.qrsBeepMuted === 'boolean') {
+        applyQrsMuteState(settings.qrsBeepMuted);
+    }
+
     if (needsTraceStyle) {
         configureTraceStyle();
     }
@@ -1131,13 +1342,58 @@ function setCalibrationVisibility(visible) {
         overlayElements.calibration.classList.toggle('is-visible', calibrationInfoVisible);
     }
 
-    if (overlayElements.calibrationToggle) {
-        overlayElements.calibrationToggle.setAttribute('aria-expanded', calibrationInfoVisible ? 'true' : 'false');
+    overlayElements.calibrationToggles?.forEach((toggle) => {
+        toggle.setAttribute('aria-expanded', calibrationInfoVisible ? 'true' : 'false');
+    });
+}
+
+function handleFullscreenToggle() {
+    const target = overlayElements.frame;
+    if (!target) return;
+
+    if (document.fullscreenElement === target) {
+        document.exitFullscreen?.();
+    } else {
+        target.requestFullscreen?.();
     }
 }
 
+function handleFullscreenChange() {
+    const isFullscreen = document.fullscreenElement === overlayElements.frame;
+
+    overlayElements.frame?.classList.toggle('is-fullscreen', isFullscreen);
+    document.body.classList.toggle('ecg-fullscreen-active', isFullscreen);
+
+    if (overlayElements.fullscreenToggle) {
+        const label = isFullscreen ? 'Exit full screen' : 'Enter full screen';
+        overlayElements.fullscreenToggle.setAttribute('aria-label', label);
+        overlayElements.fullscreenToggle.setAttribute('title', label);
+        overlayElements.fullscreenToggle.setAttribute('aria-pressed', String(isFullscreen));
+        overlayElements.fullscreenToggle.textContent = isFullscreen ? '⤡' : '⛶';
+    }
+
+    requestAnimationFrame(() => {
+        syncCanvasSize();
+        resetSweep();
+    });
+}
+
+
+
+
 function getSecondsVisible() {
     return displaySettings.sweepWindow;
+}
+
+function getDisplaySize() {
+    return {
+        width: canvasDisplayWidth || canvas?.clientWidth || canvas?.width || 0,
+        height: canvasDisplayHeight || canvas?.clientHeight || canvas?.height || 0
+    };
+}
+
+function getScaledLineWidth(value) {
+    return devicePixelRatioScale > 0 ? value / devicePixelRatioScale : value;
 }
 
 function updateCalibrationNote() {

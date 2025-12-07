@@ -21,7 +21,7 @@ async function loadPartial(placeholder, partialPath, replacements = {}) {
 function getNavReplacements(activePage) {
     return {
         '{{ACTIVE_HOME}}': activePage === 'home' ? ' active' : '',
-        '{{ACTIVE_SIMULATION}}': activePage === 'simulation' ? ' active' : '',
+        '{{ACTIVE_TRAINING}}': activePage === 'training' ? ' active' : '',
         '{{ACTIVE_LOGS}}': activePage === 'logs' ? ' active' : '',
         '{{ACTIVE_INSTRUCTIONS}}': activePage === 'instructions' ? ' active' : ''
     };

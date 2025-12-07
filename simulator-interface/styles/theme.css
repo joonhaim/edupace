@@ -136,6 +136,18 @@ body.simulation-dark .calibration-inline {
     color: #e3e9f4;
 }
 
+body.simulation-dark .ecg-floating-btn {
+    background: rgba(15, 23, 42, 0.78);
+    border-color: rgba(148, 163, 184, 0.52);
+    color: #e5edf9;
+}
+
+body.simulation-dark .ecg-audio-toggle.is-muted {
+    background: rgba(248, 113, 113, 0.82);
+    border-color: rgba(252, 165, 165, 0.92);
+    color: #0b1023;
+}
+
 
 
 body.simulation-dark .telemetry-item,
