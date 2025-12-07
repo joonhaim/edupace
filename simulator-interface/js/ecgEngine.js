@@ -27,6 +27,9 @@ const TRACE_COLOR_MAP = {
 
 const ASYNC_SENSITIVITY_THRESHOLD = 20;
 
+let baseCanvasAspectRatio = null;
+
+
 function resolveAsyncMode({ sensitivity, mode, asynchronous }) {
     if (typeof asynchronous === 'boolean') {
         return asynchronous;
@@ -161,6 +164,12 @@ function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
     if (!canvas) return;
     ctx = canvas.getContext('2d');
+
+    if (!baseCanvasAspectRatio) {
+        const attrWidth = Number(canvas.getAttribute('width')) || canvas.width || 1200;
+        const attrHeight = Number(canvas.getAttribute('height')) || canvas.height || 550;
+        baseCanvasAspectRatio = attrWidth / attrHeight;
+    }
 
     gridCanvas = document.createElement('canvas');
     gridCtx = gridCanvas.getContext('2d');
@@ -450,34 +459,64 @@ function processBeatLabelEvents(windowStart, windowEnd, startX, endX, height, se
     });
 }
 
+const BASE_CANVAS_WIDTH  = 1200;
+const BASE_CANVAS_HEIGHT = 550;
+const BASE_ASPECT = BASE_CANVAS_WIDTH / BASE_CANVAS_HEIGHT; // ≈ 2.18
+
 function syncCanvasSize() {
     if (!canvas || !traceCanvas || !gridCanvas) return;
 
     const frame = overlayElements.frame;
+    const rect = canvas.getBoundingClientRect();
+    const frameSize = getFrameContentSize();
     const isFullscreen =
         document.fullscreenElement === frame ||
         frame?.classList.contains('is-fullscreen');
 
-    const rect = canvas.getBoundingClientRect();
-    const frameSize = getFrameContentSize();
-
+    // Layout width always comes from the frame
     const newWidth = Math.max(
-        Math.round(frameSize?.width ?? rect.width ?? canvas.clientWidth ?? canvas.width ?? 1),
+        Math.round(
+            frameSize?.width ??
+            rect.width ??
+            canvas.clientWidth ??
+            canvas.width ??
+            1
+        ),
         1
     );
-    const newHeight = Math.max(
-        Math.round(frameSize?.height ?? rect.height ?? canvas.clientHeight ?? canvas.height ?? 1),
-        1
-    );
+
+    // Height: fullscreen = fill frame, normal = flat strip aspect ratio
+    let newHeight;
+    if (isFullscreen) {
+        newHeight = Math.max(
+            Math.round(
+                frameSize?.height ??
+                rect.height ??
+                canvas.clientHeight ??
+                canvas.height ??
+                1
+            ),
+            1
+        );
+    } else {
+        newHeight = Math.max(
+            Math.round(newWidth / BASE_ASPECT),
+            1
+        );
+    }
 
     const prevPixelRatio = devicePixelRatioScale;
     const pixelRatio = Math.max(window.devicePixelRatio || 1, 1);
+
     const renderWidth  = Math.max(Math.round(newWidth  * pixelRatio), 1);
     const renderHeight = Math.max(Math.round(newHeight * pixelRatio), 1);
 
-    const resizedCanvas = canvas.width !== renderWidth || canvas.height !== renderHeight;
-    const resizedTrace  = traceCanvas.width !== renderWidth || traceCanvas.height !== renderHeight;
-    const resizedGrid   = gridCanvas.width !== renderWidth || gridCanvas.height !== renderHeight;
+    const resizedCanvas =
+        canvas.width !== renderWidth || canvas.height !== renderHeight;
+    const resizedTrace =
+        traceCanvas.width !== renderWidth || traceCanvas.height !== renderHeight;
+    const resizedGrid =
+        gridCanvas.width !== renderWidth || gridCanvas.height !== renderHeight;
     const pixelRatioChanged = pixelRatio !== prevPixelRatio;
 
     devicePixelRatioScale = pixelRatio;
@@ -486,32 +525,33 @@ function syncCanvasSize() {
 
     if (
         resizedCanvas ||
-        canvas.style.width !== `${newWidth}px` ||
-        (isFullscreen && canvas.style.height !== `${newHeight}px`)
+        resizedTrace ||
+        resizedGrid ||
+        // when we are in fullscreen we may need to update inline styles
+        (isFullscreen &&
+            (canvas.style.width !== `${newWidth}px` ||
+             canvas.style.height !== `${newHeight}px`))
     ) {
+        // update drawing buffers
         canvas.width = renderWidth;
         canvas.height = renderHeight;
 
-        // Always set width so it tracks the frame
-        canvas.style.width = `${newWidth}px`;
-
-        if (isFullscreen) {
-            // In fullscreen: lock height to the frame
-            canvas.style.height = `${newHeight}px`;
-        } else {
-            // Outside fullscreen: let CSS (height:auto) + aspect ratio handle it
-            canvas.style.height = '';
-        }
-    }
-
-    if (resizedTrace) {
         traceCanvas.width = renderWidth;
         traceCanvas.height = renderHeight;
-    }
 
-    if (resizedGrid) {
         gridCanvas.width = renderWidth;
         gridCanvas.height = renderHeight;
+
+        // layout styles:
+        if (isFullscreen) {
+            // in fullscreen we explicitly lock to the frame size
+            canvas.style.width = `${newWidth}px`;
+            canvas.style.height = `${newHeight}px`;
+        } else {
+            // in normal mode we let CSS control layout size
+            canvas.style.width = '';
+            canvas.style.height = '';
+        }
     }
 
     ctx?.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
@@ -526,6 +566,8 @@ function syncCanvasSize() {
         gridDirty = true;
     }
 }
+
+
 
 
 function getFrameContentSize() {
@@ -1330,12 +1372,13 @@ function handleFullscreenChange() {
         overlayElements.fullscreenToggle.textContent = isFullscreen ? '⤡' : '⛶';
     }
 
-    // Let the browser apply the new layout, then recompute sizes once.
     requestAnimationFrame(() => {
         syncCanvasSize();
         resetSweep();
     });
 }
+
+
 
 
 function getSecondsVisible() {

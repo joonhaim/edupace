@@ -635,11 +635,17 @@ body.simulation-light .theme-toggle {
     padding: 1rem;
     box-shadow: 0 18px 32px rgba(12, 26, 45, 0.08);
     overflow: hidden;
+
+    aspect-ratio: 1200 / 550;
+}
+
+.ecg-frame.is-fullscreen {
+    aspect-ratio: auto;
 }
 
 .ecg-frame canvas {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
 }
 
