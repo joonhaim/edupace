@@ -12,6 +12,7 @@ const defaultSettings = {
     leadLabel: true,
     leadLabelColor: 'white',
     labelSize: 'normal',
+    sensitivityGuide: false,
     pacingSpikeLabel: false,
     paceColor: 'amber',
     intrinsicBeatLabels: false,
@@ -150,6 +151,7 @@ function initSettingsPanel() {
     bindToggle(settingsCard, 'leadLabelToggle', 'leadLabel');
     bindRadios(settingsCard, 'leadLabelColor', 'leadLabelColor');
     bindRadios(settingsCard, 'labelSize', 'labelSize');
+    bindToggle(settingsCard, 'sensitivityGuideToggle', 'sensitivityGuide');
     bindToggle(settingsCard, 'pacingLabelToggle', 'pacingSpikeLabel');
     bindRadios(settingsCard, 'paceColor', 'paceColor');
     bindToggle(settingsCard, 'intrinsicLabelToggle', 'intrinsicBeatLabels');
