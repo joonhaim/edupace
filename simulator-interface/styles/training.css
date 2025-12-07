@@ -420,7 +420,6 @@ body.simulation-light .theme-toggle {
 }
 
 .scenario-menu-grid {
-    display: grid;
     grid-template-columns: repeat(2, minmax(240px, 1fr));
     gap: 0.35rem;
 }
