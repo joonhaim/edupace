@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>EduPace – Simulator</title>
+    <title>EduPace – Training</title>
     <meta name="application-name" content="EduPace">
     <meta name="theme-color" content="#f5f7fa">
  <link rel="icon" type="image/png" href="/simulator-interface/assets/logos/edupace_logo2.png" sizes="180x180">
@@ -14,19 +14,19 @@
     <script src="js/layout.js" defer></script>
     <script type="module" src="js/navInit.js"></script>
 </head>
-<body class="simulation-light page-simulation theme-transition">
+<body class="simulation-light page-training theme-transition">
     <div class="app-shell">
         <!-- Top nav -->
-        <div data-partial="nav" data-active-page="simulation"></div>
+        <div data-partial="nav" data-active-page="training"></div>
 
         <!-- Main content -->
         <main class="screen-stack">
-            <section aria-label="Simulation">
+            <section aria-label="Training">
                 <div class="sim-shell">
                     <div class="sim-header">
                         <div>
                             <p class="eyebrow">Hands-on practice</p>
-                            <h2>Patient monitor simulator</h2>
+                            <h2>Training workspace</h2>
                         </div>
                         <div class="connection-group">
                             <span class="connection-label">Device</span>
@@ -43,7 +43,7 @@
 
                     </div>
 
-                    <div class="scenario-banner" role="region" aria-label="Scenario selection">
+                    <div class="scenario-banner" id="scenario-section" role="region" aria-label="Scenario selection">
                         <div class="scenario-banner-text" data-scenario-picker-area>
                             <span class="scenario-pill">Scenario</span>
                             <div class="scenario-title-row">
@@ -64,7 +64,7 @@
                             </div>
                             <div id="scenarioMenu" class="scenario-menu" role="listbox" aria-label="Available scenarios"></div>
                             <p id="scenarioText" class="scenario-text">
-                                Select a scenario to begin a training case.
+                                Pick a module or clinical case to begin training.
                             </p>
                         </div>
                         <div class="session-actions" aria-label="Session controls">
@@ -80,7 +80,7 @@
                             </div>
                             <div class="session-meta">
                                 <p id="sessionStatusText" class="session-status" aria-live="polite">
-                                    <span id="sessionStatusLabel">Select a scenario to begin.</span>
+                                    <span id="sessionStatusLabel">Select a module or clinical case to begin.</span>
                                     <span id="sessionTimerDisplay" class="session-timer-inline"></span>
                                 </p>
                             </div>
