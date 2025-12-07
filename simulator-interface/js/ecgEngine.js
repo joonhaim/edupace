@@ -115,7 +115,7 @@ const overlayElements = {
     leadLabel: document.querySelector('.ecg-label'),
     calibration: document.querySelector('.calibration-inline'),
     calibrationValue: document.querySelector('.calibration-inline .calibration-value'),
-    calibrationToggle: document.querySelector('.calibration-toggle'),
+    calibrationToggles: Array.from(document.querySelectorAll('.calibration-toggle')),
     qrsMuteToggle: document.querySelector('.ecg-audio-toggle'),
     qrsMuteIconOn: document.querySelector('.ecg-audio-toggle [data-sound-icon="on"]'),
     qrsMuteIconOff: document.querySelector('.ecg-audio-toggle [data-sound-icon="off"]'),
@@ -186,10 +186,12 @@ function initEcgEngine() {
     window.addEventListener('edupace-waveform-change', handleWaveformChange);
     window.addEventListener('edupace-ecg-settings', handleDisplaySettings);
 
-    overlayElements.calibrationToggle?.addEventListener('pointerenter', () => setCalibrationVisibility(true));
-    overlayElements.calibrationToggle?.addEventListener('focus', () => setCalibrationVisibility(true));
-    overlayElements.calibrationToggle?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
-    overlayElements.calibrationToggle?.addEventListener('blur', () => setCalibrationVisibility(false));
+    overlayElements.calibrationToggles?.forEach((toggle) => {
+        toggle.addEventListener('pointerenter', () => setCalibrationVisibility(true));
+        toggle.addEventListener('focus', () => setCalibrationVisibility(true));
+        toggle.addEventListener('pointerleave', () => setCalibrationVisibility(false));
+        toggle.addEventListener('blur', () => setCalibrationVisibility(false));
+    });
     overlayElements.frame?.addEventListener('mouseleave', () => setCalibrationVisibility(false));
     overlayElements.frame?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
     overlayElements.fullscreenToggle?.addEventListener('click', handleFullscreenToggle);
@@ -263,7 +265,7 @@ function configureTraceStyle() {
     if (!traceCtx) return;
     const thickness = displaySettings.traceThickness;
     const color = getTraceColor(displaySettings.traceColor);
-    const baseWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 3 : 2;
+    const baseWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 4.5 : 3;
     traceCtx.lineWidth = getScaledLineWidth(baseWidth);
     traceCtx.strokeStyle = color;
     traceCtx.lineJoin = 'round';
@@ -1216,9 +1218,9 @@ function setCalibrationVisibility(visible) {
         overlayElements.calibration.classList.toggle('is-visible', calibrationInfoVisible);
     }
 
-    if (overlayElements.calibrationToggle) {
-        overlayElements.calibrationToggle.setAttribute('aria-expanded', calibrationInfoVisible ? 'true' : 'false');
-    }
+    overlayElements.calibrationToggles?.forEach((toggle) => {
+        toggle.setAttribute('aria-expanded', calibrationInfoVisible ? 'true' : 'false');
+    });
 }
 
 function handleFullscreenToggle() {
@@ -1247,6 +1249,7 @@ function handleFullscreenChange() {
     }
 
     syncCanvasSize();
+    resetSweep();
 }
 
 function getSecondsVisible() {

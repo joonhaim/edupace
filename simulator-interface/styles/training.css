@@ -647,7 +647,7 @@ body.simulation-light .theme-toggle {
 .ecg-overlay {
     position: absolute;
     inset: 0;
-    padding: 1rem 1.35rem;
+    padding: 1.2rem 1.65rem 1.05rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -669,13 +669,14 @@ body.simulation-light .theme-toggle {
     font-size: 1rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+    padding-left: 0.15rem;
 }
 
 .ecg-vitals {
     display: flex;
     gap: 1.6rem;
     text-align: right;
-    padding-right: 0.4rem;
+    padding-right: 0.9rem;
     margin-left: auto;
     pointer-events: none;
 }
@@ -1850,15 +1851,16 @@ body.simulation-light .theme-toggle {
     gap: 0.4rem;
 }
 
+.ecg-floating-btn,
 .overlay-action {
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.35);
     background: rgba(0, 0, 0, 0.48);
     color: #fff;
     font-weight: 800;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     line-height: 1;
     display: inline-flex;
     align-items: center;
@@ -1937,7 +1939,7 @@ body.simulation-light .theme-toggle {
 
 .ecg-frame:fullscreen .ecg-overlay,
 .ecg-frame.is-fullscreen .ecg-overlay {
-    padding: 1rem 1.4rem;
+    padding: 1.25rem 1.65rem 1.1rem;
 }
 
 .ecg-frame:fullscreen canvas,
