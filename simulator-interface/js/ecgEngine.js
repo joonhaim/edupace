@@ -51,7 +51,8 @@ const engineState = {
     regularity: 'Regular',
     asynchronous: false,
     baseSignal: 'Normal',
-    poweredOn: false
+    poweredOn: false,
+    waveformId: 'normal-sinus'
 };
 
 let canvas;
@@ -185,8 +186,9 @@ function handleScenarioChange(event) {
         engineState.poweredOn = false;
     }
     if (event.detail?.waveformId) {
-        engineState.baseSignal = mapWaveformId(event.detail.waveformId);
-    }
+    engineState.waveformId = event.detail.waveformId;
+    engineState.baseSignal = mapWaveformId(event.detail.waveformId);
+}
     regenerateWaveform();
 }
 
@@ -194,17 +196,20 @@ function handleRuleEffects(event) {
     const hr = event.detail?.effects?.vitals?.hr;
     if (Number.isFinite(hr)) engineState.patientRate = hr;
     if (event.detail?.effects?.waveformId) {
-        engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
-    }
+    engineState.waveformId = event.detail.effects.waveformId;
+    engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
+}
     regenerateWaveform();
 }
 
 function handleWaveformChange(event) {
     const waveformId = event.detail?.waveformId;
     if (waveformId) {
-        engineState.baseSignal = mapWaveformId(waveformId);
-        regenerateWaveform();
-    }
+    engineState.waveformId = waveformId;
+    engineState.baseSignal = mapWaveformId(waveformId);
+    regenerateWaveform();
+}
+
 }
 
 function configureTraceStyle() {
@@ -257,15 +262,53 @@ function applyAnnotationStyles() {
 
 function mapWaveformId(waveformId) {
     switch (waveformId) {
-        case 'loss-of-capture':
-            return 'Ventricular pacing';
+        // Baseline intrinsic rhythms
+        case 'normal-sinus':
+            return 'Normal';
+        case 'brady-escape':
+            return 'BradyNarrow';
+
+        // Paced rhythms
         case 'ventricular-paced':
             return 'Ventricular pacing';
-        case 'normal-sinus':
+
+        // Capture problems
+        case 'loss-of-capture':
+            // show pacing spike without QRS
+            return 'SpikeOnly';
+        case 'intermittent-capture':
+            // baseline is still paced; alternation is handled by pacemaker logic,
+            // but visually this gives you a wide paced morphology
+            return 'Ventricular pacing';
+
+        // Ectopy / mixed
+        case 'paced-with-ectopy':
+            // baseline paced; PVCs injected by scenario logic later if you wish
+            return 'Ventricular pacing';
+        case 'mixed-wide-narrow':
+            // baseline sinus; pacemaker logic creates wide paced beats over it
+            return 'Normal';
+        case 'pvc':
+            return 'PVC';
+
+        // Oversensing / slow intrinsic
+        case 'oversensing':
+            // slow underlying rhythm with missing paced beats
+            return 'BradyNarrow';
+
+        // Random mode: start from sinus by default
+        case 'random-mode':
+            return 'Normal';
+
+        case 'undersensing':
+            return 'Normal'; // or a dedicated template later
+
+        // Fallback
         default:
             return 'Normal';
     }
 }
+
 
 function flashLed(element, type) {
     if (!element) return;
@@ -384,31 +427,78 @@ function handleResize() {
 }
 
 function regenerateWaveform() {
-    const gap = heartRate(engineState.patientRate);
+    // -----------------------------
+    // 1. Determine intrinsic vs pacer rate
+    // -----------------------------
+    const intrinsicRate =
+        Number.isFinite(engineState.patientRate) && engineState.patientRate > 0
+            ? engineState.patientRate
+            : 70; // safe default
+
+    const pacingEnabled =
+        engineState.poweredOn &&
+        Number.isFinite(engineState.pacingRate) &&
+        engineState.pacingRate > 0;
+
+    // Pacemaker "lower rate limit"
+    const pacerRate = pacingEnabled ? engineState.pacingRate : intrinsicRate;
+
+    // Decide which rate actually controls RR spacing on the strip:
+    // - If pacer is OFF  → intrinsic dominates
+    // - If pacer is ON and pacerRate > intrinsicRate → pacer dominates
+    // - If pacer is ON but pacerRate <= intrinsicRate → intrinsic dominates (demand mode feel)
+    let controllingRate = intrinsicRate;
+    if (pacingEnabled && pacerRate > intrinsicRate) {
+        controllingRate = pacerRate;
+    }
+
+    // Convert the controlling rate to base gap between beats.
+    const gap = heartRate(controllingRate);
+
+    // -----------------------------
+    // 2. Resolve which morphology to ask ecgCore for
+    // -----------------------------
     const ecgFunc = (type) => {
         const resolvedType = type === 'Normal' ? engineState.baseSignal : type;
         return ecgWave(resolvedType);
     };
 
-    const pacingEnabled = engineState.poweredOn;
-    const pacingRate = pacingEnabled ? engineState.pacingRate : engineState.patientRate;
     const pacingOutput = pacingEnabled ? engineState.output : 0;
     const pacingAsync = pacingEnabled ? engineState.asynchronous : false;
+
+    const secondsVisible = getSecondsVisible() || DEFAULT_SECONDS_VISIBLE;
 
     const { x, y, events } = stitchBeatsNew(
         ecgFunc,
         gap,
         engineState.regularity,
         engineState.sensitivity,
-        pacingRate,
-        pacingOutput,
-        pacingAsync
+        pacerRate,          // pacemaker rate for timing / capture logic
+        pacingOutput,       // pacemaker output (mA)
+        pacingAsync,        // async vs demand behaviour
+        {
+            waveformId: engineState.waveformId,
+            durationSec: secondsVisible
+        }
     );
+
+
+    if (!Array.isArray(x) || !Array.isArray(y) || x.length === 0 || y.length === 0) {
+        waveformPoints = [];
+        waveformEvents = [];
+        waveformDuration = 0;
+        maxWaveAmplitude = 1;
+        heartRateEngine?.reset();
+        clearBeatLabels();
+        return;
+    }
+
 
     waveformDuration = Math.max(...x, 0);
     waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
     waveformEvents = Array.isArray(events) ? events : [];
     maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
+
     heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
     heartRateEngine?.reset();
     clearBeatLabels();
@@ -417,6 +507,7 @@ function regenerateWaveform() {
         sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
     }
 }
+
 
 function resetSweep() {
     sweepX = 0;
