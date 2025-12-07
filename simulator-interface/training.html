@@ -118,7 +118,16 @@
                                     </div>
                                     <button
                                         type="button"
-                                        class="calibration-toggle"
+                                        class="ecg-audio-toggle ecg-floating-btn"
+                                        aria-label="Mute QRS beep"
+                                        aria-pressed="false"
+                                        title="Mute QRS beep"
+                                    >
+                                        <span aria-hidden="true" data-sound-icon>🔊</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="calibration-toggle ecg-floating-btn"
                                         aria-label="Show calibration details"
                                         title="Show calibration details"
                                     >
@@ -717,18 +726,6 @@
                                                                 </label>
                                                             </div>
                                                         </div>
-
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title">Mute QRS beep</div>
-                                                                <p class="setting-hint">Silence the R-wave tone.</p>
-                                                            </div>
-                                                            <label class="switch">
-                                                                <input type="checkbox" id="qrsBeepToggle">
-                                                                <span class="switch-track"></span>
-                                                            </label>
-                                                        </div>
-
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
                                                                 <div class="setting-title">Alarm sounds</div>

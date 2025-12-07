@@ -1838,9 +1838,8 @@ body.simulation-light .theme-toggle {
     font-variant-numeric: tabular-nums;
 }
 
-.calibration-toggle {
+.ecg-floating-btn {
     position: absolute;
-    right: 0.9rem;
     bottom: 0.9rem;
     width: 26px;
     height: 26px;
@@ -1860,15 +1859,29 @@ body.simulation-light .theme-toggle {
     pointer-events: none;
 }
 
-.ecg-frame:hover .calibration-toggle,
-.calibration-toggle:focus-visible {
+.calibration-toggle {
+    right: 0.9rem;
+}
+
+.ecg-audio-toggle {
+    right: 3.1rem;
+}
+
+.ecg-audio-toggle.is-muted {
+    background: rgba(248, 113, 113, 0.9);
+    border-color: rgba(254, 226, 226, 0.9);
+    color: #0f172a;
+}
+
+.ecg-frame:hover .ecg-floating-btn,
+.ecg-floating-btn:focus-visible {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(-1px);
     outline: none;
 }
 
-.calibration-toggle:focus-visible {
+.ecg-floating-btn:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
 }
 

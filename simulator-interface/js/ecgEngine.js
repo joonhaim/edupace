@@ -113,12 +113,32 @@ const overlayElements = {
     calibration: document.querySelector('.calibration-inline'),
     calibrationValue: document.querySelector('.calibration-inline .calibration-value'),
     calibrationToggle: document.querySelector('.calibration-toggle'),
+    qrsMuteToggle: document.querySelector('.ecg-audio-toggle'),
+    qrsMuteIcon: document.querySelector('.ecg-audio-toggle [data-sound-icon]'),
     frame: document.querySelector('.ecg-frame'),
     hrBlock: document.querySelector('.ecg-vitals .vital-block'),
     hrValue: document.getElementById('hrValue')
 };
 
 let calibrationInfoVisible = false;
+
+function applyQrsMuteState(muted) {
+    const isMuted = Boolean(muted);
+    displaySettings.qrsBeepMuted = isMuted;
+    heartRateEngine?.setBeepMuted(isMuted);
+
+    const label = isMuted ? 'Unmute QRS beep' : 'Mute QRS beep';
+    if (overlayElements.qrsMuteToggle) {
+        overlayElements.qrsMuteToggle.classList.toggle('is-muted', isMuted);
+        overlayElements.qrsMuteToggle.setAttribute('aria-pressed', isMuted ? 'true' : 'false');
+        overlayElements.qrsMuteToggle.setAttribute('aria-label', label);
+        overlayElements.qrsMuteToggle.title = label;
+    }
+
+    if (overlayElements.qrsMuteIcon) {
+        overlayElements.qrsMuteIcon.textContent = isMuted ? '🔇' : '🔊';
+    }
+}
 
 function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
@@ -135,6 +155,7 @@ function initEcgEngine() {
     applyAnnotationStyles();
 
     heartRateEngine = createHeartRateEngine(document.getElementById('hrValue'));
+    applyQrsMuteState(displaySettings.qrsBeepMuted);
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -155,6 +176,10 @@ function initEcgEngine() {
     overlayElements.calibrationToggle?.addEventListener('blur', () => setCalibrationVisibility(false));
     overlayElements.frame?.addEventListener('mouseleave', () => setCalibrationVisibility(false));
     overlayElements.frame?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
+
+    overlayElements.qrsMuteToggle?.addEventListener('click', () => {
+        applyQrsMuteState(!displaySettings.qrsBeepMuted);
+    });
 
     regenerateWaveform();
     startAnimationLoop();
@@ -616,6 +641,7 @@ function drawWaveform(width, height) {
 function drawSensitivityGuide(width, height) {
     if (!ctx || !displaySettings.sensitivityGuide) return;
     if (!Number.isFinite(engineState.sensitivity)) return;
+    if (engineState.asynchronous) return;
 
     const { midY, scaleY } = getWaveformGeometry(height);
     if (!scaleY) return;
@@ -1112,8 +1138,7 @@ function handleDisplaySettings(event) {
     }
 
     if (typeof settings.qrsBeepMuted === 'boolean') {
-        displaySettings.qrsBeepMuted = settings.qrsBeepMuted;
-        heartRateEngine?.setBeepMuted(settings.qrsBeepMuted);
+        applyQrsMuteState(settings.qrsBeepMuted);
     }
 
     if (needsTraceStyle) {
