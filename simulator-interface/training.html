@@ -118,72 +118,13 @@
                                     </div>
                                     <button
                                         type="button"
-                                        class="ecg-audio-toggle ecg-floating-btn"
-                                        aria-label="Mute QRS beep"
-                                        aria-pressed="false"
-                                        title="Mute QRS beep"
+                                        class="caliper-unit-toggle"
+                                        aria-label="Show calipers in milliseconds"
+                                        title="Show calipers in milliseconds"
                                     >
-                                        <span class="sound-icon sound-icon-on" aria-hidden="true" data-sound-icon="on">
-                                            <svg viewBox="0 0 24 24" role="img" focusable="false">
-                                                <path
-                                                    d="M4 9v6h3.4L13 19.5V4.5L7.4 9z"
-                                                    fill="currentColor"
-                                                    stroke="currentColor"
-                                                    stroke-width="1.2"
-                                                    stroke-linejoin="round"
-                                                />
-                                                <path
-                                                    d="M15.5 9.5c1 1 1 4 0 5"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    stroke-width="1.5"
-                                                    stroke-linecap="round"
-                                                />
-                                                <path
-                                                    d="M18 7.5c1.6 1.6 1.6 7.4 0 9"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    stroke-width="1.5"
-                                                    stroke-linecap="round"
-                                                />
-                                            </svg>
-                                        </span>
-                                        <span class="sound-icon sound-icon-off" aria-hidden="true" data-sound-icon="off">
-                                            <svg viewBox="0 0 24 24" role="img" focusable="false">
-                                                <path
-                                                    d="M4 9v6h3.4L13 19.5V4.5L7.4 9z"
-                                                    fill="currentColor"
-                                                    stroke="currentColor"
-                                                    stroke-width="1.2"
-                                                    stroke-linejoin="round"
-                                                />
-                                                <path
-                                                    d="M16 8l4 8M20 8l-4 8"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    stroke-width="1.6"
-                                                    stroke-linecap="round"
-                                                />
-                                            </svg>
-                                        </span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="calibration-toggle ecg-floating-btn"
-                                        aria-label="Show calibration details"
-                                        title="Show calibration details"
-                                    >
-                                        ⓘ
+                                        ms
                                     </button>
                                     <div class="ecg-overlay-actions">
-                                        <button
-                                            type="button"
-                                            class="overlay-action fullscreen-toggle"
-                                            aria-label="Enter full screen"
-                                            title="Enter full screen"
-                                        >
-                                            ⛶
-                                        </button>
                                         <button
                                             type="button"
                                             class="overlay-action calibration-toggle"
@@ -191,6 +132,65 @@
                                             title="Show calibration details"
                                         >
                                             ⓘ
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="overlay-action ecg-audio-toggle"
+                                            aria-label="Mute QRS beep"
+                                            aria-pressed="false"
+                                            title="Mute QRS beep"
+                                        >
+                                            <span class="sound-icon sound-icon-on" aria-hidden="true" data-sound-icon="on">
+                                                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                                                    <path
+                                                        d="M4 9v6h3.4L13 19.5V4.5L7.4 9z"
+                                                        fill="currentColor"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.2"
+                                                        stroke-linejoin="round"
+                                                    />
+                                                    <path
+                                                        d="M15.5 9.5c1 1 1 4 0 5"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.5"
+                                                        stroke-linecap="round"
+                                                    />
+                                                    <path
+                                                        d="M18 7.5c1.6 1.6 1.6 7.4 0 9"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.5"
+                                                        stroke-linecap="round"
+                                                    />
+                                                </svg>
+                                            </span>
+                                            <span class="sound-icon sound-icon-off" aria-hidden="true" data-sound-icon="off">
+                                                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                                                    <path
+                                                        d="M4 9v6h3.4L13 19.5V4.5L7.4 9z"
+                                                        fill="currentColor"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.2"
+                                                        stroke-linejoin="round"
+                                                    />
+                                                    <path
+                                                        d="M16 8l4 8M20 8l-4 8"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.6"
+                                                        stroke-linecap="round"
+                                                    />
+                                                </svg>
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="overlay-action fullscreen-toggle"
+                                            aria-label="Enter full screen"
+                                            title="Enter full screen"
+                                        >
+                                            ⛶
                                         </button>
                                     </div>
                                 </div>

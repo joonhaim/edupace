@@ -120,12 +120,14 @@ const overlayElements = {
     qrsMuteIconOn: document.querySelector('.ecg-audio-toggle [data-sound-icon="on"]'),
     qrsMuteIconOff: document.querySelector('.ecg-audio-toggle [data-sound-icon="off"]'),
     fullscreenToggle: document.querySelector('.fullscreen-toggle'),
+    caliperUnitToggle: document.querySelector('.caliper-unit-toggle'),
     frame: document.querySelector('.ecg-frame'),
     hrBlock: document.querySelector('.ecg-vitals .vital-block'),
     hrValue: document.getElementById('hrValue')
 };
 
 let calibrationInfoVisible = false;
+let caliperUnit = 'ms';
 
 function applyQrsMuteState(muted) {
     const isMuted = Boolean(muted);
@@ -195,6 +197,7 @@ function initEcgEngine() {
     overlayElements.frame?.addEventListener('mouseleave', () => setCalibrationVisibility(false));
     overlayElements.frame?.addEventListener('pointerleave', () => setCalibrationVisibility(false));
     overlayElements.fullscreenToggle?.addEventListener('click', handleFullscreenToggle);
+    overlayElements.caliperUnitToggle?.addEventListener('click', toggleCaliperUnit);
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     handleFullscreenChange();
@@ -206,6 +209,7 @@ function initEcgEngine() {
     regenerateWaveform();
     startAnimationLoop();
     updateCalibrationNote();
+    updateCaliperUnitControl();
 }
 
 function handleParameterChange(event) {
@@ -449,8 +453,15 @@ function processBeatLabelEvents(windowStart, windowEnd, startX, endX, height, se
 function syncCanvasSize() {
     if (!canvas || !traceCanvas || !gridCanvas) return;
     const rect = canvas.getBoundingClientRect();
-    const newWidth = Math.max(Math.round(rect.width || canvas.clientWidth || canvas.width || 1), 1);
-    const newHeight = Math.max(Math.round(rect.height || canvas.clientHeight || canvas.height || 1), 1);
+    const frameSize = getFrameContentSize();
+    const newWidth = Math.max(
+        Math.round(frameSize?.width ?? rect.width ?? canvas.clientWidth ?? canvas.width ?? 1),
+        1
+    );
+    const newHeight = Math.max(
+        Math.round(frameSize?.height ?? rect.height ?? canvas.clientHeight ?? canvas.height ?? 1),
+        1
+    );
     const prevPixelRatio = devicePixelRatioScale;
     const pixelRatio = Math.max(window.devicePixelRatio || 1, 1);
     const renderWidth = Math.max(Math.round(newWidth * pixelRatio), 1);
@@ -493,6 +504,21 @@ function syncCanvasSize() {
     if (resizedGrid || pixelRatioChanged) {
         gridDirty = true;
     }
+}
+
+function getFrameContentSize() {
+    const frame = overlayElements.frame;
+    if (!frame) return null;
+
+    const style = window.getComputedStyle(frame);
+    const paddingX =
+        parseFloat(style.paddingLeft || '0') + parseFloat(style.paddingRight || '0');
+    const paddingY = parseFloat(style.paddingTop || '0') + parseFloat(style.paddingBottom || '0');
+
+    return {
+        width: Math.max(frame.clientWidth - paddingX, 1),
+        height: Math.max(frame.clientHeight - paddingY, 1)
+    };
 }
 
 function handleResize() {
@@ -978,6 +1004,24 @@ function getPointerPosition(event) {
     };
 }
 
+function toggleCaliperUnit() {
+    caliperUnit = caliperUnit === 'ms' ? 'ppm' : 'ms';
+    updateCaliperUnitControl();
+    draw();
+}
+
+function updateCaliperUnitControl() {
+    if (!overlayElements.caliperUnitToggle) return;
+
+    const isPpm = caliperUnit === 'ppm';
+    const label = isPpm ? 'Show calipers in milliseconds' : 'Show calipers in paces per minute';
+
+    overlayElements.caliperUnitToggle.textContent = isPpm ? 'ppm' : 'ms';
+    overlayElements.caliperUnitToggle.setAttribute('aria-pressed', isPpm ? 'true' : 'false');
+    overlayElements.caliperUnitToggle.setAttribute('aria-label', label);
+    overlayElements.caliperUnitToggle.setAttribute('title', label);
+}
+
 function drawCaliper(width, height) {
     const activeCaliper = pendingCaliper?.active ? pendingCaliper : caliper;
     if (!isPaused || !displaySettings.intervalRulers || !activeCaliper || !ctx) return;
@@ -1009,7 +1053,10 @@ function drawCaliper(width, height) {
 
     const diffSeconds = ((right - left) / width) * getSecondsVisible();
     const diffMs = Math.max(0, diffSeconds * 1000);
-    const label = `${diffMs.toFixed(0)} ms`;
+    const label =
+        caliperUnit === 'ppm'
+            ? `${diffSeconds > 0 ? (60 / diffSeconds).toFixed(0) : '0'} ppm`
+            : `${diffMs.toFixed(0)} ms`;
     const textX = (left + right) / 2;
 
     ctx.font = '600 18px "IBM Plex Mono", monospace';
