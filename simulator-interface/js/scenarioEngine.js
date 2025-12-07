@@ -48,6 +48,8 @@ const CATEGORY_LABELS = {
     clinical: 'Clinical Cases'
 };
 
+const CATEGORY_ORDER = ['module', 'clinical'];
+
 function normalizeCategory(scenario) {
     const category = typeof scenario?.category === 'string' ? scenario.category.toLowerCase() : 'module';
     return category || 'module';
@@ -55,6 +57,11 @@ function normalizeCategory(scenario) {
 
 function getCategoryLabel(category) {
     return CATEGORY_LABELS[category] || 'Training modes';
+}
+
+function getCategoryClasses(category) {
+    const base = 'scenario-menu-section';
+    return `${base} ${base}-${category}`.trim();
 }
 
 
@@ -188,7 +195,7 @@ function renderScenarioMenu(menu, scenarios) {
     menu.innerHTML = '';
 
     const list = document.createElement('div');
-    list.className = 'scenario-menu-list';
+    list.className = 'scenario-menu-list scenario-menu-grid';
 
     if (!scenarios.length) {
         const empty = document.createElement('div');
@@ -211,14 +218,29 @@ function renderScenarioMenu(menu, scenarios) {
         grouped.get(category).push({ scenario, index });
     });
 
-    grouped.forEach((items, category) => {
+    const orderedCategories = [
+        ...CATEGORY_ORDER,
+        ...Array.from(grouped.keys()).filter((category) => !CATEGORY_ORDER.includes(category))
+    ];
+
+    orderedCategories.forEach((category) => {
+        const items = grouped.get(category) ?? [];
         const section = document.createElement('div');
-        section.className = 'scenario-menu-section';
+        section.className = getCategoryClasses(category);
 
         const heading = document.createElement('div');
         heading.className = 'scenario-menu-heading';
         heading.textContent = getCategoryLabel(category);
         section.appendChild(heading);
+
+        if (!items.length) {
+            const empty = document.createElement('div');
+            empty.className = 'scenario-option scenario-option-empty';
+            empty.textContent = 'No scenarios available';
+            empty.setAttribute('aria-disabled', 'true');
+            empty.tabIndex = -1;
+            section.appendChild(empty);
+        }
 
         items.forEach(({ scenario, index }) => {
             const option = document.createElement('button');
@@ -363,9 +385,26 @@ async function initScenarios() {
         setScenarioLock(shouldLock);
     });
 
-    const firstAvailableIndex = scenarios.findIndex((scenario) => !scenario.comingSoon);
-    if (firstAvailableIndex >= 0) {
-        startScenario(firstAvailableIndex);
+    const params = new URLSearchParams(window.location.search);
+    const scenarioQuery = params.get('scenario');
+
+    let initialIndex = scenarios.findIndex((scenario) => !scenario.comingSoon);
+
+    if (scenarioQuery) {
+        const normalizedQuery = scenarioQuery.trim().toLowerCase();
+        const matchedIndex = scenarios.findIndex((scenario) => {
+            const idMatch = scenario.id?.toLowerCase() === normalizedQuery;
+            const codeMatch = scenario.code?.toLowerCase() === normalizedQuery;
+            return !scenario.comingSoon && (idMatch || codeMatch);
+        });
+
+        if (matchedIndex >= 0) {
+            initialIndex = matchedIndex;
+        }
+    }
+
+    if (initialIndex >= 0) {
+        startScenario(initialIndex);
     }
 }
 
