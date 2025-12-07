@@ -43,6 +43,20 @@ const scenarioState = {
     locked: false
 };
 
+const CATEGORY_LABELS = {
+    module: 'Module Training',
+    clinical: 'Clinical Cases'
+};
+
+function normalizeCategory(scenario) {
+    const category = typeof scenario?.category === 'string' ? scenario.category.toLowerCase() : 'module';
+    return category || 'module';
+}
+
+function getCategoryLabel(category) {
+    return CATEGORY_LABELS[category] || 'Training modes';
+}
+
 
 function isScenarioLocked() {
     return scenarioState.locked;
@@ -183,26 +197,50 @@ function renderScenarioMenu(menu, scenarios) {
         empty.setAttribute('aria-disabled', 'true');
         empty.tabIndex = -1;
         list.appendChild(empty);
+        menu.appendChild(list);
+        return;
     }
 
-    scenarios.forEach((scenario, index) => {
-        const option = document.createElement('button');
-        option.type = 'button';
-        option.className = 'scenario-option';
-        option.dataset.index = String(index);
-        option.role = 'option';
-        option.textContent = scenario.title;
-        if (scenario.comingSoon) {
-            option.disabled = true;
-            option.title = 'Coming soon';
-        }
+    const grouped = new Map();
 
-        option.addEventListener('click', () => {
-            startScenario(index);
-            toggleMenu(false);
+    scenarios.forEach((scenario, index) => {
+        const category = normalizeCategory(scenario);
+        if (!grouped.has(category)) {
+            grouped.set(category, []);
+        }
+        grouped.get(category).push({ scenario, index });
+    });
+
+    grouped.forEach((items, category) => {
+        const section = document.createElement('div');
+        section.className = 'scenario-menu-section';
+
+        const heading = document.createElement('div');
+        heading.className = 'scenario-menu-heading';
+        heading.textContent = getCategoryLabel(category);
+        section.appendChild(heading);
+
+        items.forEach(({ scenario, index }) => {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'scenario-option';
+            option.dataset.index = String(index);
+            option.role = 'option';
+            option.textContent = scenario.title;
+            if (scenario.comingSoon) {
+                option.disabled = true;
+                option.title = 'Coming soon';
+            }
+
+            option.addEventListener('click', () => {
+                startScenario(index);
+                toggleMenu(false);
+            });
+
+            section.appendChild(option);
         });
 
-        list.appendChild(option);
+        list.appendChild(section);
     });
 
     menu.appendChild(list);
