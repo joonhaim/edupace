@@ -1842,9 +1842,9 @@ body.simulation-light .theme-toggle {
     font-variant-numeric: tabular-nums;
 }
 
+.ecg-floating-btn {
 .ecg-overlay-actions {
     position: absolute;
-    right: 0.9rem;
     bottom: 0.9rem;
     display: flex;
     gap: 0.4rem;
@@ -1869,6 +1869,47 @@ body.simulation-light .theme-toggle {
     pointer-events: none;
 }
 
+.calibration-toggle {
+    right: 0.9rem;
+}
+
+.ecg-audio-toggle {
+    right: 3.1rem;
+}
+
+.ecg-audio-toggle.is-muted {
+    background: rgba(248, 113, 113, 0.9);
+    border-color: rgba(254, 226, 226, 0.9);
+    color: #0f172a;
+}
+
+.sound-icon {
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+}
+
+.sound-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.sound-icon-off {
+    display: none;
+}
+
+.ecg-audio-toggle.is-muted .sound-icon-on {
+    display: none;
+}
+
+.ecg-audio-toggle.is-muted .sound-icon-off {
+    display: inline-flex;
+}
+
+.ecg-frame:hover .ecg-floating-btn,
+.ecg-floating-btn:focus-visible {
 .ecg-frame:hover .overlay-action,
 .overlay-action:focus-visible {
     opacity: 1;
@@ -1877,6 +1918,7 @@ body.simulation-light .theme-toggle {
     outline: none;
 }
 
+.ecg-floating-btn:focus-visible {
 .overlay-action:focus-visible {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
 }

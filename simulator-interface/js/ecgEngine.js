@@ -113,6 +113,9 @@ const overlayElements = {
     calibration: document.querySelector('.calibration-inline'),
     calibrationValue: document.querySelector('.calibration-inline .calibration-value'),
     calibrationToggle: document.querySelector('.calibration-toggle'),
+    qrsMuteToggle: document.querySelector('.ecg-audio-toggle'),
+    qrsMuteIconOn: document.querySelector('.ecg-audio-toggle [data-sound-icon="on"]'),
+    qrsMuteIconOff: document.querySelector('.ecg-audio-toggle [data-sound-icon="off"]'),
     fullscreenToggle: document.querySelector('.fullscreen-toggle'),
     frame: document.querySelector('.ecg-frame'),
     hrBlock: document.querySelector('.ecg-vitals .vital-block'),
@@ -120,6 +123,34 @@ const overlayElements = {
 };
 
 let calibrationInfoVisible = false;
+
+function applyQrsMuteState(muted) {
+    const isMuted = Boolean(muted);
+    displaySettings.qrsBeepMuted = isMuted;
+    heartRateEngine?.setBeepMuted(isMuted);
+
+    const label = isMuted ? 'Unmute QRS beep' : 'Mute QRS beep';
+    if (overlayElements.qrsMuteToggle) {
+        overlayElements.qrsMuteToggle.classList.toggle('is-muted', isMuted);
+        overlayElements.qrsMuteToggle.setAttribute('aria-pressed', isMuted ? 'true' : 'false');
+        overlayElements.qrsMuteToggle.setAttribute('aria-label', label);
+        overlayElements.qrsMuteToggle.title = label;
+    }
+
+    if (overlayElements.qrsMuteIconOn && overlayElements.qrsMuteIconOff) {
+        overlayElements.qrsMuteIconOn.hidden = isMuted;
+        overlayElements.qrsMuteIconOff.hidden = !isMuted;
+    }
+}
+
+function updateQrsControlVisibility() {
+    if (!overlayElements.qrsMuteToggle) return;
+
+    const isBeepOff = displaySettings.qrsBeep === 'off';
+    overlayElements.qrsMuteToggle.hidden = isBeepOff;
+    overlayElements.qrsMuteToggle.setAttribute('aria-hidden', isBeepOff ? 'true' : 'false');
+    overlayElements.qrsMuteToggle.tabIndex = isBeepOff ? -1 : 0;
+}
 
 function initEcgEngine() {
     canvas = document.getElementById('ecgCanvas');
@@ -136,6 +167,8 @@ function initEcgEngine() {
     applyAnnotationStyles();
 
     heartRateEngine = createHeartRateEngine(document.getElementById('hrValue'));
+    applyQrsMuteState(displaySettings.qrsBeepMuted);
+    updateQrsControlVisibility();
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -160,6 +193,10 @@ function initEcgEngine() {
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     handleFullscreenChange();
+
+    overlayElements.qrsMuteToggle?.addEventListener('click', () => {
+        applyQrsMuteState(!displaySettings.qrsBeepMuted);
+    });
 
     regenerateWaveform();
     startAnimationLoop();
@@ -621,6 +658,7 @@ function drawWaveform(width, height) {
 function drawSensitivityGuide(width, height) {
     if (!ctx || !displaySettings.sensitivityGuide) return;
     if (!Number.isFinite(engineState.sensitivity)) return;
+    if (engineState.asynchronous) return;
 
     const { midY, scaleY } = getWaveformGeometry(height);
     if (!scaleY) return;
@@ -1108,17 +1146,17 @@ function handleDisplaySettings(event) {
         needsAnnotationUpdate = true;
     }
 
-     if (typeof settings.qrsBeep === 'string') {
+    if (typeof settings.qrsBeep === 'string') {
         const normalizedBeep = ['classic', 'soft', 'off'].includes(settings.qrsBeep)
             ? settings.qrsBeep
             : 'classic';
         displaySettings.qrsBeep = normalizedBeep;
         heartRateEngine?.setBeepMode(normalizedBeep);
+        updateQrsControlVisibility();
     }
 
     if (typeof settings.qrsBeepMuted === 'boolean') {
-        displaySettings.qrsBeepMuted = settings.qrsBeepMuted;
-        heartRateEngine?.setBeepMuted(settings.qrsBeepMuted);
+        applyQrsMuteState(settings.qrsBeepMuted);
     }
 
     if (needsTraceStyle) {
