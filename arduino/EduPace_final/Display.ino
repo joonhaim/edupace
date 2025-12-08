@@ -173,12 +173,26 @@ void setupDisplay(){
   lv_obj_set_style_text_font(third_unit, &lv_font_montserrat_24, LV_PART_MAIN);
   lv_obj_align(third_unit, LV_ALIGN_TOP_RIGHT, -15, 640);
   
-  //EduPace 2.0
+  //EduPace 
   lv_obj_t * edu_text = lv_label_create(cont);
-  lv_label_set_text(edu_text, "EduPace 2.0");
+  lv_label_set_text(edu_text, "EduPace");
   lv_obj_set_style_text_color(edu_text, lv_color_black(), LV_PART_MAIN);
   lv_obj_set_style_text_font(edu_text, &lv_font_montserrat_24, LV_PART_MAIN);
   lv_obj_align(edu_text, LV_ALIGN_TOP_MID, 0, 10);
+
+  //Pace Label
+  lv_obj_t * pace_lbl = lv_label_create(cont);
+  lv_label_set_text(pace_lbl, "Pace");
+  lv_obj_set_style_text_color(pace_lbl, lv_color_black(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(pace_lbl, &lv_font_montserrat_24, LV_PART_MAIN);
+  lv_obj_align(pace_lbl, LV_ALIGN_TOP_MID, -155, 5);
+
+  //Sense Label
+  lv_obj_t * sense_lbl = lv_label_create(cont);
+  lv_label_set_text(sense_lbl, "Sense");
+  lv_obj_set_style_text_color(sense_lbl, lv_color_black(), LV_PART_MAIN);
+  lv_obj_set_style_text_font(sense_lbl, &lv_font_montserrat_24, LV_PART_MAIN);
+  lv_obj_align(sense_lbl, LV_ALIGN_TOP_MID, 150, 5);
 }
 
 /*Update Labels*/
