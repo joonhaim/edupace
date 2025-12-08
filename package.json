@@ -1,0 +1,14 @@
+{
+  "name": "edupace-electron",
+  "version": "0.1.0",
+  "description": "Electron wrapper for the EduPace simulator interface.",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "EduPace Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.2.0"
+  }
+}
