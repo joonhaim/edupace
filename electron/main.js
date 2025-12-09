@@ -33,7 +33,16 @@ function createWindow() {
     return false;
   });
 
+  ses.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    if (permission === 'serial') {
+      callback(true);
+      return;
+    }
+
+    callback(false);
+  });
 }
+
 
 app.whenReady().then(() => {
   createWindow();
