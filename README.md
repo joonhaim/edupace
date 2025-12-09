@@ -1,5 +1,7 @@
 <p align="center">
-  <img src="simulator-interface/assets/logos/edupace_text_right.png" width="260" alt="EduPace logo">
+<p align="left">
+  <img src="simulator-interface/assets/logos/edupace_text_right.png" width="260" alt="EduPace">
+</p>
 </p>
 
 
