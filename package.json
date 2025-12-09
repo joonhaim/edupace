@@ -35,12 +35,12 @@
     "mac": {
       "category": "public.app-category.education",
       "target": ["dmg"],
-      "icon": "electron/icons/edupace.icns"
+      "icon": "electron/icons/edupace.png"
     },
 
     "win": {
       "target": ["nsis"],
-      "icon": "electron/icons/edupace.ico"
+      "icon": "electron/icons/edupace.png"
     },
 
     "nsis": {
