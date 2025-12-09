@@ -1,4 +1,7 @@
-![EduPace](simulator-interface/assets/logos/edupace_text_right.png){width="300"}
+<p align="center">
+  <img src="simulator-interface/assets/logos/edupace_text_right.png" width="260" alt="EduPace logo">
+</p>
+
 
 EduPace is an educational simulator that trains nurses and students to configure a temporary external single-chamber pacemaker. It allows users to practice pacing, sensing, and threshold adjustments.
 Developed within the TU Delft Minor Biomedical Engineering in collaboration with the Reinier de Graaf Hospital (Delft, Netherlands). 
