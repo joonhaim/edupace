@@ -9,6 +9,7 @@
   "author": "EduPace Team",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^31.2.0"
+    "electron": "^31.2.0",
+    "electron-builder": "^26.0.12"
   }
 }
