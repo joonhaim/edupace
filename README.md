@@ -43,44 +43,34 @@ TBD
 ## Repository Structure
 
 ```text
-edupace/
-│
-├── arduino/                    # Arduino firmware and hardware logic
-│   ├── Dial.ino
-│   ├── Display.ino
-│   ├── EduPace2025.ino
-│   ├── Key_Button.ino
-│   ├── Leds.ino
-│   ├── Serial_communication.ino
+.
+├── README.md
+├── package.json               # Electron wrapper metadata and scripts
+├── package-lock.json
+├── arduino/                   # Firmware and hardware assets
+│   ├── README.md
 │   ├── digital.c
-│   ├── key.c
-│   ├── l_conf.h
-│   └── README.md
-│
-├── docs/                       # Documentation, figures, reports
-│
-├── simulator-interface/        # Browser-based pacing & ECG simulator
-│   ├── assets/
-│   │   ├── audio/
-│   │   ├── icons/
-│   │   └── logos/
-│   ├── data/
-│   │   └── scenarios.json
-│   ├── ecg/
-│   │   ├── ecg_core.py
-│   │   ├── ecgCore.js
-│   │   ├── ecgCore_old.js
-│   │   ├── ECG simulation.ipynb
-│   │   └── ECG simulation - organised version.ipynb
-│   ├── js/
-│   ├── partials/
-│   ├── styles/
-│   ├── index.html
-│   └── training.html
-│
-└── misc/                       # Logs, prototypes, temporary assets
+│   └── EduPace_final/         # LVGL UI, serial logic, and encoder handling
+│       ├── *.ino
+│       ├── key.c
+│       ├── lv_conf.h
+│       ├── edupace_logo*.{c,png}
+│       └── tu_logo.{c,jpg}
+├── electron/                  # Electron wrapper for the simulator
+│   ├── icons/
+│   ├── main.js
+│   └── preload.js
+└── simulator-interface/       # Browser-based pacing & ECG simulator
+    ├── assets/
+    ├── data/scenarios.json
+    ├── ecg/
+    ├── js/
+    ├── partials/
+    ├── styles/
+    ├── index.html
+    ├── instructions.html
     ├── logs.html
-    └── ...
+    └── training.html
 ```
 
 ___
