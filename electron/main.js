@@ -6,6 +6,7 @@ function createWindow() {
     width: 1440,
     height: 900,
     backgroundColor: '#000000',
+    fullscreenable: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -21,6 +22,18 @@ function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
+  });
+
+  mainWindow.webContents.on('enter-html-full-screen', () => {
+    if (!mainWindow.isFullScreen()) {
+      mainWindow.setFullScreen(true);
+    }
+  });
+
+  mainWindow.webContents.on('leave-html-full-screen', () => {
+    if (mainWindow.isFullScreen()) {
+      mainWindow.setFullScreen(false);
+    }
   });
 
   // --------- Web Serial integration for Electron ---------
@@ -42,6 +55,27 @@ function createWindow() {
     callback(false);
   });
 }
+
+app.on('select-serial-port', (event, portList, webContents, callback, details) => {
+  event.preventDefault();
+
+  const requestedPortId = details?.portId;
+  const matchingPort = requestedPortId
+    ? portList.find((port) => port.portId === requestedPortId)
+    : null;
+
+  if (matchingPort) {
+    callback(matchingPort.portId);
+    return;
+  }
+
+  if (portList.length > 0) {
+    callback(portList[0].portId);
+    return;
+  }
+
+  callback('');
+});
 
 
 app.whenReady().then(() => {
