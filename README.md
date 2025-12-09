@@ -1,6 +1,6 @@
 <p align="center">
 <p align="left">
-  <img src="simulator-interface/assets/logos/edupace_text_right.png" width="260" alt="EduPace">
+  <img src="simulator-interface/assets/logos/edupace_text_right_crop.png" width="260" alt="EduPace">
 </p>
 </p>
 
