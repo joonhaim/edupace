@@ -4,10 +4,39 @@
   "description": "Electron wrapper for the EduPace simulator interface.",
   "main": "electron/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder"
   },
   "author": "EduPace Team",
   "license": "MIT",
+  "build": {
+    "appId": "com.edupace.simulator",
+    "productName": "EduPace Simulator",
+    "files": [
+      "electron/**/*",
+      "simulator-interface/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.education",
+      "target": [
+        "dmg"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
   "devDependencies": {
     "electron": "^31.2.0",
     "electron-builder": "^26.0.12"
