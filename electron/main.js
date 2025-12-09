@@ -1,43 +1,68 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, protocol, shell } = require('electron');
 const path = require('path');
+
+// Treat the bundled simulator assets as a secure origin so Web Serial and
+// other modern APIs are available when loading over the custom protocol.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'app',
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+    },
+  },
+]);
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
-    backgroundColor: '#000000',
+    backgroundColor: '#10131b',
     fullscreenable: true,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       webSecurity: false,
-      experimentalFeatures: true
+      experimentalFeatures: true,
+      enableBlinkFeatures: 'Serial',
     },
   });
 
-  const indexPath = path.join(__dirname, '..', 'simulator-interface', 'index.html');
-  mainWindow.loadFile(indexPath);
+  const appRoot = path.join(__dirname, '..', 'simulator-interface');
+
+  protocol.registerFileProtocol('app', (request, callback) => {
+    const url = new URL(request.url);
+    const safePath = url.pathname.replace(/^\/+/, '');
+    const relativePath = safePath.startsWith('simulator-interface/')
+      ? safePath.slice('simulator-interface/'.length)
+      : safePath;
+    const filePath = path.normalize(path.join(appRoot, relativePath));
+    callback({ path: filePath });
+  });
+
+  mainWindow.loadURL('app://index.html');
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
   });
 
-  mainWindow.webContents.on('enter-html-full-screen', () => {
-    if (!mainWindow.isFullScreen()) {
-      mainWindow.setFullScreen(true);
-    }
-  });
-
-  mainWindow.webContents.on('leave-html-full-screen', () => {
-    if (mainWindow.isFullScreen()) {
-      mainWindow.setFullScreen(false);
-    }
-  });
-
   // --------- Web Serial integration for Electron ---------
   const ses = mainWindow.webContents.session;
+
+  ses.setDevicePermissionHandler(({ deviceType }) => {
+    if (deviceType === 'serial') {
+      return true;
+    }
+    return false;
+  });
 
   ses.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
     if (permission === 'serial') {

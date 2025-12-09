@@ -40,6 +40,8 @@ const serialState = {
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+const isElectron = navigator.userAgent?.includes('Electron');
+let hasRequestedSerialAccess = false;
 const parameterState = {
     rate: null,
     output: null,
@@ -185,9 +187,12 @@ async function populateDeviceList({ requestAccess = false } = {}) {
         return;
     }
 
-    if (requestAccess) {
+    const shouldRequestAccess = requestAccess || (isElectron && !hasRequestedSerialAccess);
+
+    if (shouldRequestAccess) {
         try {
             await navigator.serial.requestPort();
+            hasRequestedSerialAccess = true;
         } catch (error) {
             if (error?.name !== 'NotFoundError') {
                 console.error('Unable to request serial device', error);
@@ -197,6 +202,11 @@ async function populateDeviceList({ requestAccess = false } = {}) {
 
     try {
         const ports = await navigator.serial.getPorts();
+        if (ports.length === 0 && isElectron && !hasRequestedSerialAccess) {
+            hasRequestedSerialAccess = true;
+            await populateDeviceList({ requestAccess: true });
+            return;
+        }
         renderDeviceList(ports);
     } catch (error) {
         console.error('Unable to list serial ports', error);
