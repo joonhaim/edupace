@@ -23,25 +23,58 @@
         <main class="screen-stack">
             <section aria-label="Training">
                 <div class="sim-shell">
-                    <div class="sim-header">
-                        <div>
-                            <p class="eyebrow">Hands-on practice</p>
-                            <h2>Training workspace</h2>
+                        <div class="sim-header">
+                            <div>
+                                <p class="eyebrow">Hands-on practice</p>
+                                <h2>Training workspace</h2>
+                            </div>
+                            <div class="connection-group">
+                                <span class="connection-label">Device</span>
+
+                                <span id="connectionStatus" class="chip chip-disconnected">
+                                    <span class="status-dot"></span>
+                                    <span class="status-text">Disconnected</span>
+                                </span>
+
+                                <button id="connectBtn" type="button" class="btn btn-small connect-btn" title="Plug EduPace device via USB and press connect">
+                                    CONNECT
+                                </button>
+
+                                <div
+                                    id="devicePopover"
+                                    class="device-popover"
+                                    role="dialog"
+                                    aria-modal="true"
+                                    aria-labelledby="devicePopoverTitle"
+                                    aria-hidden="true"
+                                >
+                                    <div class="device-popover-header">
+                                        <div>
+                                            <p class="eyebrow">Serial devices</p>
+                                            <h3 id="devicePopoverTitle">Choose a device</h3>
+                                            <p class="device-popover-subtitle">Plug in EduPace and pick a USB serial connection.</p>
+                                        </div>
+                                        <button id="devicePopoverClose" class="icon-button" type="button" aria-label="Close device list">
+                                            ×
+                                        </button>
+                                    </div>
+
+                                    <div id="deviceList" class="device-list" role="list"></div>
+                                    <div id="deviceListEmpty" class="device-list-empty" role="status" hidden>
+                                        No serial devices found. Plug in your console and scan again.
+                                    </div>
+
+                                    <div class="device-popover-footer">
+                                        <button id="refreshDevicesBtn" class="btn btn-ghost btn-small" type="button">Refresh list</button>
+                                        <button id="requestDeviceBtn" class="btn btn-primary btn-small" type="button">Scan &amp; grant access</button>
+                                    </div>
+
+                                    <p class="device-popover-hint">Supports Chrome, Edge, or the EduPace desktop app.</p>
+                                </div>
+                            </div>
+                            <div id="devicePopoverOverlay" class="device-popover-overlay" hidden></div>
+
                         </div>
-                        <div class="connection-group">
-                            <span class="connection-label">Device</span>
-
-                            <span id="connectionStatus" class="chip chip-disconnected">
-                                <span class="status-dot"></span>
-                                <span class="status-text">Disconnected</span>
-                            </span>
-
-                            <button id="connectBtn" type="button" class="btn btn-small connect-btn" title="Plug EduPace device via USB and press connect">
-                                CONNECT
-                            </button>
-                        </div>
-
-                    </div>
 
                     <div class="scenario-banner" id="scenario-section" role="region" aria-label="Scenario selection">
                         <div class="scenario-banner-text" data-scenario-picker-area>
