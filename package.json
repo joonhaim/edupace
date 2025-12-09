@@ -3,42 +3,50 @@
   "version": "0.1.0",
   "description": "Electron wrapper for the EduPace simulator interface.",
   "main": "electron/main.js",
+  "author": "EduPace Team",
+  "license": "MIT",
+
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder"
   },
-  "author": "EduPace Team",
-  "license": "MIT",
+
+  "devDependencies": {
+    "electron": "^31.2.0",
+    "electron-builder": "^26.0.12"
+  },
+
   "build": {
     "appId": "com.edupace.simulator",
     "productName": "EduPace Simulator",
-    "files": [
-      "electron/**/*",
-      "simulator-interface/**/*",
-      "package.json"
-    ],
+
     "directories": {
       "output": "dist"
     },
+
+    "files": [
+      "electron/main.js",
+      "electron/preload.js",
+      "icons/**/*",
+      "simulator-interface/**/*",
+      "package.json"
+    ],
+
     "mac": {
       "category": "public.app-category.education",
-      "target": [
-        "dmg"
-      ]
+      "target": ["dmg"],
+      "icon": "electron/icons/edupace.icns"
     },
+
     "win": {
-      "target": [
-        "nsis"
-      ]
+      "target": ["nsis"],
+      "icon": "electron/icons/edupace.ico"
     },
+
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true
     }
-  },
-  "devDependencies": {
-    "electron": "^31.2.0",
-    "electron-builder": "^26.0.12"
   }
 }
