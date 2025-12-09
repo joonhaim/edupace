@@ -15,6 +15,13 @@ const ui = {
     ledTestSense: document.getElementById('ledTestSense'),
     inputModeRadios: document.querySelectorAll('input[name="inputMode"]'),
     connectionGroup: document.querySelector('.connection-group'),
+    devicePopover: document.getElementById('devicePopover'),
+    devicePopoverClose: document.getElementById('devicePopoverClose'),
+    deviceOverlay: document.getElementById('devicePopoverOverlay'),
+    deviceList: document.getElementById('deviceList'),
+    deviceListEmpty: document.getElementById('deviceListEmpty'),
+    refreshDevicesBtn: document.getElementById('refreshDevicesBtn'),
+    requestDeviceBtn: document.getElementById('requestDeviceBtn'),
     unsupportedHint: null,
     unsupportedHintClose: null
 };
@@ -27,7 +34,8 @@ const serialState = {
     reader: null,
     writer: null,
     keepReading: false,
-    buffer: ''
+    buffer: '',
+    label: ''
 };
 
 const encoder = new TextEncoder();
@@ -79,6 +87,141 @@ function setUnsupportedHintVisible(visible) {
 
     const shouldShow = visible && !unsupportedHintDismissed;
     ui.unsupportedHint.classList.toggle('is-visible', shouldShow);
+}
+
+function toggleDevicePopover(visible) {
+    if (!ui.devicePopover) return;
+
+    const shouldShow = typeof visible === 'boolean' ? visible : !ui.devicePopover.classList.contains('is-visible');
+    ui.devicePopover.classList.toggle('is-visible', shouldShow);
+    ui.devicePopover.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+
+    if (ui.deviceOverlay) {
+        ui.deviceOverlay.toggleAttribute('hidden', !shouldShow);
+    }
+
+    if (shouldShow) {
+        populateDeviceList();
+    }
+}
+
+function describeSerialPort(port, index = 0) {
+    if (!port || typeof port.getInfo !== 'function') {
+        return {
+            name: `Serial device ${index + 1}`,
+            meta: 'Awaiting device details'
+        };
+    }
+
+    const info = port.getInfo();
+    const vendor = info?.usbVendorId ? info.usbVendorId.toString(16).padStart(4, '0') : null;
+    const product = info?.usbProductId ? info.usbProductId.toString(16).padStart(4, '0') : null;
+
+    let name = 'USB Serial Device';
+    if (vendor || product) {
+        name = `USB ${vendor ?? '----'}:${product ?? '----'}`;
+    }
+
+    return {
+        name,
+        meta: 'Click to connect to this port'
+    };
+}
+
+function renderDeviceList(ports) {
+    if (!ui.deviceList || !ui.deviceListEmpty) return;
+
+    ui.deviceList.innerHTML = '';
+    const list = Array.isArray(ports) ? ports : [];
+
+    if (list.length === 0) {
+        ui.deviceListEmpty.hidden = false;
+        return;
+    }
+
+    ui.deviceListEmpty.hidden = true;
+
+    list.forEach((port, index) => {
+        const { name, meta } = describeSerialPort(port, index);
+        const option = document.createElement('div');
+        option.className = 'device-option';
+
+        const icon = document.createElement('div');
+        icon.className = 'device-icon';
+        icon.innerHTML =
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="12" rx="2" /><path d="M7 16h10" /><path d="M9 20h6" /><path d="M12 14v6" /></svg>';
+
+        const textColumn = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'device-title';
+        title.textContent = name;
+
+        const metaText = document.createElement('div');
+        metaText.className = 'device-meta';
+        metaText.textContent = meta;
+
+        textColumn.append(title, metaText);
+
+        const connectButton = document.createElement('button');
+        connectButton.type = 'button';
+        connectButton.className = 'btn btn-small';
+        connectButton.textContent = 'Connect';
+        connectButton.addEventListener('click', () => handleDeviceSelection(port, name));
+
+        option.append(icon, textColumn, connectButton);
+        ui.deviceList.appendChild(option);
+    });
+}
+
+async function populateDeviceList({ requestAccess = false } = {}) {
+    if (!ui.deviceList) return;
+
+    if (!('serial' in navigator)) {
+        ui.deviceList.innerHTML = '';
+        if (ui.deviceListEmpty) {
+            ui.deviceListEmpty.hidden = false;
+            ui.deviceListEmpty.textContent = 'This browser does not support serial devices.';
+        }
+        return;
+    }
+
+    if (requestAccess) {
+        try {
+            await navigator.serial.requestPort();
+        } catch (error) {
+            if (error?.name !== 'NotFoundError') {
+                console.error('Unable to request serial device', error);
+            }
+        }
+    }
+
+    try {
+        const ports = await navigator.serial.getPorts();
+        renderDeviceList(ports);
+    } catch (error) {
+        console.error('Unable to list serial ports', error);
+        if (ui.deviceListEmpty) {
+            ui.deviceListEmpty.hidden = false;
+            ui.deviceListEmpty.textContent = 'Unable to list serial ports.';
+        }
+    }
+}
+
+async function handleDeviceSelection(port, label) {
+    if (!port) return;
+
+    toggleDevicePopover(false);
+    ui.connectBtn.textContent = 'Connecting...';
+    ui.connectBtn.disabled = true;
+
+    try {
+        await connectToHardware(port, label);
+    } finally {
+        ui.connectBtn.disabled = false;
+        if (!serialState.port) {
+            ui.connectBtn.textContent = 'CONNECT';
+        }
+    }
 }
 
 function setBasePaceMode(mode) {
@@ -182,13 +325,20 @@ function initHardwareIntegration() {
         ui.connectBtn.disabled = true;
     }
 
+    populateDeviceList();
+
     ui.connectBtn.addEventListener('click', () => {
         if (serialState.port) {
             disconnectFromHardware();
         } else {
-            connectToHardware();
+            toggleDevicePopover(true);
         }
     });
+
+    ui.devicePopoverClose?.addEventListener('click', () => toggleDevicePopover(false));
+    ui.deviceOverlay?.addEventListener('click', () => toggleDevicePopover(false));
+    ui.refreshDevicesBtn?.addEventListener('click', () => populateDeviceList());
+    ui.requestDeviceBtn?.addEventListener('click', () => populateDeviceList({ requestAccess: true }));
 
     ui.inputModeRadios.forEach((radio) => {
         radio.addEventListener('change', (event) => {
@@ -196,6 +346,7 @@ function initHardwareIntegration() {
                 disconnectFromHardware();
                 ui.connectBtn.disabled = true;
                 updateConnectionStatus('VIRTUAL', true);
+                toggleDevicePopover(false);
             } else {
                 ui.connectBtn.disabled = !supported;
                 updateConnectionStatus(serialState.port ? 'CONNECTED' : 'DISCONNECTED', Boolean(serialState.port));
@@ -236,13 +387,13 @@ function resetParameters() {
 }
 
 
-async function connectToHardware() {
+async function connectToHardware(selectedPort = null, labelOverride = '') {
     if (!('serial' in navigator)) {
         return;
     }
 
     try {
-        const port = await navigator.serial.requestPort();
+        const port = selectedPort ?? (await navigator.serial.requestPort());
         await port.open({ baudRate: 115200 });
 
         serialState.port = port;
@@ -250,13 +401,16 @@ async function connectToHardware() {
         serialState.reader = port.readable?.getReader() ?? null;
         serialState.keepReading = true;
         serialState.buffer = '';
+        serialState.label = labelOverride || describeSerialPort(port).name;
 
         port.addEventListener('disconnect', () => {
             disconnectFromHardware();
         });
 
-        updateConnectionStatus('CONNECTED', true);
+        updateConnectionStatus(serialState.label ? `Connected: ${serialState.label}` : 'CONNECTED', true);
         ui.connectBtn.textContent = 'Disconnect';
+
+        toggleDevicePopover(false);
 
         readLoop();
     } catch (error) {
@@ -285,11 +439,12 @@ async function disconnectFromHardware() {
     serialState.reader = null;
     serialState.writer = null;
     serialState.buffer = '';
+    serialState.label = '';
     resetParameters();
 
 
     updateConnectionStatus('DISCONNECTED', false);
-    ui.connectBtn.textContent = 'Connect';
+    ui.connectBtn.textContent = 'CONNECT';
 }
 
 function updateConnectionStatus(text, connected, unsupported = false) {

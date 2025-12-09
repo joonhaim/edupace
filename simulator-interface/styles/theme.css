@@ -269,7 +269,7 @@ body.simulation-dark .brand {
     color: #e5e8ed;
 }
 body.simulation-dark .brand-mark {
-    background-image: url("../assets/logos/edupace_logo2_neg.png");
+    background-image: url("../assets/logos/edupace_inverted.png");
 }
 body.simulation-dark .param-tile {
     background: #101827;
@@ -298,7 +298,7 @@ body.simulation-dark .param-step:focus-visible {
 }
 
 body.simulation-dark .brand::before {
-    background-image: url("../assets/logos/edupace_logo2_neg.png");
+    background-image: url("../assets/logos/edupace_inverted.png");
 }
 
 body.simulation-dark.page-logs .logs-toolbar,

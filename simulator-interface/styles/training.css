@@ -28,6 +28,117 @@
     position: relative;
 }
 
+.device-popover {
+    position: absolute;
+    top: calc(100% + 0.65rem);
+    right: 0;
+    width: min(420px, 88vw);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.15);
+    padding: 1rem 1.05rem;
+    display: none;
+    flex-direction: column;
+    gap: 0.8rem;
+    z-index: 30;
+}
+
+.device-popover.is-visible {
+    display: flex;
+}
+
+.device-popover-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.9rem;
+    align-items: flex-start;
+}
+
+.device-popover-subtitle {
+    margin-top: 0.2rem;
+    color: var(--muted);
+}
+
+.device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.device-option {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.7rem;
+    align-items: center;
+    padding: 0.75rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(247, 249, 254, 0.9));
+}
+
+.device-title {
+    font-weight: 700;
+    color: var(--deep-navy);
+}
+
+.device-meta {
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.device-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(37, 99, 235, 0.08);
+    display: grid;
+    place-items: center;
+    color: #2563eb;
+}
+
+.device-list-empty {
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 0.9rem 0.95rem;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.device-popover-footer {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.device-popover-hint {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.icon-button {
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.35rem 0.55rem;
+    font-weight: 700;
+    color: var(--deep-navy);
+}
+
+.icon-button:hover,
+.icon-button:focus-visible {
+    background: rgba(37, 99, 235, 0.08);
+    border-color: rgba(37, 99, 235, 0.45);
+}
+
+.device-popover-overlay {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    z-index: 20;
+}
+
 .connection-label {
     font-size: 0.85rem;
     text-transform: uppercase;
