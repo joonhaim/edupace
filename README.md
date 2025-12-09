@@ -12,9 +12,7 @@ Developed within the TU Delft Minor Biomedical Engineering in collaboration with
 
 ## Overview
 
-EduPace was developed to replicate the behavior of the Medtronic 53401 Temporary External Pacemaker using:
-- A software-based ECG simulator  
-- A physical control unit with knobs, LEDs, and display
+EduPace replicates the core behaviour of the Medtronic 53401 Temporary External Pacemaker. It combines a browser-based ECG and pacing simulator with a physical control unit that mirrors the real device through knobs, LEDs, and a display. The system allows users to practise pacing, sensing, threshold adjustments, and troubleshooting in a safe and interactive environment.
 
 [**EduPace Project Report**](docs/report.pdf)
 
