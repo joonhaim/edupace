@@ -197,7 +197,16 @@ async function populateDeviceList({ requestAccess = false } = {}) {
 
     try {
         const ports = await navigator.serial.getPorts();
-        renderDeviceList(ports);
+        const connectedPorts = ports.filter((port) => {
+            if (!port || typeof port.getInfo !== 'function') {
+                return false;
+            }
+
+            const info = port.getInfo();
+            return Boolean(info?.usbVendorId) && Boolean(info?.usbProductId);
+        });
+
+        renderDeviceList(connectedPorts);
     } catch (error) {
         console.error('Unable to list serial ports', error);
         if (ui.deviceListEmpty) {
