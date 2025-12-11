@@ -39,14 +39,14 @@ function createWindow() {
   // --------- Web Serial integration for Electron ---------
   const ses = mainWindow.webContents.session;
 
-  ses.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
+  ses.setPermissionCheckHandler((webContents, permission) => {
     if (permission === 'serial') {
       return true;
     }
     return false;
   });
 
-  ses.setPermissionRequestHandler((webContents, permission, callback, details) => {
+  ses.setPermissionRequestHandler((webContents, permission, callback) => {
     if (permission === 'serial') {
       callback(true);
       return;
@@ -54,28 +54,14 @@ function createWindow() {
 
     callback(false);
   });
+
+  ses.setDevicePermissionHandler(({ deviceType }) => {
+    if (deviceType === 'serial') {
+      return true;
+    }
+    return false;
+  });
 }
-
-app.on('select-serial-port', (event, portList, webContents, callback, details) => {
-  event.preventDefault();
-
-  const requestedPortId = details?.portId;
-  const matchingPort = requestedPortId
-    ? portList.find((port) => port.portId === requestedPortId)
-    : null;
-
-  if (matchingPort) {
-    callback(matchingPort.portId);
-    return;
-  }
-
-  if (portList.length > 0) {
-    callback(portList[0].portId);
-    return;
-  }
-
-  callback('');
-});
 
 
 app.whenReady().then(() => {
