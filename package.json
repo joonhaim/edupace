@@ -18,7 +18,8 @@
 
   "build": {
     "appId": "com.edupace.simulator",
-    "productName": "EduPace Simulator",
+    "productName": "EduPace",
+    "executableName": "EduPace",
 
     "directories": {
       "output": "dist"
