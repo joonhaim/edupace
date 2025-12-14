@@ -416,6 +416,222 @@ export function ecgWave(signalType) {
 }
 
 // -----------------------------------------------------------------------------
+// Specialised strips
+// -----------------------------------------------------------------------------
+
+function mergeTraces(x, y, xTemp, yTemp) {
+  const mergedX = x.concat(xTemp);
+  const mergedY = y.concat(yTemp);
+  return { x: mergedX, y: mergedY };
+}
+
+function completeAvBlock(iterations = 5) {
+  const PP_interval = 4 + Math.random();
+  const RR_interval = 5 + Math.random();
+
+  const start = [[1, 0, 0]];
+  const points_P = [
+    [1, 2.45, 0],
+    [2, 2.53, 0.02],
+    [1, 2.6, 0.12],
+    [1, 2.7, 0.44],
+    [2, 2.8, 0.65],
+    [3, 2.915, 0.74],
+    [2, 3.05, 0.63],
+    [1, 3.1, 0.52],
+    [1, 3.2, 0.16],
+    [1, 3.25, 0.05],
+    [2, 3.3, 0.01],
+    [1, 3.35, 0]
+  ];
+
+  const points_R_first = [
+    [1, 4.4, 0],
+    [2, 4.45, 0.05],
+    [1, 4.5, 0.15],
+    [1, 4.55, 0.8],
+    [5, 4.625, 1.2],
+    [1, 4.68, 0.8],
+    [1, 4.7, 0.4],
+    [2, 4.72, 0]
+  ];
+
+  const points_R_second = [
+    [2, 4.72, 0],
+    [1, 4.75, -1.2],
+    [1, 4.8, -2.6],
+    [1, 4.85, -3.6],
+    [5, 4.95, -4.4],
+    [2, 5.05, -4],
+    [1, 5.1, -3.8],
+    [1, 5.15, -3.6],
+    [1, 5.2, -3.2],
+    [1, 5.3, -3],
+    [2, 5.4, -2.6],
+    [1, 5.45, -2.2],
+    [1, 5.5, -1.2],
+    [1, 5.55, -0.6],
+    [1, 5.6, -0.2],
+    [1, 5.65, -0.1],
+    [2, 5.67, -0.05],
+    [1, 5.7, 0]
+  ];
+
+  const points_R_third = [
+    [1, 5.7, 0],
+    [1, 5.75, 0.15],
+    [1, 5.8, 0.25],
+    [1, 5.85, 0.35],
+    [1, 5.9, 0.44],
+    [1, 6, 0.58],
+    [1, 6.1, 0.77],
+    [1, 6.2, 0.95],
+    [1, 6.3, 1.15],
+    [1, 6.4, 1.34],
+    [2, 6.5, 1.58],
+    [3, 6.63, 1.8],
+    [2, 6.7, 1.75],
+    [1, 6.8, 1.6],
+    [1, 6.9, 1.3],
+    [1, 7, 1],
+    [1, 7.1, 0.6],
+    [1, 7.2, 0.36],
+    [1, 7.3, 0.15],
+    [1, 7.35, 0.1],
+    [2, 7.4, 0.03],
+    [1, 7.45, 0]
+  ];
+
+  const storage = [];
+  const maxVals = [];
+
+  const { x: startX, y: startY } = bPolynomial(T, start);
+  let waveNum = 0;
+  let offsetP = 0;
+  let offsetR = 0;
+
+  for (let i = 0; i < iterations; i++) {
+    const { x: PxRaw, y: Py } = bPolynomial(T, points_P);
+    const { x: R1Raw, y: R1y } = bPolynomial(T, points_R_first);
+    const { x: R2Raw, y: R2y } = bPolynomial(T, points_R_second);
+    const { x: R3Raw, y: R3y } = bPolynomial(T, points_R_third);
+
+    let Px = PxRaw.slice();
+    let R1x = R1Raw.slice();
+    let R2x = R2Raw.slice();
+    let R3x = R3Raw.slice();
+
+    if (i === 0) {
+      const PR_dist = Math.random() * 4 + 1;
+      R1x = R1x.map((v) => v + PR_dist);
+      R2x = R2x.map((v) => v + PR_dist);
+      R3x = R3x.map((v) => v + PR_dist);
+      offsetP = Math.max(...Px) + PP_interval;
+      offsetR = Math.max(...R3x) + RR_interval;
+    } else {
+      Px = Px.map((v) => v + offsetP);
+      R1x = R1x.map((v) => v + offsetR);
+      R2x = R2x.map((v) => v + offsetR);
+      R3x = R3x.map((v) => v + offsetR);
+      offsetP = Math.max(...Px) + PP_interval;
+      offsetR = Math.max(...R3x) + RR_interval;
+    }
+
+    const RWaveX = [...R1x, ...R2x, ...R3x];
+    const RWaveY = [...R1y, ...R2y, ...R3y];
+
+    storage.push({ x: Px, y: Py });
+    maxVals.push({ idx: waveNum, maxX: Math.max(...Px) });
+    waveNum += 1;
+
+    storage.push({ x: RWaveX, y: RWaveY });
+    maxVals.push({ idx: waveNum, maxX: Math.max(...RWaveX) });
+    waveNum += 1;
+  }
+
+  // Sort waves by time
+  const sorted = maxVals
+    .slice()
+    .sort((a, b) => a.maxX - b.maxX)
+    .map((entry) => entry.idx);
+
+  let x = startX.slice();
+  let y = startY.slice();
+  let scalingFactorX = 1;
+
+  for (let i = 0; i < sorted.length; i++) {
+    const idx = sorted[i];
+    const xTemp = storage[idx].x;
+    const yTemp = storage[idx].y;
+
+    if (i === 1) {
+      scalingFactorX = 0.8 / Math.max(...xTemp);
+    }
+
+    if (i === 0) {
+      ({ x, y } = mergeTraces(x, y, xTemp, yTemp));
+      continue;
+    }
+
+    const overlaps = Math.min(...xTemp) < Math.max(...x);
+    if (overlaps) {
+      const previousIdx = sorted[i - 1];
+      const previousY = storage[previousIdx].y;
+      const newIsDominant = Math.max(...yTemp) >= Math.max(...previousY);
+      if (newIsDominant) {
+        const cutoff = storage[previousIdx].x.length;
+        x = x.slice(0, -cutoff);
+        y = y.slice(0, -cutoff);
+        ({ x, y } = mergeTraces(x, y, xTemp, yTemp));
+      }
+    } else {
+      ({ x, y } = mergeTraces(x, y, xTemp, yTemp));
+    }
+  }
+
+  const spanY = Math.max(...y) - Math.min(...y) || 1;
+  const scalingFactorY = (1.0 + (Math.random() * 0.6 - 0.3)) / spanY;
+
+  x = x.map((v) => v * scalingFactorX);
+  y = y.map((v) => v * scalingFactorY);
+
+  return { x, y };
+}
+
+function buildCompleteAvBlockStrip(durationSec) {
+  const iterations = Math.max(3, Math.ceil(durationSec / 1.5));
+  const { x, y } = completeAvBlock(iterations);
+  const spanX = maxArray(x) - minArray(x) || 1;
+  const scaleToDuration = durationSec > 0 ? durationSec / spanX : 1;
+  const scaledX = x.map((v) => v * scaleToDuration);
+  return { x: scaledX, y };
+}
+
+function detectCompleteBlockEvents(x, y) {
+  if (!Array.isArray(x) || !Array.isArray(y) || x.length !== y.length) {
+    return [];
+  }
+
+  const maxAmplitude = Math.max(...y.map((v) => Math.abs(v)), 0);
+  const threshold = maxAmplitude * 0.6;
+  const events = [];
+
+  for (let i = 1; i < y.length - 1; i++) {
+    const peak = y[i];
+    if (
+      peak > threshold &&
+      peak >= y[i - 1] &&
+      peak >= y[i + 1] &&
+      Number.isFinite(x[i])
+    ) {
+      events.push({ time: x[i], type: "sense", beatType: "CompleteHeartBlock" });
+    }
+  }
+
+  return events;
+}
+
+// -----------------------------------------------------------------------------
 // HR → inter-beat gap
 // -----------------------------------------------------------------------------
 
@@ -467,6 +683,12 @@ export function stitchBeatsNew(
     typeof options.durationSec === "number" && options.durationSec > 0
       ? options.durationSec
       : DEFAULT_STRIP_DURATION_SEC;
+
+  if (scenarioWaveform === "brady-escape") {
+    const { x: stripX, y: stripY } = buildCompleteAvBlockStrip(maxDurationSec);
+    const events = detectCompleteBlockEvents(stripX, stripY);
+    return { x: stripX, y: stripY, events };
+  }
 
   // Beat sequence: we dynamically push beat types based on pacing logic.
   let beatList = ["Normal"];
