@@ -670,6 +670,45 @@ function regenerateWaveform() {
     if (waveformDuration > 0) {
         sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
     }
+
+    redrawTraceFromSweepPosition();
+}
+
+function redrawTraceFromSweepPosition() {
+    if (!traceCtx || !waveformPoints.length || waveformDuration <= 0) return;
+
+    const { width, height } = getDisplaySize();
+    if (!width || !height) return;
+
+    const secondsVisible = getSecondsVisible();
+    if (!secondsVisible) return;
+
+    const pixelsPerSecond = width / secondsVisible;
+    const { midY, scaleY } = getWaveformGeometry(height);
+    if (!scaleY) return;
+
+    const windowStartTime = sweepTime - sweepX / pixelsPerSecond;
+    const windowEndTime = windowStartTime + secondsVisible;
+
+    traceCtx.clearRect(0, 0, width, height);
+    traceCtx.beginPath();
+
+    const drawPoint = (x) => {
+        const time = windowStartTime + (x / width) * (windowEndTime - windowStartTime);
+        const value = sampleWaveform(time);
+        const y = valueToY(value, midY, scaleY);
+        if (x === 0) {
+            traceCtx.moveTo(x, y);
+        } else {
+            traceCtx.lineTo(x, y);
+        }
+    };
+
+    for (let x = 0; x <= width; x += 1) {
+        drawPoint(x);
+    }
+
+    traceCtx.stroke();
 }
 
 

@@ -215,26 +215,30 @@ function createHeartRateEngine(displayElement) {
         if (!Number.isFinite(timeSeconds)) return;
 
         const magnitude = Math.abs(value);
+        const threshold = getPeakThreshold();
         state.lastSampleTime = timeSeconds;
 
         if (state.previousMagnitude !== null) {
             const slope = magnitude - state.previousMagnitude;
             const previousSlope = state.previousSlope;
 
+            const separated = (timeSeconds - state.lastPeakTime) >= MIN_PEAK_INTERVAL_SECONDS;
+
             // Detect a local maximum in |value| that crosses the peak threshold
-            if (
+            const isPeakShape =
                 previousSlope !== null &&
                 previousSlope > 0 &&
                 slope <= 0 &&
-                state.previousMagnitude >= getPeakThreshold()
-            ) {
-                const separated =
-                    (timeSeconds - state.lastPeakTime) >= MIN_PEAK_INTERVAL_SECONDS;
+                state.previousMagnitude >= threshold;
 
-                if (separated) {
-                    const peakTime = state.previousSampleTime ?? timeSeconds;
-                    recordPeak(peakTime);
-                }
+            // Also catch fast-rising waves that might skip the exact apex between samples
+            const crossedThreshold =
+                state.previousMagnitude < threshold &&
+                magnitude >= threshold;
+
+            if (separated && (isPeakShape || crossedThreshold)) {
+                const peakTime = state.previousSampleTime ?? timeSeconds;
+                recordPeak(peakTime);
             }
 
             state.previousSlope = slope;
