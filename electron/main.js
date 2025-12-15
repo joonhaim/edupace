@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
 
 function createWindow() {
@@ -36,6 +36,14 @@ function createWindow() {
     }
   });
 
+  mainWindow.on('enter-full-screen', () => {
+    mainWindow.webContents.send('edupace:fullscreen-changed', true);
+  });
+
+  mainWindow.on('leave-full-screen', () => {
+    mainWindow.webContents.send('edupace:fullscreen-changed', false);
+  });
+
   // --------- Web Serial integration for Electron ---------
   const ses = mainWindow.webContents.session;
 
@@ -65,6 +73,13 @@ function createWindow() {
 
 
 app.whenReady().then(() => {
+  ipcMain.handle('edupace:set-fullscreen', (event, enable) => {
+    const targetWindow = BrowserWindow.fromWebContents(event.sender);
+    if (targetWindow) {
+      targetWindow.setFullScreen(Boolean(enable));
+    }
+  });
+
   createWindow();
 
   app.on('activate', () => {

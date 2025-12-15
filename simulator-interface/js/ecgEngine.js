@@ -131,6 +131,7 @@ const overlayElements = {
 
 let calibrationInfoVisible = false;
 let caliperUnit = 'ms';
+let electronFullscreenActive = false;
 
 function applyQrsMuteState(muted) {
     const isMuted = Boolean(muted);
@@ -209,6 +210,7 @@ function initEcgEngine() {
     overlayElements.caliperUnitToggle?.addEventListener('click', toggleCaliperUnit);
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    window.addEventListener('edupace-fullscreen-changed', handleElectronFullscreenChange);
     handleFullscreenChange();
 
     overlayElements.qrsMuteToggle?.addEventListener('click', () => {
@@ -1351,16 +1353,34 @@ function handleFullscreenToggle() {
     const target = overlayElements.frame;
     if (!target) return;
 
+    const requestWindowFullscreen = (enabled) => {
+        if (window.edupace?.setWindowFullscreen) {
+            window.edupace.setWindowFullscreen(enabled);
+        }
+    };
+
     if (document.fullscreenElement === target) {
-        document.exitFullscreen?.();
-    } else {
-        target.requestFullscreen?.();
+        if (document.exitFullscreen) {
+            document.exitFullscreen().catch(() => requestWindowFullscreen(false));
+        } else {
+            requestWindowFullscreen(false);
+        }
+        return;
     }
+
+    if (target.requestFullscreen) {
+        target.requestFullscreen().catch(() => requestWindowFullscreen(true));
+        return;
+    }
+
+    requestWindowFullscreen(true);
 }
 
-function handleFullscreenChange() {
-    const isFullscreen = document.fullscreenElement === overlayElements.frame;
+function getFullscreenState() {
+    return document.fullscreenElement === overlayElements.frame || electronFullscreenActive;
+}
 
+function applyFullscreenState(isFullscreen) {
     overlayElements.frame?.classList.toggle('is-fullscreen', isFullscreen);
     document.body.classList.toggle('ecg-fullscreen-active', isFullscreen);
 
@@ -1376,6 +1396,15 @@ function handleFullscreenChange() {
         syncCanvasSize();
         resetSweep();
     });
+}
+
+function handleFullscreenChange() {
+    applyFullscreenState(getFullscreenState());
+}
+
+function handleElectronFullscreenChange(event) {
+    electronFullscreenActive = Boolean(event.detail?.isFullscreen);
+    applyFullscreenState(getFullscreenState());
 }
 
 
