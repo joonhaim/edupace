@@ -1,7 +1,13 @@
+import { getCurrentLanguage, translateKey } from './languageToggle.js';
+import { localizeScenarioList } from './scenarioLocalization.js';
+
 const scenarioLists = {
     module: document.querySelector('[data-scenario-list="module"]'),
     clinical: document.querySelector('[data-scenario-list="clinical"]')
 };
+
+let baseScenarios = [];
+let localizedScenarios = [];
 
 function hasTargets() {
     return Object.values(scenarioLists).some(Boolean);
@@ -46,7 +52,7 @@ function createScenarioLink(scenario) {
 function createEmptyState(target) {
     const empty = document.createElement('div');
     empty.className = 'scenario-link-empty';
-    empty.textContent = 'No scenarios available yet.';
+    empty.textContent = translateKey('home.scenarios.empty');
     target.appendChild(empty);
 }
 
@@ -89,20 +95,27 @@ async function initHomeScenarios() {
         const response = await fetch('data/scenarios.json', { cache: 'no-store' });
         if (!response.ok) throw new Error(`Failed to load scenarios (${response.status})`);
         const payload = await response.json();
-        const scenarios = Array.isArray(payload) ? payload : payload.scenarios;
-        renderScenarioLists(Array.isArray(scenarios) ? scenarios : []);
+        baseScenarios = Array.isArray(payload) ? payload : payload.scenarios;
+        localizedScenarios = localizeScenarioList(Array.isArray(baseScenarios) ? baseScenarios : [], getCurrentLanguage());
+        renderScenarioLists(localizedScenarios);
     } catch (error) {
         Object.values(scenarioLists).forEach((target) => {
             if (!target) return;
             target.innerHTML = '';
             const warning = document.createElement('div');
             warning.className = 'scenario-link-empty';
-            warning.textContent = 'Unable to load scenarios.';
+            warning.textContent = translateKey('home.scenarios.error');
             target.appendChild(warning);
         });
         // eslint-disable-next-line no-console
         console.error(error);
     }
+
+    document.addEventListener('edupace:language-changed', (event) => {
+        const language = event.detail?.language || getCurrentLanguage();
+        localizedScenarios = localizeScenarioList(baseScenarios, language);
+        renderScenarioLists(localizedScenarios);
+    });
 }
 
 initHomeScenarios();

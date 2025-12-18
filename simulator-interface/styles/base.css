@@ -56,117 +56,6 @@ a {
     min-height: 100vh;
 }
 
-.global-nav {
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 12px 30px rgba(7, 19, 34, 0.06);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    margin-bottom: var(--page-gap);
-}
-
-.global-nav::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 4px;
-    background: var(--accent);
-}
-
-.global-nav-inner {
-    max-width: 1120px;
-    margin: auto;
-    padding: 1.2rem 1rem;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.brand {
-    font-weight: 600;
-    font-size: 1.35rem;
-    letter-spacing: -0.02em;
-    color: var(--deep-navy);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.2rem 0.35rem;
-    border-radius: 12px;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.brand:hover {
-    background: rgba(31, 75, 153, 0.08);
-    color: var(--primary);
-}
-
-.brand-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background-image: url("../assets/logos/edupace.png");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-.brand-name {
-    display: inline-flex;
-    align-items: center;
-}
-
-.nav-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 1.6rem;
-}
-
-.nav-btn {
-    padding: 0.5rem 0.2rem;
-    color: var(--muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    position: relative;
-}
-
-.nav-btn::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -0.55rem;
-    width: 100%;
-    height: 3px;
-    background: var(--accent);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.2s ease;
-}
-
-.nav-btn:hover::after,
-.nav-btn.active::after {
-    transform: scaleX(1);
-}
-
-.nav-btn.active {
-    color: var(--deep-navy);
-}
-
-.nav-actions {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--muted);
-    font-size: 0.9rem;
-}
-
 .icon-button {
     display: inline-flex;
     align-items: center;
@@ -198,9 +87,23 @@ a {
     color: var(--deep-navy);
 }
 
-body.page-home .settings-toggle,
-body.page-instructions .settings-toggle {
-    display: none;
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background-image: url("../assets/logos/edupace.png");
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.brand-name {
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
 }
 
 .sr-only {
@@ -218,7 +121,7 @@ body.page-instructions .settings-toggle {
 
 .screen-stack {
     flex: 1;
-   max-width: 1120px;
+    max-width: 1120px;
     margin: 0 auto var(--page-gap);
     padding: var(--page-gap) 1.2rem calc(var(--page-gap) * 1.1);
     width: 100%;
@@ -255,28 +158,38 @@ h1, h2, h3 {
 .sidebar {
     background: var(--card);
     border-right: 1px solid var(--border);
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    padding: 16px;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 16px;
     position: sticky;
     top: 0;
     align-self: start;
     height: 100vh;
-    overflow: auto;
+    overflow: visible;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
 .sidebar-brand {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 10px 10px;
     border-radius: 12px;
+    font-weight: 800;
+    color: var(--deep-navy);
 }
 
 .sidebar-nav {
     display: grid;
-    gap: 6px;
+    gap: 8px;
+    align-content: start;
 }
 
 .side-item {
@@ -298,17 +211,35 @@ h1, h2, h3 {
 
 .sidebar-footer {
     margin-top: auto;
-    position: sticky;
-    bottom: 0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 252, 0.98));
-    padding-top: 0.5rem;
+    position: relative;
 }
 
-.sidebar-meta {
-    margin-top: 0.75rem;
-    color: var(--muted);
-    font-weight: 600;
-    font-size: 0.9rem;
+.connection-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,249,252,0.98));
+    box-shadow: 0 10px 30px rgba(12, 26, 45, 0.08);
+    display: grid;
+    gap: 12px;
+}
+
+.connection-card--compact {
+    padding: 12px;
+    gap: 10px;
+    background: var(--surface-2);
+    box-shadow: none;
+}
+
+.connection-card--compact .connect-btn {
+    width: 100%;
+}
+
+.connection-chip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .status-pill {
@@ -330,21 +261,17 @@ h1, h2, h3 {
     background: #d36b6b;
 }
 
-.app-main {
-    display: grid;
-    grid-template-rows: 58px 1fr;
-    min-width: 0;
-}
-
 .view-stack {
     position: relative;
-    height: 100vh;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
     overflow: hidden;
     background: var(--app-bg);
 }
 
 .view {
-    height: 100%;
+    min-height: 0;
     overflow-y: auto;
 }
 
@@ -367,6 +294,12 @@ h1, h2, h3 {
     justify-content: space-between;
 }
 
+.global-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
 .toolbar-title {
     display: grid;
     gap: 2px;
@@ -379,7 +312,34 @@ h1, h2, h3 {
 .toolbar-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
+}
+
+.toolbar-actions-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toolbar-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toolbar-search {
+    display: inline-flex;
+    align-items: center;
+}
+
+.toolbar-search[hidden] {
+    display: none !important;
+}
+
+.toolbar-logos img {
+    height: 42px;
+    width: auto;
+    display: block;
 }
 
 .search {

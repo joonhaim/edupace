@@ -28,26 +28,29 @@
 <body class="theme-transition">
   <div class="app-shell app-shell--desktop">
     <aside class="sidebar" aria-label="Primary navigation">
-      <a class="sidebar-brand" href="#" data-view-target="home" aria-label="EduPace home">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <span class="brand-name">EduPace</span>
-      </a>
+      <div class="sidebar-header">
+        <a class="sidebar-brand" href="#" data-view-target="home" aria-label="EduPace home">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-name">EduPace</span>
+        </a>
+      </div>
 
       <nav class="sidebar-nav" aria-label="Sections">
-        <a class="side-item active" href="#" data-view-target="home" aria-current="page">Home</a>
-        <a class="side-item" href="#" data-view-target="training">Training</a>
-        <a class="side-item" href="#" data-view-target="logs">Logs</a>
-        <a class="side-item" href="#" data-view-target="instructions">Instructions</a>
+        <a class="side-item active" href="#" data-view-target="home" aria-current="page" data-i18n-key="nav.home">Home</a>
+        <a class="side-item" href="#" data-view-target="training" data-i18n-key="nav.training">Training</a>
+        <a class="side-item" href="#" data-view-target="logs" data-i18n-key="nav.logs">Logs</a>
+        <a class="side-item" href="#" data-view-target="instructions" data-i18n-key="nav.instructions">Instructions</a>
       </nav>
 
       <div class="sidebar-footer" aria-label="Device connection">
-        <div class="connection-group connection-group--sidebar">
-          <span class="connection-label">Device</span>
-
-          <span id="connectionStatus" class="chip chip-disconnected">
-            <span class="status-dot"></span>
-            <span class="status-text">Disconnected</span>
-          </span>
+        <div class="connection-card connection-card--compact">
+          <div class="connection-chip-row">
+            <span class="connection-label" data-i18n-key="connection.status">Device</span>
+            <span id="connectionStatus" class="chip chip-disconnected">
+              <span class="status-dot"></span>
+              <span class="status-text" data-i18n-key="connection.disconnected">Disconnected</span>
+            </span>
+          </div>
 
           <button
             id="connectBtn"
@@ -55,93 +58,139 @@
             class="btn btn-small connect-btn"
             title="Plug EduPace device via USB and press connect"
           >
-            CONNECT
+            <span data-i18n-key="connection.button">Connect</span>
           </button>
-
-          <div
-            id="devicePopover"
-            class="device-popover"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="devicePopoverTitle"
-            aria-hidden="true"
-          >
-            <div class="device-popover-header">
-              <div>
-                <p class="eyebrow">Serial devices</p>
-                <h3 id="devicePopoverTitle">Choose a device</h3>
-                <p class="device-popover-subtitle">Plug in EduPace and pick a USB serial connection.</p>
-              </div>
-              <button id="devicePopoverClose" class="icon-button" type="button" aria-label="Close device list">
-                ×
-              </button>
-            </div>
-
-            <div id="deviceList" class="device-list" role="list"></div>
-            <div id="deviceListEmpty" class="device-list-empty" role="status" hidden>
-              No serial devices found. Plug in your console and scan again.
-            </div>
-
-            <div class="device-popover-footer">
-              <button id="refreshDevicesBtn" class="btn btn-ghost btn-small" type="button">Refresh list</button>
-              <button id="requestDeviceBtn" class="btn btn-primary btn-small" type="button">Scan &amp; grant access</button>
-            </div>
-
-            <p class="device-popover-hint">Supports Chrome, Edge, or the EduPace desktop app.</p>
-          </div>
-          <div id="devicePopoverOverlay" class="device-popover-overlay" hidden></div>
         </div>
-        <p class="sidebar-meta">© 2025 EduPace - TU Delft</p>
+
+        <div
+          id="devicePopover"
+          class="device-popover"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="devicePopoverTitle"
+          aria-hidden="true"
+        >
+          <div class="device-popover-header">
+            <div>
+              <p class="eyebrow" data-i18n-key="connection.devices">Serial devices</p>
+              <h3 id="devicePopoverTitle" data-i18n-key="connection.choose">Choose a device</h3>
+              <p class="device-popover-subtitle" data-i18n-key="connection.subtitle">
+                Plug in EduPace and pick a USB serial connection.
+              </p>
+            </div>
+            <button id="devicePopoverClose" class="icon-button" type="button" aria-label="Close device list">
+              ×
+            </button>
+          </div>
+
+          <div id="deviceList" class="device-list" role="list"></div>
+          <div id="deviceListEmpty" class="device-list-empty" role="status" hidden>
+            <span data-i18n-key="connection.empty">No serial devices found. Plug in your console and scan again.</span>
+          </div>
+
+          <div class="device-popover-footer">
+            <button id="refreshDevicesBtn" class="btn btn-ghost btn-small" type="button" data-i18n-key="connection.refresh">
+              Refresh list
+            </button>
+            <button id="requestDeviceBtn" class="btn btn-primary btn-small" type="button" data-i18n-key="connection.scan">
+              Scan &amp; grant access
+            </button>
+          </div>
+
+          <p class="device-popover-hint" data-i18n-key="connection.support">
+            Supports Chrome, Edge, or the EduPace desktop app.
+          </p>
+        </div>
+        <div id="devicePopoverOverlay" class="device-popover-overlay" hidden></div>
       </div>
     </aside>
 
     <div class="view-stack">
-      <div class="app-main view view-home is-active" data-view="home">
-      <!-- Toolbar: contextual actions -->
-      <header class="toolbar" aria-label="Toolbar">
+      <header class="toolbar global-toolbar" aria-label="Toolbar">
         <div class="toolbar-title">
-          <strong>Home</strong>
-          <span class="muted">Temporary External Pacemaker Trainer</span>
+          <strong data-global-title>Home</strong>
+          <span class="muted" data-global-subtitle>Temporary External Pacemaker Trainer</span>
         </div>
 
         <div class="toolbar-actions">
-          <label class="sr-only" for="home-scenario-search">Search scenarios</label>
-          <input
-            id="home-scenario-search"
-            class="search"
-            type="search"
-            placeholder="Search scenarios…"
-            autocomplete="off"
-          />
+          <div class="toolbar-search" data-global-search>
+            <label class="sr-only" for="home-scenario-search" data-i18n-key="home.searchLabel">Search scenarios</label>
+            <input
+              id="home-scenario-search"
+              class="search"
+              type="search"
+              placeholder="Search scenarios…"
+              data-i18n-key="home.searchPlaceholder"
+              data-i18n-attr="placeholder"
+              autocomplete="off"
+            />
+          </div>
 
-          <!-- Keep your existing theme/language UX if you want;
-               these are just placeholders that match your icon-button styles -->
-          <button class="icon-button" type="button" aria-label="Theme">
-            <img src="assets/icons/sun.svg" alt="" />
-          </button>
-          <button class="icon-button language-toggle" type="button" aria-label="Language">
-            EN
-          </button>
+          <div class="toolbar-actions-right">
+            <div class="toolbar-logos">
+              <img src="assets/logos/TU_Delft_SVG/logo_black_rgb.svg" alt="TU Delft" />
+            </div>
+
+            <div class="toolbar-controls" aria-label="Global controls">
+              <button
+                type="button"
+                class="icon-button settings-toggle"
+                data-settings-toggle
+                aria-expanded="false"
+                aria-controls="ecgSettingsPanel"
+                aria-label="Open settings"
+              >
+                <img src="assets/icons/settings.svg" data-settings-icon alt="" aria-hidden="true" />
+                <span class="sr-only" data-i18n-key="controls.settings">Open settings</span>
+              </button>
+              <button
+                type="button"
+                class="icon-button theme-toggle"
+                data-theme-toggle
+                aria-pressed="true"
+                aria-label="Switch to dark mode"
+              >
+                <img src="assets/icons/theme-light.svg" data-theme-icon alt="" aria-hidden="true" />
+                <span class="sr-only" data-i18n-key="controls.theme">Toggle theme</span>
+              </button>
+              <button
+                type="button"
+                class="icon-button language-toggle"
+                data-language-toggle
+                aria-pressed="false"
+                aria-label="Switch language"
+              >
+                <span data-language-label aria-hidden="true">EN</span>
+                <span class="sr-only" data-i18n-key="controls.language">Toggle language</span>
+              </button>
+            </div>
+          </div>
         </div>
       </header>
+
+      <div class="app-main view view-home is-active" data-view="home" data-title-key="home.title" data-subtitle-key="home.subtitle" data-show-search="true">
 
       <!-- Workspace -->
       <main class="workspace" aria-label="Home workspace">
         <section class="dash-grid" aria-label="Dashboard">
           <!-- Quick start panel -->
           <article class="panel panel-primary" aria-label="Quick start">
-            <p class="eyebrow">Quick start</p>
-            <h1 class="dash-title">Start training</h1>
-            <p class="muted">
+            <p class="eyebrow" data-i18n-key="home.quickStart.label">Quick start</p>
+            <h1 class="dash-title" data-i18n-key="home.quickStart.title">Start training</h1>
+            <p class="muted" data-i18n-key="home.quickStart.body">
               Open the training workspace and load a scenario.
             </p>
 
             <div class="dash-actions">
-              <a class="btn btn-primary" href="#training" data-view-target="training">Open training</a>
-              <a class="btn btn-ghost" href="#instructions" data-view-target="instructions">Instructions</a>
+              <a class="btn btn-primary" href="#training" data-view-target="training" data-i18n-key="home.quickStart.open">
+                Open training
+              </a>
+              <a class="btn btn-ghost" href="#instructions" data-view-target="instructions" data-i18n-key="home.quickStart.instructions">
+                Instructions
+              </a>
             </div>
 
-            <p class="landing-meta muted" style="margin-top: 0.9rem;">
+            <p class="landing-meta muted" style="margin-top: 0.9rem;" data-i18n-key="home.quickStart.meta">
               Designed for CCU / ER nurse training
             </p>
           </article>
@@ -150,14 +199,13 @@
           <article class="panel" aria-label="Scenario browser">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">Scenarios</p>
-                <h2 style="margin-bottom: 0;">Browse</h2>
+                <p class="eyebrow" data-i18n-key="home.scenarios.label">Scenarios</p>
+                <h2 style="margin-bottom: 0;" data-i18n-key="home.scenarios.title">Browse</h2>
               </div>
 
-              <!-- Optional: you can wire these to toggle visibility between the two lists -->
               <div class="segmented" role="tablist" aria-label="Scenario category">
-                <button class="seg" type="button" data-scenario-category="module" aria-selected="false">Module</button>
-                <button class="seg active" type="button" data-scenario-category="clinical" aria-selected="true">Clinical</button>
+                <button class="seg" type="button" data-scenario-category="module" aria-selected="false" data-i18n-key="home.scenarios.module">Module</button>
+                <button class="seg active" type="button" data-scenario-category="clinical" aria-selected="true" data-i18n-key="home.scenarios.clinical">Clinical</button>
               </div>
             </div>
 
@@ -165,7 +213,7 @@
             <div class="scenario-list" data-scenario-list="module" hidden></div>
             <div class="scenario-list" data-scenario-list="clinical"></div>
 
-            <p class="muted" style="margin-top: 0.9rem;">
+            <p class="muted" style="margin-top: 0.9rem;" data-i18n-key="home.scenarios.hint">
               Selecting a scenario opens the training workspace with that case loaded.
             </p>
           </article>
@@ -173,37 +221,41 @@
           <!-- Recent panel -->
           <article class="panel" aria-label="Recent">
             <div class="panel-header">
-              <h2 style="margin-bottom: 0;">Recent</h2>
+              <h2 style="margin-bottom: 0;" data-i18n-key="home.recent.title">Recent</h2>
             </div>
             <div class="recent-list">
-              <div class="empty muted">No recent sessions yet.</div>
+              <div class="empty muted" data-i18n-key="home.recent.empty">No recent sessions yet.</div>
             </div>
           </article>
         </section>
       </main>
 
-      <!-- Optional: keep footer partial if you still want it;
-           many “apps” don’t show a footer on the home screen -->
-      <div data-partial="footer"></div>
       </div>
-      <div class="app-main app-main--stacked view view-training" data-view="training" hidden>
+      <div
+        class="app-main app-main--stacked view view-training"
+        data-view="training"
+        data-title-key="nav.training"
+        data-subtitle-key="training.header.title"
+        data-show-search="false"
+        hidden
+      >
         <main class="screen-stack">
             <section aria-label="Training">
                 <div class="sim-shell">
                         <div class="sim-header">
                             <div>
-                                <p class="eyebrow">Hands-on practice</p>
-                                <h2>Training workspace</h2>
+                                <p class="eyebrow" data-i18n-key="training.header.tag">Hands-on practice</p>
+                                <h2 data-i18n-key="training.header.title">Training workspace</h2>
                             </div>
 
                         </div>
 
                     <div class="scenario-banner" id="scenario-section" role="region" aria-label="Scenario selection">
                         <div class="scenario-banner-text" data-scenario-picker-area>
-                            <span class="scenario-pill">Scenario</span>
+                            <span class="scenario-pill" data-i18n-key="training.scenario.pill">Scenario</span>
                             <div class="scenario-title-row">
                                 <button id="scenarioPicker" class="scenario-name scenario-picker" type="button" aria-haspopup="listbox" aria-expanded="false">
-                                    <span id="scenarioPickerLabel">No scenario active</span>
+                                    <span id="scenarioPickerLabel" data-i18n-key="training.scenario.empty">No scenario active</span>
                                     <span class="chevron" aria-hidden="true">▾</span>
                                 </button>
                                 <button id="scenarioNextBtn" class="scenario-cycle" type="button" aria-label="Load next scenario" title="Next scenario">
@@ -218,7 +270,7 @@
                                 </button>
                             </div>
                             <div id="scenarioMenu" class="scenario-menu" role="listbox" aria-label="Available scenarios"></div>
-                            <p id="scenarioText" class="scenario-text">
+                            <p id="scenarioText" class="scenario-text" data-i18n-key="training.scenario.hint">
                                 Pick a module or clinical case to begin training.
                             </p>
                         </div>
@@ -226,16 +278,16 @@
                             <div class="session-cta-row">
                                 <button id="startSessionBtn" class="btn btn-primary session-chip" type="button" disabled>
                                     <span class="btn-icon" aria-hidden="true">▶</span>
-                                    <span class="btn-label">Start</span>
+                                    <span class="btn-label" data-i18n-key="training.scenario.start">Start</span>
                                 </button>
                                 <button id="endSessionBtn" class="btn btn-ghost session-chip session-end" type="button" disabled>
                                     <span class="btn-icon" aria-hidden="true">■</span>
-                                    <span class="btn-label">End</span>
+                                    <span class="btn-label" data-i18n-key="training.scenario.end">End</span>
                                 </button>
                             </div>
                             <div class="session-meta">
                                 <p id="sessionStatusText" class="session-status" aria-live="polite">
-                                    <span id="sessionStatusLabel">Select a module or clinical case to begin.</span>
+                                    <span id="sessionStatusLabel" data-i18n-key="training.scenario.status">Select a module or clinical case to begin.</span>
                                     <span id="sessionTimerDisplay" class="session-timer-inline"></span>
                                 </p>
                             </div>
@@ -247,7 +299,7 @@
                         <!-- Left: ECG + vitals -->
                         <section class="graph-column" aria-label="Telemetry">
                             <div id="alarmBanner" class="alarm-banner alarm-normal">
-                                <span id="alarmText">No active alarms</span>
+                                <span id="alarmText" data-i18n-key="training.telemetry.noAlarms">No active alarms</span>
                             </div>
 
                             <div class="ecg-frame">
@@ -268,7 +320,7 @@
                                         </div>
                                     </div>
                                     <div class="calibration-inline" aria-live="polite" hidden>
-                                        <span class="calibration-label">Calibration</span>
+                                        <span class="calibration-label" data-i18n-key="training.telemetry.calibration">Calibration</span>
                                         <span class="calibration-value">10 mm/mV · 25 mm/s · 6 s window</span>
                                     </div>
                                     <button
@@ -277,7 +329,7 @@
                                         aria-label="Show calipers in milliseconds"
                                         title="Show calipers in milliseconds"
                                     >
-                                        ms
+                                        <span data-i18n-key="training.telemetry.ms">ms</span>
                                     </button>
                                     <div class="ecg-overlay-actions">
                                         <button
@@ -357,11 +409,11 @@
                                 </div>
                                 <div class="learning-details">
                                     <div class="learning-item">
-                                        <p class="learning-label">Current Objective</p>
+                                        <p class="learning-label" data-i18n-key="training.learning.objective">Current Objective</p>
                                         <p id="objectiveTextSecondary" class="learning-body">–</p>
                                     </div>
                                     <div class="learning-item">
-                                        <p class="learning-label">Feedback</p>
+                                        <p class="learning-label" data-i18n-key="training.learning.feedback">Feedback</p>
                                         <p id="feedbackTextSecondary" class="learning-body">–</p>
                                     </div>
                                 </div>
@@ -1103,39 +1155,45 @@
             </section>
         </main>
 
-        <div data-partial="footer"></div>
       </div>
-      <div class="app-main app-main--stacked view view-logs" data-view="logs" hidden>
+      <div
+        class="app-main app-main--stacked view view-logs"
+        data-view="logs"
+        data-title-key="nav.logs"
+        data-subtitle-key="logs.header.title"
+        data-show-search="false"
+        hidden
+      >
         <main class="screen-stack">
             <section aria-label="Session logs">
                 <div class="logs-shell">
                     <div class="logs-header">
                         <div>
-                            <p class="eyebrow">Recorded sessions</p>
-                            <h1>Session logs</h1>
+                            <p class="eyebrow" data-i18n-key="logs.header.label">Recorded sessions</p>
+                            <h1 data-i18n-key="logs.header.title">Session logs</h1>
                         </div>
                         <div class="logs-header-actions">
-                            <p>Download completed runs as JSON or CSV.</p>
+                            <p data-i18n-key="logs.header.copy">Download completed runs as JSON or CSV.</p>
                         </div>
                     </div>
 
                     <div class="logs-toolbar" aria-label="Log filters">
                         <label class="logs-filter">
-                            <span class="filter-label">Search</span>
-                            <input id="logSearch" type="search" placeholder="Scenario, operator, notes" />
+                            <span class="filter-label" data-i18n-key="logs.filters.search">Search</span>
+                            <input id="logSearch" type="search" placeholder="Scenario, operator, notes" data-i18n-key="logs.filters.searchPlaceholder" data-i18n-attr="placeholder" />
                         </label>
                         <label class="logs-filter">
-                            <span class="filter-label">Sort by</span>
+                            <span class="filter-label" data-i18n-key="logs.filters.sort">Sort by</span>
                             <select id="logSort">
-                                <option value="newest">Newest first</option>
-                                <option value="oldest">Oldest first</option>
-                                <option value="duration">Longest duration</option>
-                                <option value="events">Most events</option>
+                                <option value="newest" data-i18n-key="logs.filters.newest">Newest first</option>
+                                <option value="oldest" data-i18n-key="logs.filters.oldest">Oldest first</option>
+                                <option value="duration" data-i18n-key="logs.filters.duration">Longest duration</option>
+                                <option value="events" data-i18n-key="logs.filters.events">Most events</option>
                             </select>
                         </label>
                     </div>
 
-                    <div id="logsEmpty" class="log-empty" role="status">
+                    <div id="logsEmpty" class="log-empty" role="status" data-i18n-key="logs.empty">
                         No sessions have been logged yet. Complete a run to see it here.
                     </div>
 
@@ -1147,43 +1205,49 @@
             </section>
         </main>
 
-        <div data-partial="footer"></div>
       </div>
-      <div class="app-main app-main--stacked view view-instructions" data-view="instructions" hidden>
+      <div
+        class="app-main app-main--stacked view view-instructions"
+        data-view="instructions"
+        data-title-key="nav.instructions"
+        data-subtitle-key="instructions.title"
+        data-show-search="false"
+        hidden
+      >
         <main class="screen-stack">
             <section aria-label="Instructions">
                 <div class="instructions-shell">
                     <div>
-                        <p class="eyebrow">Quick start</p>
-                        <h2>Run a pacing session in four steps</h2>
+                        <p class="eyebrow" data-i18n-key="instructions.label">Quick start</p>
+                        <h2 data-i18n-key="instructions.title">Run a pacing session in four steps</h2>
                     </div>
 
                     <ol class="instruction-list">
                         <li>
-                            <h3>Connect the device</h3>
-                            <p>
+                            <h3 data-i18n-key="instructions.steps.connect.title">Connect the device</h3>
+                            <p data-i18n-key="instructions.steps.connect.body">
                                 Plug in the EduPace console via USB. Open the Training page and
                                 allow the browser to access the serial device by pressing on the "CONNECT" button.
                             </p>
                         </li>
                         <li>
-                            <h3>Choose input mode</h3>
-                            <p>
+                            <h3 data-i18n-key="instructions.steps.input.title">Choose input mode</h3>
+                            <p data-i18n-key="instructions.steps.input.body">
                                 Select <strong>Hardware</strong> if the Arduino console is available. It is recommended to use Google Chrome or Edge.
                                 Otherwise switch to the <strong>Virtual controller</strong> for
                                 keyboard / mouse practice.
                             </p>
                         </li>
                         <li>
-                            <h3>Select a scenario</h3>
-                            <p>
+                            <h3 data-i18n-key="instructions.steps.scenario.title">Select a scenario</h3>
+                            <p data-i18n-key="instructions.steps.scenario.body">
                                 Pick a training case from the scenario dropdown (e.g. symptomatic
                                 bradycardia, undersensing, oversensing) and read the summary banner.
                             </p>
                         </li>
                         <li>
-                            <h3>Adjust pacing parameters</h3>
-                            <p>
+                            <h3 data-i18n-key="instructions.steps.parameters.title">Adjust pacing parameters</h3>
+                            <p data-i18n-key="instructions.steps.parameters.body">
                                 Use the knobs (or virtual sliders) to set Rate, Output and Sensitivity.
                                 Watch the ECG, PACE/SENSE LEDs and HR tile to confirm capture and
                                 appropriate sensing.
@@ -1198,10 +1262,9 @@
             </section>
         </main>
 
-        <div data-partial="footer"></div>
-      </div>
     </div>
   </div>
+</div>
 
   <script type="module" src="js/homeScenarios.js"></script>
   <script type="module" src="js/main.js" defer></script>
