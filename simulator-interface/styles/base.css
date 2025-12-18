@@ -243,10 +243,12 @@ h1, h2, h3 {
 
 /* ---------- App layout (Home / dashboard) ---------- */
 
+
 .app-shell--desktop {
     min-height: 100vh;
+    min-width: 1180px;
     display: grid;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 280px 1fr;
     overflow: hidden;
 }
 
@@ -257,6 +259,11 @@ h1, h2, h3 {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow: auto;
 }
 
 .sidebar-brand {
@@ -291,6 +298,17 @@ h1, h2, h3 {
 
 .sidebar-footer {
     margin-top: auto;
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 252, 0.98));
+    padding-top: 0.5rem;
+}
+
+.sidebar-meta {
+    margin-top: 0.75rem;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 .status-pill {
@@ -316,6 +334,22 @@ h1, h2, h3 {
     display: grid;
     grid-template-rows: 58px 1fr;
     min-width: 0;
+}
+
+.view-stack {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--app-bg);
+}
+
+.view {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.view:not(.is-active) {
+    display: none;
 }
 
 .app-main--stacked {

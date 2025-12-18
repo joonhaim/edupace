@@ -18,30 +18,26 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-  <!-- Keep your existing CSS bundle -->
   <link rel="stylesheet" href="styles/main.css" />
-
-  <!-- Keep existing layout/nav scripts (no breaking changes) -->
   <script src="js/layout.js" defer></script>
   <script type="module" src="js/deviceInit.js"></script>
   <script type="module" src="js/navInit.js"></script>
+  <script type="module" src="js/viewRouter.js" defer></script>
 </head>
 
-<body class="page-home theme-transition">
-  <!-- App-like shell -->
+<body class="theme-transition">
   <div class="app-shell app-shell--desktop">
-    <!-- Sidebar: app navigation -->
     <aside class="sidebar" aria-label="Primary navigation">
-      <a class="sidebar-brand" href="index.html" aria-label="EduPace home">
+      <a class="sidebar-brand" href="#" data-view-target="home" aria-label="EduPace home">
         <span class="brand-mark" aria-hidden="true"></span>
         <span class="brand-name">EduPace</span>
       </a>
 
       <nav class="sidebar-nav" aria-label="Sections">
-        <a class="side-item active" href="index.html" aria-current="page">Home</a>
-        <a class="side-item" href="training.html">Training</a>
-        <a class="side-item" href="logs.html">Logs</a>
-        <a class="side-item" href="instructions.html">Instructions</a>
+        <a class="side-item active" href="#" data-view-target="home" aria-current="page">Home</a>
+        <a class="side-item" href="#" data-view-target="training">Training</a>
+        <a class="side-item" href="#" data-view-target="logs">Logs</a>
+        <a class="side-item" href="#" data-view-target="instructions">Instructions</a>
       </nav>
 
       <div class="sidebar-footer" aria-label="Device connection">
@@ -95,11 +91,12 @@
           </div>
           <div id="devicePopoverOverlay" class="device-popover-overlay" hidden></div>
         </div>
+        <p class="sidebar-meta">© 2025 EduPace - TU Delft</p>
       </div>
     </aside>
 
-    <!-- Main area -->
-    <div class="app-main">
+    <div class="view-stack">
+      <div class="app-main view view-home is-active" data-view="home">
       <!-- Toolbar: contextual actions -->
       <header class="toolbar" aria-label="Toolbar">
         <div class="toolbar-title">
@@ -140,8 +137,8 @@
             </p>
 
             <div class="dash-actions">
-              <a class="btn btn-primary" href="training.html">Open training</a>
-              <a class="btn btn-ghost" href="instructions.html">Instructions</a>
+              <a class="btn btn-primary" href="#training" data-view-target="training">Open training</a>
+              <a class="btn btn-ghost" href="#instructions" data-view-target="instructions">Instructions</a>
             </div>
 
             <p class="landing-meta muted" style="margin-top: 0.9rem;">
@@ -159,14 +156,14 @@
 
               <!-- Optional: you can wire these to toggle visibility between the two lists -->
               <div class="segmented" role="tablist" aria-label="Scenario category">
-                <button class="seg active" type="button" aria-selected="true">Module</button>
-                <button class="seg" type="button" aria-selected="false">Clinical</button>
+                <button class="seg" type="button" data-scenario-category="module" aria-selected="false">Module</button>
+                <button class="seg active" type="button" data-scenario-category="clinical" aria-selected="true">Clinical</button>
               </div>
             </div>
 
             <!-- Keep your existing injection targets so homeScenarios.js still works -->
-            <div class="scenario-list" data-scenario-list="module"></div>
-            <div class="scenario-list" data-scenario-list="clinical" hidden></div>
+            <div class="scenario-list" data-scenario-list="module" hidden></div>
+            <div class="scenario-list" data-scenario-list="clinical"></div>
 
             <p class="muted" style="margin-top: 0.9rem;">
               Selecting a scenario opens the training workspace with that case loaded.
@@ -188,9 +185,1026 @@
       <!-- Optional: keep footer partial if you still want it;
            many “apps” don’t show a footer on the home screen -->
       <div data-partial="footer"></div>
+      </div>
+      <div class="app-main app-main--stacked view view-training" data-view="training" hidden>
+        <main class="screen-stack">
+            <section aria-label="Training">
+                <div class="sim-shell">
+                        <div class="sim-header">
+                            <div>
+                                <p class="eyebrow">Hands-on practice</p>
+                                <h2>Training workspace</h2>
+                            </div>
+
+                        </div>
+
+                    <div class="scenario-banner" id="scenario-section" role="region" aria-label="Scenario selection">
+                        <div class="scenario-banner-text" data-scenario-picker-area>
+                            <span class="scenario-pill">Scenario</span>
+                            <div class="scenario-title-row">
+                                <button id="scenarioPicker" class="scenario-name scenario-picker" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                    <span id="scenarioPickerLabel">No scenario active</span>
+                                    <span class="chevron" aria-hidden="true">▾</span>
+                                </button>
+                                <button id="scenarioNextBtn" class="scenario-cycle" type="button" aria-label="Load next scenario" title="Next scenario">
+                                    <span class="scenario-cycle-icon" aria-hidden="true">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+     stroke-linejoin="round">
+  <path d="M5 12h14" />
+  <path d="M13 6l6 6-6 6" />
+</svg>
+</span>
+                                </button>
+                            </div>
+                            <div id="scenarioMenu" class="scenario-menu" role="listbox" aria-label="Available scenarios"></div>
+                            <p id="scenarioText" class="scenario-text">
+                                Pick a module or clinical case to begin training.
+                            </p>
+                        </div>
+                        <div class="session-actions" aria-label="Session controls">
+                            <div class="session-cta-row">
+                                <button id="startSessionBtn" class="btn btn-primary session-chip" type="button" disabled>
+                                    <span class="btn-icon" aria-hidden="true">▶</span>
+                                    <span class="btn-label">Start</span>
+                                </button>
+                                <button id="endSessionBtn" class="btn btn-ghost session-chip session-end" type="button" disabled>
+                                    <span class="btn-icon" aria-hidden="true">■</span>
+                                    <span class="btn-label">End</span>
+                                </button>
+                            </div>
+                            <div class="session-meta">
+                                <p id="sessionStatusText" class="session-status" aria-live="polite">
+                                    <span id="sessionStatusLabel">Select a module or clinical case to begin.</span>
+                                    <span id="sessionTimerDisplay" class="session-timer-inline"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="sim-main">
+                        <!-- Left: ECG + vitals -->
+                        <section class="graph-column" aria-label="Telemetry">
+                            <div id="alarmBanner" class="alarm-banner alarm-normal">
+                                <span id="alarmText">No active alarms</span>
+                            </div>
+
+                            <div class="ecg-frame">
+                                <canvas id="ecgCanvas" width="1200" height="550"></canvas>
+                                <div class="ecg-overlay">
+                                    <div class="ecg-overlay-top">
+                                        <div class="ecg-label" aria-live="polite">II</div>
+                                        <div class="ecg-vitals">
+                                            <div class="vital-block">
+                                                <span class="vital-label">HR</span>
+                                                <span id="hrValue" class="vital-value hr-value">--</span>
+                                                <span class="vital-unit">bpm</span>
+                                            </div>
+                                            <div class="vital-block pace-block" aria-hidden="true">
+                                                <span class="vital-label">PACE</span>
+                                                <span id="paceMode" class="vital-value pace-value small">--</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="calibration-inline" aria-live="polite" hidden>
+                                        <span class="calibration-label">Calibration</span>
+                                        <span class="calibration-value">10 mm/mV · 25 mm/s · 6 s window</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="caliper-unit-toggle"
+                                        aria-label="Show calipers in milliseconds"
+                                        title="Show calipers in milliseconds"
+                                    >
+                                        ms
+                                    </button>
+                                    <div class="ecg-overlay-actions">
+                                        <button
+                                            type="button"
+                                            class="overlay-action calibration-toggle"
+                                            aria-label="Show calibration details"
+                                            title="Show calibration details"
+                                        >
+                                            ⓘ
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="overlay-action ecg-audio-toggle"
+                                            aria-label="Mute QRS beep"
+                                            aria-pressed="false"
+                                            title="Mute QRS beep"
+                                        >
+                                            <span class="sound-icon sound-icon-on" aria-hidden="true" data-sound-icon="on">
+                                                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                                                    <path
+                                                        d="M4 9v6h3.4L13 19.5V4.5L7.4 9z"
+                                                        fill="currentColor"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.2"
+                                                        stroke-linejoin="round"
+                                                    />
+                                                    <path
+                                                        d="M15.5 9.5c1 1 1 4 0 5"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.5"
+                                                        stroke-linecap="round"
+                                                    />
+                                                    <path
+                                                        d="M18 7.5c1.6 1.6 1.6 7.4 0 9"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.5"
+                                                        stroke-linecap="round"
+                                                    />
+                                                </svg>
+                                            </span>
+                                            <span class="sound-icon sound-icon-off" aria-hidden="true" data-sound-icon="off">
+                                                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                                                    <path
+                                                        d="M4 9v6h3.4L13 19.5V4.5L7.4 9z"
+                                                        fill="currentColor"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.2"
+                                                        stroke-linejoin="round"
+                                                    />
+                                                    <path
+                                                        d="M16 8l4 8M20 8l-4 8"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.6"
+                                                        stroke-linecap="round"
+                                                    />
+                                                </svg>
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="overlay-action fullscreen-toggle"
+                                            aria-label="Enter full screen"
+                                            title="Enter full screen"
+                                        >
+                                            ⛶
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card performance-card calibration-performance">
+                                <div class="card-heading compact">
+<!--                                    <p class="eyebrow">Learning</p>-->
+                                </div>
+                                <div class="learning-details">
+                                    <div class="learning-item">
+                                        <p class="learning-label">Current Objective</p>
+                                        <p id="objectiveTextSecondary" class="learning-body">–</p>
+                                    </div>
+                                    <div class="learning-item">
+                                        <p class="learning-label">Feedback</p>
+                                        <p id="feedbackTextSecondary" class="learning-body">–</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Right: controls -->
+                        <aside class="control-column" aria-label="Controls">
+                            <div class="card parameters-card">
+                                <div class="card-heading compact">
+                                    <p class="eyebrow">Pacemaker</p>
+                                    <h3 class="card-title" id="pacemakerTitle">Parameters</h3>
+                                </div>
+
+                                <div class="led-row">
+                                    <div class="led-group">
+                                        <div class="led led-pace" id="paceLed"></div>
+                                        <span>PACE</span>
+                                    </div>
+                                    <div class="led-group">
+                                        <div class="led led-sense" id="senseLed"></div>
+                                        <span>SENSE</span>
+                                    </div>
+
+                                </div>
+
+                                <div class="param-grid">
+                                    <div class="param-tile">
+                                        <div class="param-meta">
+                                            <div class="param-label">Rate</div>
+                                            <div class="param-value">
+                                                <span id="rateValue">--</span>
+                                                <span class="param-unit">ppm</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="rate"
+                                            data-min="30"
+                                            data-max="120"
+                                            data-step="1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease rate">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase rate">→</button>
+                                        </div>
+                                    </div>
+                                    <div class="param-tile">
+                                        <div class="param-meta">
+                                            <div class="param-label">Output</div>
+                                            <div class="param-value">
+                                                <span id="outputValue">--</span>
+                                                <span class="param-unit">mA</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="output"
+                                            data-min="0"
+                                            data-max="10"
+                                            data-step="0.1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease output">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase output">→</button>
+                                        </div>
+                                    </div>
+                                    <div class="param-tile">
+                                        <div class="param-meta">
+                                            <div class="param-label">Sensitivity</div>
+                                            <div class="param-value">
+                                                <span id="sensValue">--</span>
+                                                <span class="param-unit">mV</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="sensitivity"
+                                            data-min="0"
+                                            data-max="10"
+                                            data-step="0.1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease sensitivity">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase sensitivity">→</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="virtual-actions" aria-label="Power and lock controls" aria-hidden="true">
+                                    <button
+                                        type="button"
+                                        class="virtual-action-btn"
+                                        data-virtual-action="power"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="action-label">Power</span>
+                                        <span class="action-state" data-action-state>Off</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="virtual-action-btn"
+                                        data-virtual-action="lock"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="action-label">Lock</span>
+                                        <span class="action-state" data-action-state>Unlocked</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="card control-stack">
+                            <div class="card-heading inline control-heading">
+                                <div>
+                                    <p class="eyebrow">Control</p>
+                                    <h3 class="card-title">Input source</h3>
+                                </div>
+                                <div class="mode-toggle is-compact" role="radiogroup" aria-label="Input source">
+                                    <label class="mode-pill">
+                                        <input type="radio" name="inputMode" value="hardware" checked>
+                                        <span>Hardware</span>
+                                    </label>
+                                    <label class="mode-pill">
+                                        <input type="radio" name="inputMode" value="virtual">
+                                        <span>Virtual</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <p class="muted control-caption">
+                                Choose whether the simulator follows the physical EduPace device or on-screen controls.
+                            </p>
+                        </div>
+
+
+                            <div class="settings-launch">
+                                <button
+                                    type="button"
+                                    class="btn btn-ghost settings-toggle"
+                                    data-settings-toggle
+                                    aria-expanded="false"
+                                    aria-controls="ecgSettingsPanel"
+                                >
+                                    <span class="settings-toggle-icon" aria-hidden="true">⚙️</span>
+                                    <span>Settings</span>
+                                </button>
+                            </div>
+
+                            <div class="settings-layer is-hidden" data-settings-layer>
+                                <div
+                                    class="card settings-card settings-window"
+                                    data-settings-panel
+                                    id="ecgSettingsPanel"
+                                    role="dialog"
+                                    aria-modal="true"
+                                    aria-labelledby="settingsTitle"
+                                >
+                                    <div class="card-heading settings-window-header">
+                                        <div>
+                                            <p class="eyebrow">Settings</p>
+                                            <h3 id="settingsTitle">Settings</h3>
+                                        </div>
+                                        <div class="settings-window-actions">
+                                            <button
+                                                type="button"
+                                                class="btn btn-ghost"
+                                                data-settings-reset
+                                            >
+                                                Reset to defaults
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-tabs" role="tablist">
+                                        <button
+                                            type="button"
+                                            class="settings-tab is-active"
+                                            data-settings-tab="ecg"
+                                            aria-controls="ecgSettings"
+                                            aria-selected="true"
+                                        >
+                                            ECG
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="settings-tab"
+                                            data-settings-tab="sound"
+                                            aria-controls="soundSettings"
+                                            aria-selected="false"
+                                        >
+                                            Sound
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="settings-tab"
+                                            data-settings-tab="simulation"
+                                            aria-controls="simulationSettings"
+                                            aria-selected="false"
+                                        >
+                                            Simulation
+                                        </button>
+                                    </div>
+
+                                    <div class="settings-scroll">
+                                        <div class="settings-body">
+                                            <div class="settings-panel" id="ecgSettings" data-settings-panel-target="ecg">
+                                                <div class="settings-section">
+                                                    <div class="section-label">Layout</div>
+                                                    <div class="settings-grid">
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Sweep speed</div>
+                                                                <p class="setting-hint">Millimeters per second.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep speed">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="sweepSpeed" value="12.5">
+                                                                    <span>12.5 mm/s</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="sweepSpeed" value="25" checked>
+                                                                    <span>25 mm/s</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="sweepSpeed" value="50">
+                                                                    <span>50 mm/s</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Sweep window</div>
+                                                                <p class="setting-hint">Visible seconds on screen.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep window">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="sweepWindow" value="4">
+                                                                    <span>4 s</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="sweepWindow" value="6" checked>
+                                                                    <span>6 s</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="sweepWindow" value="10">
+                                                                    <span>10 s</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Amplitude</div>
+                                                                <p class="setting-hint">Millimeters per mV.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="Amplitude scaling">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="amplitudeScaling" value="5">
+                                                                    <span>5 mm/mV</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="amplitudeScaling" value="10" checked>
+                                                                    <span>10 mm/mV</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="amplitudeScaling" value="20">
+                                                                    <span>20 mm/mV</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="settings-section">
+                                                    <div class="section-label">Appearance</div>
+                                                    <div class="settings-grid">
+                                                        <div class="setting-row full-span">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Trace look</div>
+                                                                <p class="setting-hint">Color and stroke weight.</p>
+                                                            </div>
+                                                            <div class="setting-controls setting-controls-stacked">
+                                                                <div class="color-options" role="radiogroup" aria-label="Trace color">
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="traceColor" value="green" checked>
+                                                                        <span class="color-swatch" style="--swatch-color: #00e000"></span>
+                                                                        <span class="sr-only">Green</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="traceColor" value="blue">
+                                                                        <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
+                                                                        <span class="sr-only">Blue</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="traceColor" value="amber">
+                                                                        <span class="color-swatch" style="--swatch-color: #f59e0b"></span>
+                                                                        <span class="sr-only">Amber</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="traceColor" value="white">
+                                                                        <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
+                                                                        <span class="sr-only">White</span>
+                                                                    </label>
+                                                                </div>
+                                                                <div class="pill-group" role="radiogroup" aria-label="Trace thickness">
+                                                                    <label class="pill-option">
+                                                                        <input type="radio" name="traceThickness" value="thin">
+                                                                        <span>Thin</span>
+                                                                    </label>
+                                                                    <label class="pill-option">
+                                                                        <input type="radio" name="traceThickness" value="normal" checked>
+                                                                        <span>Normal</span>
+                                                                    </label>
+                                                                    <label class="pill-option">
+                                                                        <input type="radio" name="traceThickness" value="thick">
+                                                                        <span>Thick</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Gridlines</div>
+                                                                <p class="setting-hint">Toggle ECG grid overlay.</p>
+                                                            </div>
+                                                            <label class="switch">
+                                                                <input type="checkbox" id="gridlinesToggle">
+                                                                <span class="switch-track"></span>
+                                                            </label>
+                                                        </div>
+
+                                                        <div class="setting-row" data-setting-row="gridDensity">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Grid density</div>
+                                                                <p class="setting-hint">1 mm or 2 mm boxes.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="Grid density">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="gridDensity" value="1mm">
+                                                                    <span>1 mm</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="gridDensity" value="2mm" checked>
+                                                                    <span>2 mm</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row full-span" data-setting-row="gridIntensity">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Grid intensity</div>
+                                                                <p class="setting-hint">Adjust line brightness.</p>
+                                                            </div>
+                                                            <div class="slider-row">
+                                                                <input type="range" id="gridIntensity" min="0" max="100" value="55">
+                                                                <span class="slider-value" data-slider-value="gridIntensity">55%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="settings-section">
+                                                    <div class="section-label">Annotations</div>
+                                                    <div class="settings-grid">
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">HR display</div>
+                                                                <p class="setting-hint">Show heart rate overlay.</p>
+                                                            </div>
+                                                            <div class="setting-controls">
+                                                                <label class="switch">
+                                                                    <input type="checkbox" id="hrDisplayToggle" checked>
+                                                                    <span class="switch-track"></span>
+                                                                </label>
+                                                                <div class="color-options" role="radiogroup" aria-label="Heart rate color">
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="hrColor" value="green">
+                                                                        <span class="color-swatch" style="--swatch-color: #00e000"></span>
+                                                                        <span class="sr-only">Green</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="hrColor" value="blue" checked>
+                                                                        <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
+                                                                        <span class="sr-only">Blue</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="hrColor" value="amber">
+                                                                        <span class="color-swatch" style="--swatch-color: #f59e0b"></span>
+                                                                        <span class="sr-only">Amber</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="hrColor" value="white">
+                                                                        <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
+                                                                        <span class="sr-only">White</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Lead label</div>
+                                                                <p class="setting-hint">Show current lead overlay.</p>
+                                                            </div>
+                                                            <div class="setting-controls">
+                                                                <label class="switch">
+                                                                    <input type="checkbox" id="leadLabelToggle" checked>
+                                                                    <span class="switch-track"></span>
+                                                                </label>
+                                                                <div class="color-options" role="radiogroup" aria-label="Lead label color">
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="leadLabelColor" value="green">
+                                                                        <span class="color-swatch" style="--swatch-color: #00e000"></span>
+                                                                        <span class="sr-only">Green</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="leadLabelColor" value="blue" checked>
+                                                                        <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
+                                                                        <span class="sr-only">Blue</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="leadLabelColor" value="amber">
+                                                                        <span class="color-swatch" style="--swatch-color: #f59e0b"></span>
+                                                                        <span class="sr-only">Amber</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="leadLabelColor" value="white">
+                                                                        <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
+                                                                        <span class="sr-only">White</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Overlay size</div>
+                                                                <p class="setting-hint">Increase or reduce ECG label text.</p>
+                                                            </div>
+                                                            <div class="setting-controls">
+                                                                <div class="pill-group" role="radiogroup" aria-label="Overlay size">
+                                                                    <label class="pill-option">
+                                                                        <input type="radio" name="labelSize" value="compact">
+                                                                        <span>Compact</span>
+                                                                    </label>
+                                                                    <label class="pill-option">
+                                                                        <input type="radio" name="labelSize" value="normal" checked>
+                                                                        <span>Normal</span>
+                                                                    </label>
+                                                                    <label class="pill-option">
+                                                                        <input type="radio" name="labelSize" value="large">
+                                                                        <span>Large</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Sensitivity guide</div>
+                                                                <p class="setting-hint">Show current sensing threshold line.</p>
+                                                            </div>
+                                                            <label class="switch">
+                                                                <input type="checkbox" id="sensitivityGuideToggle">
+                                                                <span class="switch-track"></span>
+                                                            </label>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Pace markers</div>
+                                                                <p class="setting-hint">Show paced beat indicators.</p>
+                                                            </div>
+                                                            <div class="setting-controls">
+                                                                <label class="switch">
+                                                                    <input type="checkbox" id="pacingLabelToggle" checked>
+                                                                    <span class="switch-track"></span>
+                                                                </label>
+                                                                <div class="color-options" role="radiogroup" aria-label="Pace marker color">
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="paceColor" value="amber" checked>
+                                                                        <span class="color-swatch" style="--swatch-color: #f59e0b"></span>
+                                                                        <span class="sr-only">Amber</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="paceColor" value="green">
+                                                                        <span class="color-swatch" style="--swatch-color: #00e000"></span>
+                                                                        <span class="sr-only">Green</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="paceColor" value="blue">
+                                                                        <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
+                                                                        <span class="sr-only">Blue</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="paceColor" value="white">
+                                                                        <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
+                                                                        <span class="sr-only">White</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Sense markers</div>
+                                                                <p class="setting-hint">Show intrinsic beat indicators.</p>
+                                                            </div>
+                                                            <div class="setting-controls">
+                                                                <label class="switch">
+                                                                    <input type="checkbox" id="intrinsicLabelToggle" checked>
+                                                                    <span class="switch-track"></span>
+                                                                </label>
+                                                                <div class="color-options" role="radiogroup" aria-label="Sense marker color">
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="senseColor" value="amber" checked>
+                                                                        <span class="color-swatch" style="--swatch-color: #f59e0b"></span>
+                                                                        <span class="sr-only">Amber</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="senseColor" value="green">
+                                                                        <span class="color-swatch" style="--swatch-color: #00e000"></span>
+                                                                        <span class="sr-only">Green</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="senseColor" value="blue">
+                                                                        <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
+                                                                        <span class="sr-only">Blue</span>
+                                                                    </label>
+                                                                    <label class="color-option">
+                                                                        <input type="radio" name="senseColor" value="white">
+                                                                        <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
+                                                                        <span class="sr-only">White</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Interval rulers</div>
+                                                                <p class="setting-hint">RR/PP calipers on drag.</p>
+                                                            </div>
+                                                            <label class="switch">
+                                                                <input type="checkbox" id="intervalRulersToggle" checked>
+                                                                <span class="switch-track"></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="settings-panel is-hidden" id="soundSettings" data-settings-panel-target="sound">
+                                                <div class="settings-section">
+                                                    <div class="section-label">Beats & Alarms</div>
+                                                    <div class="settings-grid">
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">ECG QRS beep</div>
+                                                                <p class="setting-hint">Classic, soft, or off.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="QRS beep">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="qrsBeep" value="classic" checked>
+                                                                    <span>Classic</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="qrsBeep" value="soft">
+                                                                    <span>Soft</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="qrsBeep" value="off">
+                                                                    <span>Off</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Alarm sounds</div>
+                                                                <p class="setting-hint">Enable audible alarms.</p>
+                                                            </div>
+                                                            <label class="switch">
+                                                                <input type="checkbox" id="alarmSoundToggle" checked>
+                                                                <span class="switch-track"></span>
+                                                            </label>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Button beeps</div>
+                                                                <p class="setting-hint">Feedback tones when controls are used.</p>
+                                                            </div>
+                                                            <label class="switch">
+                                                                <input type="checkbox" id="buttonBeepsToggle" checked>
+                                                                <span class="switch-track"></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="settings-section">
+                                                    <div class="section-label">Volume</div>
+                                                    <div class="settings-grid">
+                                                        <div class="setting-row full-span">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Notification volume</div>
+                                                                <p class="setting-hint">Overall alert volume.</p>
+                                                            </div>
+                                                            <div class="slider-row">
+                                                                <input type="range" id="soundVolume" min="0" max="100" value="70">
+                                                                <span class="slider-value" data-slider-value="soundVolume">70%</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="settings-panel is-hidden" id="simulationSettings" data-settings-panel-target="simulation">
+                                                <div class="settings-section">
+                                                    <div class="section-label">Device behaviour</div>
+                                                    <div class="settings-grid">
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Auto-lock knobs</div>
+                                                                <p class="setting-hint">Lock after inactivity.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="Auto-lock knobs">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="autoLockKnobs" value="30">
+                                                                    <span>30 s</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="autoLockKnobs" value="60" checked>
+                                                                    <span>60 s</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="autoLockKnobs" value="120">
+                                                                    <span>120 s</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="autoLockKnobs" value="off">
+                                                                    <span>Off</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Action log</div>
+                                                                <p class="setting-hint">Record actions for debrief.</p>
+                                                            </div>
+                                                            <label class="switch">
+                                                                <input type="checkbox" id="actionLogToggle" checked>
+                                                                <span class="switch-track"></span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="settings-section">
+                                                    <div class="section-label">Physiology realism</div>
+                                                    <div class="settings-grid">
+                                                        <div class="setting-row full-span">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Capture threshold drift</div>
+                                                                <p class="setting-hint">Off, mild, or strong drift.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="Capture threshold drift">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="captureDrift" value="off" checked>
+                                                                    <span>Off</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="captureDrift" value="mild">
+                                                                    <span>Mild</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="captureDrift" value="strong">
+                                                                    <span>Strong</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="settings-section">
+                                                    <div class="section-label">Training</div>
+                                                    <div class="settings-grid">
+                                                        <div class="setting-row full-span">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Post-scenario review</div>
+                                                                <p class="setting-hint">Auto-open, ask, or off.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="Post-scenario review">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="postScenarioReview" value="auto" checked>
+                                                                    <span>Auto-open</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="postScenarioReview" value="ask">
+                                                                    <span>Ask</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="postScenarioReview" value="off">
+                                                                    <span>Off</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-actions">
+                                        <button
+                                            type="button"
+                                            class="btn btn-primary"
+                                            data-settings-toggle
+                                            aria-label="Save and close settings"
+                                            aria-controls="ecgSettingsPanel"
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </aside>
+                    </div>
+
+                    <footer class="sim-footer">
+                        <span>Ventricular single-chamber training only · EduPace</span>
+                    </footer>
+                </div>
+            </section>
+        </main>
+
+        <div data-partial="footer"></div>
+      </div>
+      <div class="app-main app-main--stacked view view-logs" data-view="logs" hidden>
+        <main class="screen-stack">
+            <section aria-label="Session logs">
+                <div class="logs-shell">
+                    <div class="logs-header">
+                        <div>
+                            <p class="eyebrow">Recorded sessions</p>
+                            <h1>Session logs</h1>
+                        </div>
+                        <div class="logs-header-actions">
+                            <p>Download completed runs as JSON or CSV.</p>
+                        </div>
+                    </div>
+
+                    <div class="logs-toolbar" aria-label="Log filters">
+                        <label class="logs-filter">
+                            <span class="filter-label">Search</span>
+                            <input id="logSearch" type="search" placeholder="Scenario, operator, notes" />
+                        </label>
+                        <label class="logs-filter">
+                            <span class="filter-label">Sort by</span>
+                            <select id="logSort">
+                                <option value="newest">Newest first</option>
+                                <option value="oldest">Oldest first</option>
+                                <option value="duration">Longest duration</option>
+                                <option value="events">Most events</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div id="logsEmpty" class="log-empty" role="status">
+                        No sessions have been logged yet. Complete a run to see it here.
+                    </div>
+
+                    <div class="logs-grid">
+                        <div id="logsList" class="log-list" aria-live="polite"></div>
+                        <div id="logDetailPanel" class="log-detail is-hidden" aria-live="polite"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div data-partial="footer"></div>
+      </div>
+      <div class="app-main app-main--stacked view view-instructions" data-view="instructions" hidden>
+        <main class="screen-stack">
+            <section aria-label="Instructions">
+                <div class="instructions-shell">
+                    <div>
+                        <p class="eyebrow">Quick start</p>
+                        <h2>Run a pacing session in four steps</h2>
+                    </div>
+
+                    <ol class="instruction-list">
+                        <li>
+                            <h3>Connect the device</h3>
+                            <p>
+                                Plug in the EduPace console via USB. Open the Training page and
+                                allow the browser to access the serial device by pressing on the "CONNECT" button.
+                            </p>
+                        </li>
+                        <li>
+                            <h3>Choose input mode</h3>
+                            <p>
+                                Select <strong>Hardware</strong> if the Arduino console is available. It is recommended to use Google Chrome or Edge.
+                                Otherwise switch to the <strong>Virtual controller</strong> for
+                                keyboard / mouse practice.
+                            </p>
+                        </li>
+                        <li>
+                            <h3>Select a scenario</h3>
+                            <p>
+                                Pick a training case from the scenario dropdown (e.g. symptomatic
+                                bradycardia, undersensing, oversensing) and read the summary banner.
+                            </p>
+                        </li>
+                        <li>
+                            <h3>Adjust pacing parameters</h3>
+                            <p>
+                                Use the knobs (or virtual sliders) to set Rate, Output and Sensitivity.
+                                Watch the ECG, PACE/SENSE LEDs and HR tile to confirm capture and
+                                appropriate sensing.
+                            </p>
+                        </li>
+                    </ol>
+
+                    <div class="instruction-cta">
+                        <a class="btn btn-primary" href="#training" data-view-target="training">Go to training</a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div data-partial="footer"></div>
+      </div>
     </div>
   </div>
 
   <script type="module" src="js/homeScenarios.js"></script>
+  <script type="module" src="js/main.js" defer></script>
+  <script type="module" src="js/logsPage.js" defer></script>
 </body>
 </html>

@@ -7,10 +7,32 @@ function hasTargets() {
     return Object.values(scenarioLists).some(Boolean);
 }
 
+function setScenarioCategory(category = 'clinical') {
+    Object.entries(scenarioLists).forEach(([key, target]) => {
+        if (!target) return;
+        const isActive = key === category;
+        target.hidden = !isActive;
+    });
+
+    document.querySelectorAll('[data-scenario-category]').forEach((button) => {
+        const isActive = button.dataset.scenarioCategory === category;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', String(isActive));
+    });
+}
+
+function bindScenarioToggles() {
+    const toggles = document.querySelectorAll('[data-scenario-category]');
+    toggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => setScenarioCategory(toggle.dataset.scenarioCategory));
+    });
+}
+
 function createScenarioLink(scenario) {
     const link = document.createElement('a');
     link.className = 'scenario-link';
-    link.href = `training.html?scenario=${encodeURIComponent(scenario.id)}#scenario-section`;
+    link.href = '#training';
+    link.dataset.viewTarget = 'training';
     link.textContent = scenario.title;
 
     const summary = document.createElement('span');
@@ -59,6 +81,9 @@ function renderScenarioLists(scenarios) {
 
 async function initHomeScenarios() {
     if (!hasTargets()) return;
+
+    bindScenarioToggles();
+    setScenarioCategory('clinical');
 
     try {
         const response = await fetch('data/scenarios.json', { cache: 'no-store' });
