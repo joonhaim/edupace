@@ -173,7 +173,8 @@
       <!-- Workspace -->
       <main class="workspace" aria-label="Home workspace">
         <section class="dash-grid" aria-label="Dashboard">
-          <!-- Quick start panel -->
+            <div class="dash-col">
+                <!-- Quick start panel -->
           <article class="panel panel-primary" aria-label="Quick start">
             <p class="eyebrow" data-i18n-key="home.quickStart.label">Quick start</p>
             <h1 class="dash-title" data-i18n-key="home.quickStart.title">Start training</h1>
@@ -194,6 +195,19 @@
               Designed for CCU / ER nurse training
             </p>
           </article>
+                <!-- Recent panel -->
+          <article class="panel" aria-label="Recent">
+            <div class="panel-header">
+              <h2 style="margin-bottom: 0;" data-i18n-key="home.recent.title">Recent</h2>
+            </div>
+            <div class="recent-list">
+              <div class="empty muted" data-i18n-key="home.recent.empty">No recent sessions yet.</div>
+            </div>
+          </article>
+
+            </div>
+
+<div class="dash-col">
 
           <!-- Scenario browser panel -->
           <article class="panel" aria-label="Scenario browser">
@@ -217,16 +231,10 @@
               Selecting a scenario opens the training workspace with that case loaded.
             </p>
           </article>
+    </div>
 
-          <!-- Recent panel -->
-          <article class="panel" aria-label="Recent">
-            <div class="panel-header">
-              <h2 style="margin-bottom: 0;" data-i18n-key="home.recent.title">Recent</h2>
-            </div>
-            <div class="recent-list">
-              <div class="empty muted" data-i18n-key="home.recent.empty">No recent sessions yet.</div>
-            </div>
-          </article>
+
+
         </section>
       </main>
 
