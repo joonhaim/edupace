@@ -8,12 +8,15 @@ const scenarioLists = {
 
 let baseScenarios = [];
 let localizedScenarios = [];
+let searchTerm = '';
+let activeCategory = 'clinical';
 
 function hasTargets() {
     return Object.values(scenarioLists).some(Boolean);
 }
 
 function setScenarioCategory(category = 'clinical') {
+    activeCategory = category;
     Object.entries(scenarioLists).forEach(([key, target]) => {
         if (!target) return;
         const isActive = key === category;
@@ -31,6 +34,16 @@ function bindScenarioToggles() {
     const toggles = document.querySelectorAll('[data-scenario-category]');
     toggles.forEach((toggle) => {
         toggle.addEventListener('click', () => setScenarioCategory(toggle.dataset.scenarioCategory));
+    });
+}
+
+function bindScenarioSearch() {
+    const searchInput = document.getElementById('home-scenario-search');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', () => {
+        searchTerm = searchInput.value;
+        applyScenarioFilters();
     });
 }
 
@@ -85,10 +98,30 @@ function renderScenarioLists(scenarios) {
     });
 }
 
+function filterScenarios(term = '', scenarios = localizedScenarios) {
+    const normalized = term.trim().toLowerCase();
+    if (!normalized) return scenarios;
+
+    return scenarios.filter((scenario) => {
+        const haystack = [scenario.title, scenario.description, scenario.summaryLabel, scenario.code]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+        return haystack.includes(normalized);
+    });
+}
+
+function applyScenarioFilters() {
+    const filtered = filterScenarios(searchTerm, localizedScenarios);
+    renderScenarioLists(filtered);
+    setScenarioCategory(activeCategory);
+}
+
 async function initHomeScenarios() {
     if (!hasTargets()) return;
 
     bindScenarioToggles();
+    bindScenarioSearch();
     setScenarioCategory('clinical');
 
     try {
@@ -97,7 +130,7 @@ async function initHomeScenarios() {
         const payload = await response.json();
         baseScenarios = Array.isArray(payload) ? payload : payload.scenarios;
         localizedScenarios = localizeScenarioList(Array.isArray(baseScenarios) ? baseScenarios : [], getCurrentLanguage());
-        renderScenarioLists(localizedScenarios);
+        applyScenarioFilters();
     } catch (error) {
         Object.values(scenarioLists).forEach((target) => {
             if (!target) return;
@@ -114,7 +147,7 @@ async function initHomeScenarios() {
     document.addEventListener('edupace:language-changed', (event) => {
         const language = event.detail?.language || getCurrentLanguage();
         localizedScenarios = localizeScenarioList(baseScenarios, language);
-        renderScenarioLists(localizedScenarios);
+        applyScenarioFilters();
     });
 }
 
