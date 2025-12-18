@@ -28,6 +28,18 @@
     position: relative;
 }
 
+.connection-group--sidebar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+    padding-right: 1rem;
+}
+
+.connection-group--sidebar .connect-btn {
+    margin-left: 0;
+    width: 100%;
+}
+
 .device-popover {
     position: absolute;
     top: calc(100% + 0.65rem);

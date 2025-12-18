@@ -12,13 +12,80 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="styles/main.css">
     <script src="js/layout.js" defer></script>
+    <script type="module" src="js/deviceInit.js"></script>
     <script type="module" src="js/navInit.js"></script>
     <script type="module" src="js/logsPage.js"></script>
 </head>
 <body class="page-logs theme-transition">
-    <div class="app-shell">
-        <div data-partial="nav" data-active-page="logs"></div>
+    <div class="app-shell app-shell--desktop">
+        <aside class="sidebar" aria-label="Primary navigation">
+            <a class="sidebar-brand" href="index.html" aria-label="EduPace home">
+                <span class="brand-mark" aria-hidden="true"></span>
+                <span class="brand-name">EduPace</span>
+            </a>
 
+            <nav class="sidebar-nav" aria-label="Sections">
+                <a class="side-item" href="index.html">Home</a>
+                <a class="side-item" href="training.html">Training</a>
+                <a class="side-item active" href="logs.html" aria-current="page">Logs</a>
+                <a class="side-item" href="instructions.html">Instructions</a>
+            </nav>
+
+            <div class="sidebar-footer" aria-label="Device connection">
+                <div class="connection-group connection-group--sidebar">
+                    <span class="connection-label">Device</span>
+
+                    <span id="connectionStatus" class="chip chip-disconnected">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Disconnected</span>
+                    </span>
+
+                    <button
+                        id="connectBtn"
+                        type="button"
+                        class="btn btn-small connect-btn"
+                        title="Plug EduPace device via USB and press connect"
+                    >
+                        CONNECT
+                    </button>
+
+                    <div
+                        id="devicePopover"
+                        class="device-popover"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="devicePopoverTitle"
+                        aria-hidden="true"
+                    >
+                        <div class="device-popover-header">
+                            <div>
+                                <p class="eyebrow">Serial devices</p>
+                                <h3 id="devicePopoverTitle">Choose a device</h3>
+                                <p class="device-popover-subtitle">Plug in EduPace and pick a USB serial connection.</p>
+                            </div>
+                            <button id="devicePopoverClose" class="icon-button" type="button" aria-label="Close device list">
+                                ×
+                            </button>
+                        </div>
+
+                        <div id="deviceList" class="device-list" role="list"></div>
+                        <div id="deviceListEmpty" class="device-list-empty" role="status" hidden>
+                            No serial devices found. Plug in your console and scan again.
+                        </div>
+
+                        <div class="device-popover-footer">
+                            <button id="refreshDevicesBtn" class="btn btn-ghost btn-small" type="button">Refresh list</button>
+                            <button id="requestDeviceBtn" class="btn btn-primary btn-small" type="button">Scan &amp; grant access</button>
+                        </div>
+
+                        <p class="device-popover-hint">Supports Chrome, Edge, or the EduPace desktop app.</p>
+                    </div>
+                    <div id="devicePopoverOverlay" class="device-popover-overlay" hidden></div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="app-main app-main--stacked">
         <main class="screen-stack">
             <section aria-label="Session logs">
                 <div class="logs-shell">
@@ -61,6 +128,8 @@
         </main>
 
         <div data-partial="footer"></div>
+    </div>
+
     </div>
 
     <div class="settings-layer is-hidden" data-log-settings-layer>

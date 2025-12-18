@@ -318,6 +318,12 @@ h1, h2, h3 {
     min-width: 0;
 }
 
+.app-main--stacked {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
 .toolbar {
     background: var(--card);
     border-bottom: 1px solid var(--border);

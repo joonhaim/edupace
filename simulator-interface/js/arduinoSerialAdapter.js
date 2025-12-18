@@ -38,6 +38,8 @@ const serialState = {
     label: ''
 };
 
+const LAST_PORT_STORAGE_KEY = 'edupace:last-serial-port';
+
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const parameterState = {
@@ -133,6 +135,50 @@ function describeSerialPort(port, index = 0) {
     };
 }
 
+function rememberLastPort(port) {
+    try {
+        const info = port?.getInfo?.();
+        if (!info) return;
+
+        const payload = {
+            vendorId: info.usbVendorId ?? null,
+            productId: info.usbProductId ?? null,
+            serial: info.serialNumber ?? null
+        };
+
+        localStorage.setItem(LAST_PORT_STORAGE_KEY, JSON.stringify(payload));
+    } catch (error) {
+        console.error('Unable to remember serial device', error);
+    }
+}
+
+function clearRememberedPort() {
+    localStorage.removeItem(LAST_PORT_STORAGE_KEY);
+}
+
+function getRememberedPortInfo() {
+    try {
+        const raw = localStorage.getItem(LAST_PORT_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+        console.error('Unable to read stored serial device', error);
+        return null;
+    }
+}
+
+function portsMatchSavedInfo(port, saved) {
+    if (!port || !saved) return false;
+
+    const info = port.getInfo?.();
+    if (!info) return false;
+
+    const vendorMatches = saved.vendorId ? info.usbVendorId === saved.vendorId : true;
+    const productMatches = saved.productId ? info.usbProductId === saved.productId : true;
+    const serialMatches = saved.serial ? info.serialNumber === saved.serial : true;
+
+    return vendorMatches && productMatches && serialMatches;
+}
+
 function renderDeviceList(ports) {
     if (!ui.deviceList || !ui.deviceListEmpty) return;
 
@@ -217,6 +263,39 @@ async function populateDeviceList({ requestAccess = false } = {}) {
         if (ui.deviceListEmpty) {
             ui.deviceListEmpty.hidden = false;
             ui.deviceListEmpty.textContent = 'Unable to list serial ports.';
+        }
+    }
+}
+
+async function restoreLastPortConnection() {
+    if (!('serial' in navigator)) return;
+
+    const saved = getRememberedPortInfo();
+    if (!saved) return;
+
+    try {
+        const ports = await navigator.serial.getPorts();
+        const matchingPort = ports.find((port) => portsMatchSavedInfo(port, saved));
+
+        if (!matchingPort) {
+            clearRememberedPort();
+            return;
+        }
+
+        updateConnectionStatus('Reconnecting...', false);
+        if (ui.connectBtn) {
+            ui.connectBtn.textContent = 'Connecting...';
+            ui.connectBtn.disabled = true;
+        }
+
+        await connectToHardware(matchingPort, describeSerialPort(matchingPort).name);
+    } catch (error) {
+        console.error('Unable to restore previous serial device', error);
+        clearRememberedPort();
+    } finally {
+        if (!serialState.port && ui.connectBtn) {
+            ui.connectBtn.textContent = 'CONNECT';
+            ui.connectBtn.disabled = false;
         }
     }
 }
@@ -328,7 +407,7 @@ function applyParameterDisplay({ rate, output, sensitivity, power, asynchronous,
 }
 
 
-function initHardwareIntegration() {
+async function initHardwareIntegration() {
     const supported = 'serial' in navigator;
 
     createUnsupportedHint();
@@ -336,12 +415,15 @@ function initHardwareIntegration() {
 
     if (!supported) {
         updateConnectionStatus('UNSUPPORTED BROWSER', false, true);
-        ui.connectBtn.disabled = true;
+        if (ui.connectBtn) {
+            ui.connectBtn.disabled = true;
+        }
     }
 
     populateDeviceList();
+    await restoreLastPortConnection();
 
-    ui.connectBtn.addEventListener('click', () => {
+    ui.connectBtn?.addEventListener('click', () => {
         if (serialState.port) {
             disconnectFromHardware();
         } else {
@@ -417,6 +499,8 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
         serialState.buffer = '';
         serialState.label = labelOverride || describeSerialPort(port).name;
 
+        rememberLastPort(port);
+
         port.addEventListener('disconnect', () => {
             disconnectFromHardware();
         });
@@ -455,6 +539,7 @@ async function disconnectFromHardware() {
     serialState.buffer = '';
     serialState.label = '';
     resetParameters();
+    clearRememberedPort();
 
 
     updateConnectionStatus('DISCONNECTED', false);
