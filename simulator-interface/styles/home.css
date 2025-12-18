@@ -176,3 +176,76 @@
     margin: 0;
 }
 
+/* Dashboard tiles */
+.dash-card--hero {
+    background: linear-gradient(135deg, rgba(18, 84, 170, 0.08), rgba(18, 84, 170, 0.16)), var(--card);
+    border-color: rgba(18, 84, 170, 0.18);
+}
+
+.dash-card--hero .dash-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.dash-card--hero .landing-meta {
+    margin-top: 0.2rem;
+}
+
+.dash-card--tall {
+    display: grid;
+}
+
+.dash-hint {
+    margin-top: 0.6rem;
+}
+
+.dash-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0.2rem 0 0;
+    display: grid;
+    gap: 0.55rem;
+}
+
+.dash-steps li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.dash-step-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    background: var(--surface-2);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    color: var(--deep-navy);
+}
+
+.dash-step-text {
+    margin: 0;
+    font-weight: 700;
+}
+
+.dash-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-start;
+}
+
+.dash-link {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.chip-muted {
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+}
+

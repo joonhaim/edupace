@@ -73,9 +73,9 @@
           <div class="device-popover-header">
             <div>
               <p class="eyebrow" data-i18n-key="connection.devices">Serial devices</p>
-              <h3 id="devicePopoverTitle" data-i18n-key="connection.choose">Connect EduPace</h3>
+              <h3 id="devicePopoverTitle" data-i18n-key="connection.choose">Choose a device</h3>
               <p class="device-popover-subtitle" data-i18n-key="connection.subtitle">
-                Plug in the console and select its USB port.
+                Plug in EduPace and pick a USB serial connection.
               </p>
             </div>
             <button id="devicePopoverClose" class="icon-button" type="button" aria-label="Close device list">
@@ -85,7 +85,7 @@
 
           <div id="deviceList" class="device-list" role="list"></div>
           <div id="deviceListEmpty" class="device-list-empty" role="status" hidden>
-            <span data-i18n-key="connection.empty">No devices yet. Connect the console and scan.</span>
+            <span data-i18n-key="connection.empty">No serial devices found. Plug in your console and scan again.</span>
           </div>
 
           <div class="device-popover-footer">
@@ -98,7 +98,7 @@
           </div>
 
           <p class="device-popover-hint" data-i18n-key="connection.support">
-            Works in Chrome, Edge, or the EduPace desktop app.
+            Supports Chrome, Edge, or the EduPace desktop app.
           </p>
         </div>
         <div id="devicePopoverOverlay" class="device-popover-overlay" hidden></div>
@@ -173,44 +173,34 @@
       <!-- Workspace -->
       <main class="workspace" aria-label="Dashboard workspace">
         <section class="dash-grid" aria-label="Dashboard">
-            <div class="dash-col">
-                <!-- Quick start panel -->
-          <article class="panel panel-primary" aria-label="Quick start">
-            <p class="eyebrow" data-i18n-key="home.quickStart.label">Quick start</p>
-            <h1 class="dash-title" data-i18n-key="home.quickStart.title">Start training</h1>
-            <p class="muted" data-i18n-key="home.quickStart.body">
-              Open the training workspace and load a scenario.
-            </p>
+          <!-- Quick start tile -->
+          <article class="panel dash-card dash-card--hero panel-primary" aria-label="Quick start">
+            <div class="dash-card__body">
+              <div>
+                <p class="eyebrow" data-i18n-key="home.quickStart.label">Quick start</p>
+                <h1 class="dash-title" data-i18n-key="home.quickStart.title">Start training</h1>
+                <p class="muted" data-i18n-key="home.quickStart.body">
+                  Open the training workspace and load a scenario.
+                </p>
+              </div>
 
-            <div class="dash-actions">
-              <a class="btn btn-primary" href="#training" data-view-target="training" data-i18n-key="home.quickStart.open">
-                Open training
-              </a>
-              <a class="btn btn-ghost" href="#instructions" data-view-target="instructions" data-i18n-key="home.quickStart.instructions">
-                Instructions
-              </a>
-            </div>
+              <div class="dash-actions">
+                <a class="btn btn-primary" href="#training" data-view-target="training" data-i18n-key="home.quickStart.open">
+                  Open training
+                </a>
+                <a class="btn btn-ghost" href="#instructions" data-view-target="instructions" data-i18n-key="home.quickStart.instructions">
+                  Instructions
+                </a>
+              </div>
 
-            <p class="landing-meta muted" style="margin-top: 0.9rem;" data-i18n-key="home.quickStart.meta">
-              Designed for CCU / ER nurse training
-            </p>
-          </article>
-                <!-- Recent panel -->
-          <article class="panel" aria-label="Recent">
-            <div class="panel-header">
-              <h2 style="margin-bottom: 0;" data-i18n-key="home.recent.title">Recent</h2>
-            </div>
-            <div class="recent-list">
-              <div class="empty muted" data-i18n-key="home.recent.empty">No recent sessions yet.</div>
+              <p class="landing-meta muted" data-i18n-key="home.quickStart.meta">
+                Designed for CCU / ER nurse training
+              </p>
             </div>
           </article>
 
-            </div>
-
-<div class="dash-col">
-
-          <!-- Scenario browser panel -->
-          <article class="panel" aria-label="Scenario browser">
+          <!-- Scenario browser tile -->
+          <article class="panel dash-card dash-card--wide dash-card--tall" aria-label="Scenario browser">
             <div class="panel-header">
               <div>
                 <p class="eyebrow" data-i18n-key="home.scenarios.label">Scenarios</p>
@@ -223,18 +213,78 @@
               </div>
             </div>
 
-            <!-- Keep your existing injection targets so homeScenarios.js still works -->
             <div class="scenario-list" data-scenario-list="module" hidden></div>
             <div class="scenario-list" data-scenario-list="clinical"></div>
 
-            <p class="muted" style="margin-top: 0.9rem;" data-i18n-key="home.scenarios.hint">
+            <p class="muted dash-hint" data-i18n-key="home.scenarios.hint">
               Selecting a scenario opens the training workspace with that case loaded.
             </p>
           </article>
-    </div>
 
+          <!-- Session steps tile -->
+          <article class="panel dash-card" aria-label="Session steps">
+            <div class="dash-card__body dash-card__body--stacked">
+              <div class="panel-header">
+                <h2 class="dash-card__title" data-i18n-key="home.steps.title">Session steps</h2>
+                <span class="chip chip-muted" data-i18n-key="home.steps.tag">4 steps</span>
+              </div>
+              <ol class="dash-steps">
+                <li>
+                  <span class="dash-step-number">1</span>
+                  <div>
+                    <p class="eyebrow" data-i18n-key="instructions.steps.connect.step">Setup</p>
+                    <p class="dash-step-text" data-i18n-key="instructions.steps.connect.title">Connect the device</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="dash-step-number">2</span>
+                  <div>
+                    <p class="eyebrow" data-i18n-key="instructions.steps.input.step">Mode</p>
+                    <p class="dash-step-text" data-i18n-key="instructions.steps.input.title">Choose input mode</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="dash-step-number">3</span>
+                  <div>
+                    <p class="eyebrow" data-i18n-key="instructions.steps.scenario.step">Scenario</p>
+                    <p class="dash-step-text" data-i18n-key="instructions.steps.scenario.title">Select a scenario</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="dash-step-number">4</span>
+                  <div>
+                    <p class="eyebrow" data-i18n-key="instructions.steps.parameters.step">Tune</p>
+                    <p class="dash-step-text" data-i18n-key="instructions.steps.parameters.title">Adjust pacing parameters</p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+          </article>
 
+          <!-- Recent panel -->
+          <article class="panel dash-card" aria-label="Recent">
+            <div class="panel-header">
+              <h2 style="margin-bottom: 0;" data-i18n-key="home.recent.title">Recent</h2>
+            </div>
+            <div class="recent-list">
+              <div class="empty muted" data-i18n-key="home.recent.empty">No recent sessions yet.</div>
+            </div>
+          </article>
 
+          <!-- Resources tile -->
+          <article class="panel dash-card dash-card--wide" aria-label="Resources">
+            <div class="dash-card__body dash-card__body--spread">
+              <div>
+                <p class="eyebrow" data-i18n-key="home.resources.label">Resources</p>
+                <h2 class="dash-card__title" data-i18n-key="home.resources.title">Keep training handy</h2>
+                <p class="muted" data-i18n-key="home.resources.body">Shortcuts to manuals and instructions.</p>
+              </div>
+              <div class="dash-links">
+                <a class="dash-link" href="assets/pdf/EduPace User Manual.pdf" target="_blank" rel="noopener" data-i18n-key="instructions.manual">Open user manual (PDF)</a>
+                <a class="dash-link" href="#instructions" data-view-target="instructions" data-i18n-key="home.quickStart.instructions">Instructions</a>
+              </div>
+            </div>
+          </article>
         </section>
       </main>
 
