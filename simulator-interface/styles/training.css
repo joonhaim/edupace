@@ -45,7 +45,8 @@
     bottom: calc(100% + 0.65rem);
     right: 0;
     left: 0;
-    width: min(440px, 92vw);
+    width: 100%;
+    max-width: 320px;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 16px;

@@ -37,6 +37,8 @@ const TRANSLATIONS = {
         'home.scenarios.module': 'Module',
         'home.scenarios.clinical': 'Clinical',
         'home.scenarios.hint': 'Selecting a scenario opens the training workspace with that case loaded.',
+        'home.scenarios.empty': 'No scenarios available yet.',
+        'home.scenarios.error': 'Unable to load scenarios.',
         'home.recent.title': 'Recent',
         'home.recent.empty': 'No recent sessions yet.',
         'training.header.tag': 'Hands-on practice',
@@ -52,6 +54,11 @@ const TRANSLATIONS = {
         'training.telemetry.ms': 'ms',
         'training.learning.objective': 'Current Objective',
         'training.learning.feedback': 'Feedback',
+        'training.menu.module': 'Module Training',
+        'training.menu.clinical': 'Clinical Cases',
+        'training.menu.trainingModes': 'Training modes',
+        'training.menu.empty': 'No scenarios available',
+        'training.menu.comingSoon': 'Coming soon',
         'logs.header.label': 'Recorded sessions',
         'logs.header.title': 'Session logs',
         'logs.header.copy': 'Download completed runs as JSON or CSV.',
@@ -109,6 +116,8 @@ const TRANSLATIONS = {
         'home.scenarios.module': 'Module',
         'home.scenarios.clinical': 'Klinisch',
         'home.scenarios.hint': 'Het kiezen van een scenario opent de trainingsomgeving met die casus.',
+        'home.scenarios.empty': 'Nog geen scenario’s beschikbaar.',
+        'home.scenarios.error': 'Scenario’s konden niet worden geladen.',
         'home.recent.title': 'Recent',
         'home.recent.empty': 'Nog geen sessies.',
         'training.header.tag': 'Praktijk',
@@ -124,6 +133,11 @@ const TRANSLATIONS = {
         'training.telemetry.ms': 'ms',
         'training.learning.objective': 'Huidig doel',
         'training.learning.feedback': 'Feedback',
+        'training.menu.module': 'Moduletraining',
+        'training.menu.clinical': 'Klinische casussen',
+        'training.menu.trainingModes': 'Trainingsmodi',
+        'training.menu.empty': 'Geen scenario’s beschikbaar',
+        'training.menu.comingSoon': 'Binnenkort beschikbaar',
         'logs.header.label': 'Opgeslagen sessies',
         'logs.header.title': 'Sessielogs',
         'logs.header.copy': 'Download afgeronde sessies als JSON of CSV.',
@@ -150,6 +164,14 @@ const TRANSLATIONS = {
 
 function getTranslation(language, key) {
     return TRANSLATIONS[language]?.[key] || TRANSLATIONS[DEFAULT_LANGUAGE]?.[key] || null;
+}
+
+function getCurrentLanguage() {
+    return document.documentElement.getAttribute('lang') || localStorage.getItem(LANGUAGE_KEY) || DEFAULT_LANGUAGE;
+}
+
+function translateKey(key, language = getCurrentLanguage()) {
+    return getTranslation(language, key) ?? key;
 }
 
 function applyTranslations(language) {
@@ -196,6 +218,12 @@ function applyLanguage(language) {
     localStorage.setItem(LANGUAGE_KEY, normalizedLanguage);
     updateLanguageButtons(normalizedLanguage);
     applyTranslations(normalizedLanguage);
+
+    document.dispatchEvent(
+        new CustomEvent('edupace:language-changed', {
+            detail: { language: normalizedLanguage }
+        })
+    );
 }
 
 function bindLanguageToggles(toggleElements) {
@@ -235,4 +263,4 @@ function initLanguageToggle() {
     observer.observe(document.body, { childList: true, subtree: true });
 }
 
-export { initLanguageToggle };
+export { initLanguageToggle, getCurrentLanguage, translateKey, applyLanguage };

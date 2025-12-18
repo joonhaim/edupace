@@ -1,6 +1,14 @@
+import { getCurrentLanguage, translateKey } from './languageToggle.js';
+
 const viewStack = new Map(
     Array.from(document.querySelectorAll('.view')).map((view) => [view.dataset.view, view])
 );
+
+const globalTitle = document.querySelector('[data-global-title]');
+const globalSubtitle = document.querySelector('[data-global-subtitle]');
+const globalSearch = document.querySelector('[data-global-search]');
+
+let activeView = null;
 
 function setActiveNav(targetView) {
     const navLinks = document.querySelectorAll('[data-view-target]');
@@ -15,6 +23,30 @@ function setActiveNav(targetView) {
     });
 }
 
+function updateGlobalHeader(targetView) {
+    const view = viewStack.get(targetView);
+    if (!view) return;
+
+    const language = getCurrentLanguage();
+    const titleKey = view.dataset.titleKey || `nav.${targetView}`;
+    const subtitleKey = view.dataset.subtitleKey || '';
+
+    if (globalTitle) {
+        globalTitle.textContent = translateKey(titleKey, language);
+    }
+
+    if (globalSubtitle) {
+        const subtitle = subtitleKey ? translateKey(subtitleKey, language) : '';
+        globalSubtitle.textContent = subtitle;
+        globalSubtitle.hidden = !subtitle;
+    }
+
+    if (globalSearch) {
+        const showSearch = view.dataset.showSearch !== 'false';
+        globalSearch.hidden = !showSearch;
+    }
+}
+
 function showView(targetView) {
     if (!viewStack.has(targetView)) return;
 
@@ -25,6 +57,8 @@ function showView(targetView) {
     });
 
     setActiveNav(targetView);
+    activeView = targetView;
+    updateGlobalHeader(targetView);
     history.replaceState(null, '', `#${targetView}`);
 
     document.dispatchEvent(
@@ -52,11 +86,12 @@ function initViewRouter() {
     document.addEventListener('click', handleNav);
 
     const initialView = location.hash?.replace('#', '') || 'home';
-    if (viewStack.has(initialView)) {
-        showView(initialView);
-    } else {
-        showView('home');
-    }
+    const startingView = viewStack.has(initialView) ? initialView : 'home';
+    showView(startingView);
+
+    document.addEventListener('edupace:language-changed', () => {
+        updateGlobalHeader(activeView || startingView);
+    });
 }
 
 initViewRouter();
