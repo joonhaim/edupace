@@ -1610,7 +1610,7 @@ body.simulation-light .theme-toggle {
     font-size: 0.9rem;
 }
 
-.log-settings select {
+.setting-select {
     border-radius: 10px;
     border: 1px solid var(--border);
     padding: 0.55rem 0.65rem;
