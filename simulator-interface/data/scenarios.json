@@ -324,7 +324,7 @@
       "summaryLabel": "Mobitz II block",
       "primaryRhythm": "Second-degree AV block, Mobitz II",
       "location": "Telemetry",
-      "waveformId": "mobitz2-no-conduction",
+      "waveformId": "mobitz-ii",
       "vitals": { "hr": 46 },
       "pacing": { "mode": "VVI (demand)", "poweredOn": false },
       "alarm": { "level": "warning", "text": "Mobitz II – dropped beats" },
