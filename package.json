@@ -20,6 +20,8 @@
     "appId": "com.edupace.simulator",
     "productName": "EduPace",
     "executableName": "EduPace",
+    "artifactName": "EduPace-${version}-${os}-${arch}.${ext}",
+
 
     "directories": {
       "output": "dist"
@@ -36,12 +38,12 @@
     "mac": {
       "category": "public.app-category.education",
       "target": ["dmg"],
-      "icon": "electron/icons/edupace.png"
+      "icon": "electron/icons/edupace.icns"
     },
 
     "win": {
       "target": ["nsis"],
-      "icon": "electron/icons/edupace.png"
+      "icon": "electron/icons/edupace.ico"
     },
 
     "nsis": {

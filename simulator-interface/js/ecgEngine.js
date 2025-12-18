@@ -325,52 +325,38 @@ function applyAnnotationStyles() {
 
 function mapWaveformId(waveformId) {
     switch (waveformId) {
-        // Baseline intrinsic rhythms
+        // Intrinsic baseline
         case 'normal-sinus':
             return 'Normal';
+
+        // Special strip handled inside stitchBeatsNew (complete AV block style strip)
         case 'brady-escape':
-            return 'BradyNarrow';
-
-        // Paced rhythms
-        case 'ventricular-paced':
-            return 'Ventricular pacing';
-
-        // Capture problems
-        case 'loss-of-capture':
-            // show pacing spike without QRS
-            return 'SpikeOnly';
-        case 'intermittent-capture':
-            // baseline is still paced; alternation is handled by pacemaker logic,
-            // but visually this gives you a wide paced morphology
-            return 'Ventricular pacing';
-
-        // Ectopy / mixed
-        case 'paced-with-ectopy':
-            // baseline paced; PVCs injected by scenario logic later if you wish
-            return 'Ventricular pacing';
-        case 'mixed-wide-narrow':
-            // baseline sinus; pacemaker logic creates wide paced beats over it
             return 'Normal';
-        case 'pvc':
-            return 'PVC';
 
-        // Oversensing / slow intrinsic
+        // Scenarios handled via stitchBeatsNew waveformId options
+        case 'mobitz-ii':
+        case 'mobitz-type-ii':
+            return 'Normal';
+
+        case 'slow-conduction':
+            return 'Normal';
+
+        // Paced / legacy scenario ids
+        case 'ventricular-paced':
+        case 'intermittent-capture':
+        case 'loss-of-capture':
+        case 'paced-with-ectopy':
+        case 'mixed-wide-narrow':
         case 'oversensing':
-            // slow underlying rhythm with missing paced beats
-            return 'BradyNarrow';
-
-        // Random mode: start from sinus by default
+        case 'undersensing':
         case 'random-mode':
             return 'Normal';
 
-        case 'undersensing':
-            return 'Normal'; // or a dedicated template later
-
-        // Fallback
         default:
             return 'Normal';
     }
 }
+
 
 
 function flashLed(element, type) {
