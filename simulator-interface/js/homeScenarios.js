@@ -35,7 +35,10 @@ function setScenarioCategory(category = 'clinical') {
 function bindScenarioToggles() {
     scenarioCategoryToggles = Array.from(document.querySelectorAll('[data-scenario-category]'));
     scenarioCategoryToggles.forEach((toggle) => {
-        toggle.addEventListener('click', () => setScenarioCategory(toggle.dataset.scenarioCategory));
+        toggle.addEventListener('click', () => {
+            setScenarioCategory(toggle.dataset.scenarioCategory);
+            applyScenarioFilters();
+        });
     });
 }
 
@@ -54,12 +57,24 @@ function createScenarioLink(scenario) {
     link.className = 'scenario-link';
     link.href = '#training';
     link.dataset.viewTarget = 'training';
+    link.dataset.scenarioId = scenario.id || scenario.code;
     link.textContent = scenario.title;
 
     const summary = document.createElement('span');
     summary.className = 'scenario-link-summary';
     summary.textContent = scenario.summaryLabel ?? scenario.description ?? '';
     link.appendChild(summary);
+
+    link.addEventListener('click', () => {
+        const scenarioId = link.dataset.scenarioId;
+        if (!scenarioId) return;
+
+        document.dispatchEvent(
+            new CustomEvent('edupace:start-scenario', {
+                detail: { scenarioId }
+            })
+        );
+    });
 
     return link;
 }
@@ -71,7 +86,7 @@ function createEmptyState(target) {
     target.appendChild(empty);
 }
 
-function renderScenarioLists(scenarios) {
+function renderScenarioLists(scenarios, { categoryFilter = null } = {}) {
     const totalItems = scenarios.length;
     const grouped = scenarios.reduce(
         (acc, scenario) => {
@@ -85,6 +100,13 @@ function renderScenarioLists(scenarios) {
 
     Object.entries(scenarioLists).forEach(([category, target]) => {
         if (!target) return;
+
+        const isFilteredOut = categoryFilter && category !== categoryFilter;
+        target.hidden = Boolean(isFilteredOut);
+        if (isFilteredOut) {
+            target.innerHTML = '';
+            return;
+        }
 
         const items = grouped[category] ?? [];
         target.innerHTML = '';
@@ -138,7 +160,8 @@ function updateCategoryVisibility() {
 
 function applyScenarioFilters() {
     const filtered = filterScenarios(searchTerm, localizedScenarios);
-    renderScenarioLists(filtered);
+    const categoryFilter = searchTerm.trim() ? null : activeCategory;
+    renderScenarioLists(filtered, { categoryFilter });
     updateCategoryVisibility();
 }
 
