@@ -577,86 +577,91 @@ function handleResize() {
 }
 
 function regenerateWaveform() {
-    // -----------------------------
-    // 1. Determine intrinsic vs pacer rate
-    // -----------------------------
-    const intrinsicRate =
-        Number.isFinite(engineState.patientRate) && engineState.patientRate > 0
-            ? engineState.patientRate
-            : 70; // safe default
+  // -----------------------------
+  // 1) Intrinsic rate always comes from the patient/scenario
+  //    (pacing logic lives inside stitchBeatsNew now)
+  // -----------------------------
+  const intrinsicRate =
+    Number.isFinite(engineState.patientRate) && engineState.patientRate > 0
+      ? engineState.patientRate
+      : 70;
 
-    const pacingEnabled =
-        engineState.poweredOn &&
-        Number.isFinite(engineState.pacingRate) &&
-        engineState.pacingRate > 0;
+  const gap = heartRate(intrinsicRate);
 
-    // Pacemaker "lower rate limit"
-    const pacerRate = pacingEnabled ? engineState.pacingRate : intrinsicRate;
+  // Pacemaker is enabled only if powered on and has a valid rate
+  const pacingEnabled =
+    engineState.poweredOn &&
+    Number.isFinite(engineState.pacingRate) &&
+    engineState.pacingRate > 0;
 
-    // Decide which rate actually controls RR spacing on the strip:
-    // - If pacer is OFF  → intrinsic dominates
-    // - If pacer is ON and pacerRate > intrinsicRate → pacer dominates
-    // - If pacer is ON but pacerRate <= intrinsicRate → intrinsic dominates (demand mode feel)
-    let controllingRate = intrinsicRate;
-    if (pacingEnabled && pacerRate > intrinsicRate) {
-        controllingRate = pacerRate;
+  // -----------------------------
+  // 2) Decide pacer mode
+  //    UI currently resolves "async" as boolean.
+  //    We map that to VOO when true, VVI when false.
+  // -----------------------------
+  const mode = pacingEnabled
+    ? (engineState.asynchronous ? "VOO" : "VVI")
+    : "VVI"; // doesn't matter when off
+
+  const pacerRate = pacingEnabled ? engineState.pacingRate : intrinsicRate;
+  const pacingOutput = pacingEnabled ? engineState.output : 0;
+
+  // -----------------------------
+  // 3) Morphology resolver
+  // -----------------------------
+  const ecgFunc = (type) => {
+    const resolvedType = type === "Normal" ? engineState.baseSignal : type;
+    return ecgWave(resolvedType);
+  };
+
+  const secondsVisible = getSecondsVisible() || DEFAULT_SECONDS_VISIBLE;
+
+  // -----------------------------
+  // 4) Generate strip
+  //    Key: pass pacemakerEnabled + mode into options
+  // -----------------------------
+  const { x, y, events } = stitchBeatsNew(
+    ecgFunc,
+    gap,
+    engineState.regularity,
+    engineState.sensitivity,
+    pacerRate,          // LRL in ppm (used for escape interval 60/rate)
+    pacingOutput,       // mA
+    mode === "VOO",     // legacy async boolean (kept for backward compat)
+    {
+      waveformId: engineState.waveformId,
+      durationSec: secondsVisible,
+
+      // NEW:
+      pacemakerEnabled: pacingEnabled,
+      mode // "VVI" | "VOO"
     }
+  );
 
-    // Convert the controlling rate to base gap between beats.
-    const gap = heartRate(controllingRate);
-
-    // -----------------------------
-    // 2. Resolve which morphology to ask ecgCore for
-    // -----------------------------
-    const ecgFunc = (type) => {
-        const resolvedType = type === 'Normal' ? engineState.baseSignal : type;
-        return ecgWave(resolvedType);
-    };
-
-    const pacingOutput = pacingEnabled ? engineState.output : 0;
-    const pacingAsync = pacingEnabled ? engineState.asynchronous : false;
-
-    const secondsVisible = getSecondsVisible() || DEFAULT_SECONDS_VISIBLE;
-
-    const { x, y, events } = stitchBeatsNew(
-        ecgFunc,
-        gap,
-        engineState.regularity,
-        engineState.sensitivity,
-        pacerRate,          // pacemaker rate for timing / capture logic
-        pacingOutput,       // pacemaker output (mA)
-        pacingAsync,        // async vs demand behaviour
-        {
-            waveformId: engineState.waveformId,
-            durationSec: secondsVisible
-        }
-    );
-
-
-    if (!Array.isArray(x) || !Array.isArray(y) || x.length === 0 || y.length === 0) {
-        waveformPoints = [];
-        waveformEvents = [];
-        waveformDuration = 0;
-        maxWaveAmplitude = 1;
-        heartRateEngine?.reset();
-        clearBeatLabels();
-        return;
-    }
-
-
-    waveformDuration = Math.max(...x, 0);
-    waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
-    waveformEvents = Array.isArray(events) ? events : [];
-    maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
-
-    heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
+  if (!Array.isArray(x) || !Array.isArray(y) || x.length === 0 || y.length === 0) {
+    waveformPoints = [];
+    waveformEvents = [];
+    waveformDuration = 0;
+    maxWaveAmplitude = 1;
     heartRateEngine?.reset();
     clearBeatLabels();
+    return;
+  }
 
-    if (waveformDuration > 0) {
-        sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
-    }
+  waveformDuration = Math.max(...x, 0);
+  waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
+  waveformEvents = Array.isArray(events) ? events : [];
+  maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
+
+  heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
+  heartRateEngine?.reset();
+  clearBeatLabels();
+
+  if (waveformDuration > 0) {
+    sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
+  }
 }
+
 
 
 function resetSweep() {

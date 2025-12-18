@@ -25,9 +25,7 @@ function binomial(n, k) {
   if (k < 0 || k > n) return 0;
   if (k === 0 || k === n) return 1;
   let res = 1;
-  for (let i = 1; i <= k; i++) {
-    res = (res * (n - i + 1)) / i;
-  }
+  for (let i = 1; i <= k; i++) res = (res * (n - i + 1)) / i;
   return res;
 }
 
@@ -124,7 +122,7 @@ export function ecgWave(signalType) {
       [1, 1.5, 0],
       [1, 2, 0],
       [1, 2.5, 0],
-      [1, 3, 0]
+      [1, 3, 0],
     ];
 
     const points_P = [
@@ -138,7 +136,7 @@ export function ecgWave(signalType) {
       [1, 7.3, 0.5],
       [1, 7.6, 0.16],
       [1.5, 7.8, 0.04],
-      [1, 8, 0]
+      [1, 8, 0],
     ];
 
     const points_preQRS = [
@@ -148,7 +146,7 @@ export function ecgWave(signalType) {
       [1, 9, 0],
       [1, 9.25, 0],
       [1, 9.5, 0],
-      [1, 10, 0]
+      [1, 10, 0],
     ];
 
     const points_QRS = [
@@ -169,7 +167,7 @@ export function ecgWave(signalType) {
       [1, 13.35, -1.5],
       [10, 13.7, -0.1],
       [100, 13.8, -0.03],
-      [10, 13.9, 0]
+      [10, 13.9, 0],
     ];
 
     const points_preT = [
@@ -179,7 +177,7 @@ export function ecgWave(signalType) {
       [1, 15, 0],
       [1, 15.5, 0],
       [1, 16, 0],
-      [1, 16.5, 0]
+      [1, 16.5, 0],
     ];
 
     const points_T = [
@@ -193,7 +191,7 @@ export function ecgWave(signalType) {
       [2, 21, 0.55],
       [1, 21.2, 0.15],
       [5, 21.3, 0.05],
-      [1, 21.42, 0]
+      [1, 21.42, 0],
     ];
 
     const points_postT = [
@@ -202,7 +200,7 @@ export function ecgWave(signalType) {
       [1, 22.5, 0],
       [1, 23, 0],
       [1, 23.5, 0],
-      [1, 24, 0]
+      [1, 24, 0],
     ];
 
     const preP = bPolynomial(T, points_preP);
@@ -220,7 +218,7 @@ export function ecgWave(signalType) {
       [1, 0, 0],
       [1, 1, 0],
       [1, 2, 0],
-      [1, 2.5, 0]
+      [1, 2.5, 0],
     ];
 
     const points_P = [
@@ -229,20 +227,20 @@ export function ecgWave(signalType) {
       [15, 4.15, 0.9],
       [15, 4.25, 0.9],
       [5, 4.7, 0.7],
-      [10, 5.4, 0]
+      [10, 5.4, 0],
     ];
 
     const points_prePacemaker = [
       [1, 5.5, 0],
       [1, 6, 0],
       [1, 7, 0],
-      [1, 8, 0]
+      [1, 8, 0],
     ];
 
     const points_Pacemaker = [
       [1, 8.3, 0],
       [10, 8.4, 14],
-      [1, 8.5, 0]
+      [1, 8.5, 0],
     ];
 
     const points_QRS = [
@@ -256,7 +254,7 @@ export function ecgWave(signalType) {
       [1, 12, -10.5],
       [1, 12.5, -6.4],
       [1, 13, -3],
-      [10, 13.6, 0]
+      [10, 13.6, 0],
     ];
 
     const points_T = [
@@ -275,7 +273,7 @@ export function ecgWave(signalType) {
       [1, 19, 3],
       [1, 19.5, 1.6],
       [1, 20, 0.5],
-      [1, 20.4, 0]
+      [1, 20.4, 0],
     ];
 
     const points_postT = [
@@ -283,7 +281,7 @@ export function ecgWave(signalType) {
       [1, 22, 0],
       [1, 23, 0],
       [1, 24, 0],
-      [1, 25, 0]
+      [1, 25, 0],
     ];
 
     const preP = bPolynomial(T, points_preP);
@@ -304,7 +302,7 @@ export function ecgWave(signalType) {
       [1, 1.5, 0],
       [1, 2, 0],
       [1, 2.5, 0],
-      [1, 3, 0]
+      [1, 3, 0],
     ];
 
     const points_P = [
@@ -318,7 +316,7 @@ export function ecgWave(signalType) {
       [1, 7.3, 0.5],
       [1, 7.6, 0.16],
       [1.5, 7.8, 0.04],
-      [1, 8, 0]
+      [1, 8, 0],
     ];
 
     const points_post = [
@@ -327,7 +325,7 @@ export function ecgWave(signalType) {
       [1, 22.5, 0],
       [1, 23, 0],
       [1, 23.5, 0],
-      [1, 24, 0]
+      [1, 24, 0],
     ];
 
     const preP = bPolynomial(T, points_preP);
@@ -344,7 +342,7 @@ export function ecgWave(signalType) {
       [1, 1.5, 0],
       [1, 2, 0],
       [1, 2.5, 0],
-      [1, 3, 0]
+      [1, 3, 0],
     ];
 
     const points_P = [
@@ -358,7 +356,7 @@ export function ecgWave(signalType) {
       [1, 7.3, 0.5],
       [1, 7.6, 0.16],
       [1.5, 7.8, 0.04],
-      [1, 8, 0]
+      [1, 8, 0],
     ];
 
     const points_preQRS = [
@@ -368,7 +366,7 @@ export function ecgWave(signalType) {
       [1, 9, 0],
       [1, 9.25, 0],
       [1, 9.5, 0],
-      [1, 10, 0]
+      [1, 10, 0],
     ];
 
     const points_QRS = [
@@ -389,7 +387,7 @@ export function ecgWave(signalType) {
       [1, 20.35, -1.5],
       [10, 20.7, -0.1],
       [100, 20.8, -0.03],
-      [10, 20.9, 0]
+      [10, 20.9, 0],
     ];
 
     const points_preT = [
@@ -399,7 +397,7 @@ export function ecgWave(signalType) {
       [1, 22, 0],
       [1, 22.5, 0],
       [1, 23, 0],
-      [1, 23.5, 0]
+      [1, 23.5, 0],
     ];
 
     const points_T = [
@@ -413,7 +411,7 @@ export function ecgWave(signalType) {
       [2, 28, 0.55],
       [1, 28.2, 0.15],
       [5, 28.3, 0.05],
-      [1, 28.42, 0]
+      [1, 28.42, 0],
     ];
 
     const points_postT = [
@@ -422,7 +420,7 @@ export function ecgWave(signalType) {
       [1, 29.5, 0],
       [1, 30, 0],
       [1, 30.5, 0],
-      [1, 31, 0]
+      [1, 31, 0],
     ];
 
     const preP = bPolynomial(T, points_preP);
@@ -467,7 +465,7 @@ function completeAvBlock(iterations = 5) {
     [1, 3.2, 0.16],
     [1, 3.25, 0.05],
     [2, 3.3, 0.01],
-    [1, 3.35, 0]
+    [1, 3.35, 0],
   ];
 
   const points_R_first = [
@@ -478,7 +476,7 @@ function completeAvBlock(iterations = 5) {
     [5, 4.625, 1.2],
     [1, 4.68, 0.8],
     [1, 4.7, 0.4],
-    [2, 4.72, 0]
+    [2, 4.72, 0],
   ];
 
   const points_R_second = [
@@ -499,7 +497,7 @@ function completeAvBlock(iterations = 5) {
     [1, 5.6, -0.2],
     [1, 5.65, -0.1],
     [2, 5.67, -0.05],
-    [1, 5.7, 0]
+    [1, 5.7, 0],
   ];
 
   const points_R_third = [
@@ -524,7 +522,7 @@ function completeAvBlock(iterations = 5) {
     [1, 7.3, 0.15],
     [1, 7.35, 0.1],
     [2, 7.4, 0.03],
-    [1, 7.45, 0]
+    [1, 7.45, 0],
   ];
 
   const storage = [];
@@ -661,9 +659,30 @@ export function heartRate(patientHR) {
 }
 
 // -----------------------------------------------------------------------------
-// Stitch beats with pacemaker logic
+// Stitch beats with pacemaker logic (supports OFF, VVI, VOO)
 // -----------------------------------------------------------------------------
 
+/**
+ * stitchBeatsNew()
+ *
+ * Fixes:
+ * 1) No pacing when pacemaker is OFF (normal sinus should not pace before power ON).
+ * 2) VVI demand pacing is based on ESCAPE INTERVAL (60 / rate), not measuredRate heuristics.
+ * 3) VOO async pacing is purely rate-based and ignores sensing.
+ *
+ * Inputs:
+ * - ecgFunc(type) -> {x,y}
+ * - gap: intrinsic gap (seconds) between beats (excluding beat duration)
+ * - sensitivity: mV threshold for sensing (simplified)
+ * - rate: pacer LRL (ppm)
+ * - output: mA (capture if >= captureThreshold)
+ * - asynchronous: legacy bool; we map it to VOO unless options.mode says otherwise
+ *
+ * options:
+ * - waveformId, durationSec, mobitzProbConduction (existing)
+ * - pacemakerEnabled: boolean
+ * - mode: "VVI" | "VOO" (preferred)
+ */
 export function stitchBeatsNew(
   ecgFunc,
   gap,
@@ -680,26 +699,44 @@ export function stitchBeatsNew(
       ? options.durationSec
       : DEFAULT_STRIP_DURATION_SEC;
 
+  // Special prebuilt strip
   if (scenarioWaveform === "brady-escape") {
     const { x: stripX, y: stripY } = buildCompleteAvBlockStrip(maxDurationSec);
     const events = detectCompleteBlockEvents(stripX, stripY);
     return { x: stripX, y: stripY, events };
   }
 
-  // Python-style constants
+  // -----------------------------
+  // Pacemaker configuration
+  // -----------------------------
+  const pacemakerEnabled =
+    typeof options.pacemakerEnabled === "boolean"
+      ? options.pacemakerEnabled
+      : true;
+
+  const modeRaw = typeof options.mode === "string" ? options.mode : null;
+  const mode = (modeRaw || (asynchronous ? "VOO" : "VVI")).toUpperCase();
+  const isVOO = mode === "VOO";
+  const isVVI = mode === "VVI";
+
+  // If OFF, force intrinsic-only behaviour.
+  // (We still generate events for intrinsic sensing if you want VS labels/LEDs,
+  //  but we will NEVER schedule paced beats.)
   const captureThreshold = 1.5; // mA
-  const maxTimeSinceSensed = Number.isFinite(rate) && rate > 0 ? 60 / rate : Infinity;
+  const escapeIntervalSec = Number.isFinite(rate) && rate > 0 ? 60 / rate : Infinity;
 
-  if (asynchronous) regularity = "Regular";
+  // Async pacing should be regular
+  if (pacemakerEnabled && isVOO) regularity = "Regular";
 
+  // Mobitz behaviour
   const mobitzProbConduction =
     typeof options.mobitzProbConduction === "number"
       ? clamp(options.mobitzProbConduction, 0, 1)
       : 0.8;
 
-  const isPacedType = (beatType) => beatType === "Ventricular pacing";
-
-  // Choose intrinsic beat type given scenario
+  // -----------------------------
+  // Beat selectors
+  // -----------------------------
   const chooseIntrinsic = () => {
     if (scenarioWaveform === "slow-conduction") return "Slow conduction";
     if (scenarioWaveform === "mobitz-ii" || scenarioWaveform === "mobitz-type-ii") {
@@ -710,18 +747,23 @@ export function stitchBeatsNew(
     return "Normal";
   };
 
-  const choosePaced = () => "Ventricular pacing";
+  const choosePaced = () => {
+    return pacemakerEnabled ? "Ventricular pacing" : chooseIntrinsic();
+  };
 
+  // -----------------------------
   // Event marker helper
+  // -----------------------------
+  const events = [];
+
   const recordEvent = (beatType, beatX, beatY, sensedOrCaptured) => {
     if (!beatX.length || beatX.length !== beatY.length) return;
 
     let time;
     if (beatType === "Ventricular pacing") {
-      time = beatX[argMin(beatY)];
+      time = beatX[argMin(beatY)]; // pacing spike is the sharp negative deflection
     } else {
-      // intrinsic -> use max
-      time = beatX[argMax(beatY)];
+      time = beatX[argMax(beatY)]; // intrinsic R peak
     }
 
     if (!Number.isFinite(time)) return;
@@ -729,11 +771,14 @@ export function stitchBeatsNew(
     if (beatType === "Ventricular pacing") {
       events.push({ time, type: "pace", beatType, captured: output >= captureThreshold });
     } else if (sensedOrCaptured) {
+      // VS marker
       events.push({ time, type: "sense", beatType });
     }
   };
 
-  // Scale + jitter morphology similarly to your JS approach, with a special rule for Mobitz dropped beat
+  // -----------------------------
+  // Morphology scaling
+  // -----------------------------
   const buildScaledBeat = (beatType) => {
     const { x: xr, y: yr } = ecgFunc(beatType);
     let xb = xr.slice();
@@ -742,13 +787,14 @@ export function stitchBeatsNew(
     const spanX = maxArray(xb) - minArray(xb) || 1;
     const spanY = maxArray(yb) - minArray(yb) || 1;
 
-    // Default: every beat occupies BEAT_DURATION_SEC
+    // Each beat occupies BEAT_DURATION_SEC
     const sx = BEAT_DURATION_SEC / spanX;
 
     // Mild amplitude jitter
     const ampJitter = 1 + (Math.random() * 2 - 1) * 0.15;
     let sy = (1.0 * ampJitter) / spanY;
 
+    // Dropped Mobitz beat: tiny signal
     if (beatType === "Mobitz type II - no conduction") sy *= 0.08;
 
     xb = xb.map((v) => v * sx);
@@ -757,17 +803,20 @@ export function stitchBeatsNew(
     return { x: xb, y: yb };
   };
 
-  const events = [];
+  // -----------------------------
+  // Timing helpers
+  // -----------------------------
+  const rrFromGap = (gapVal) => BEAT_DURATION_SEC + Math.max(0, gapVal);
+
+  // -----------------------------
+  // Strip synthesis
+  // -----------------------------
   let x = [];
   let y = [];
 
-  let offset = 0; // absolute time of last sample
-  let timeSinceSensed = 0;
+  let offset = 0;          // time of last sample appended
+  let timeSinceSense = 0;  // seconds since last VS or captured VP (escape timer)
 
-  // RR tracking (fix: compute RR using previous R before updating)
-  let prevR = null;
-
-  // Generate beats sequentially
   let nextBeat = chooseIntrinsic();
   let beatsGenerated = 0;
 
@@ -776,90 +825,80 @@ export function stitchBeatsNew(
 
     const { x: xTemp, y: yTemp } = buildScaledBeat(beatType);
 
-    // Gap jitter WITHOUT drifting base gap
+    // Gap jitter (does not drift base gap)
     let gapThisBeat = gap;
     if (regularity === "Irregular" && gap > 0) {
       const frac = 0.06;
       gapThisBeat = Math.max(0, gap + (Math.random() * 2 - 1) * frac * gap);
     }
 
+    const beatSpan = maxArray(xTemp) - minArray(xTemp); // ~ BEAT_DURATION_SEC after scaling
     const startTime = beatsGenerated === 0 ? 0 : offset + gapThisBeat;
-    const xShifted = xTemp.map((v) => v + startTime);
 
+    // Append beat samples
+    const xShifted = xTemp.map((v) => v + startTime);
     x = x.concat(xShifted);
     y = y.concat(yTemp);
 
-    // Sensing/capture logic
-    const captured = beatType === "Ventricular pacing" && output >= captureThreshold;
-    const sensed = beatType !== "Ventricular pacing" && maxArray(yTemp) >= sensitivity;
-    const sensedOrCaptured = sensed || captured;
+    // Determine sensed / captured
+    const isPaced = beatType === "Ventricular pacing";
+    const captured = isPaced && output >= captureThreshold;
+
+    // Simplified sensing rule for intrinsic beats:
+    // if R amplitude exceeds sensitivity threshold -> VS
+    const sensedIntrinsic = !isPaced && maxArray(yTemp) >= sensitivity;
+
+    const sensedOrCaptured = sensedIntrinsic || captured;
 
     recordEvent(beatType, xShifted, yTemp, sensedOrCaptured);
 
+    // Advance absolute offset
     offset = maxArray(xShifted);
 
-    // R time (for RR)
-    let currentR = null;
-    if (sensedOrCaptured) {
-      currentR =
-        beatType === "Ventricular pacing"
-          ? xShifted[argMin(yTemp)]
-          : xShifted[argMax(yTemp)];
-    }
+    // Update escape timer
+    const elapsedThisBeat = beatsGenerated === 0 ? beatSpan : beatSpan + gapThisBeat;
 
-    // Update timeSinceSensed (Python-style)
     if (sensedOrCaptured) {
-      timeSinceSensed = 0;
+      // VS or captured VP resets escape timer
+      timeSinceSense = 0;
     } else {
-      // Not sensed: accumulate elapsed time (beat span + leading gap if not first)
-      const beatSpan = maxArray(xTemp) - minArray(xTemp);
-      timeSinceSensed += beatsGenerated === 0 ? beatSpan : beatSpan + gapThisBeat;
+      // No VS and no capture -> timer continues
+      timeSinceSense += elapsedThisBeat;
     }
-
-    // Compute measured rate using prevR BEFORE updating it
-    let measuredRate = null;
-    if (Number.isFinite(prevR) && Number.isFinite(currentR) && currentR > prevR) {
-      measuredRate = 60 / (currentR - prevR);
-    }
-    if (Number.isFinite(currentR)) prevR = currentR;
 
     // Decide next beat
-    if (asynchronous) {
-      nextBeat = choosePaced();
-    } else if (!sensedOrCaptured) {
-      // Not sensed: pace if exceeds escape interval
-      if (timeSinceSensed >= maxTimeSinceSensed) {
-        nextBeat = choosePaced();
-        timeSinceSensed = 0;
+    if (!pacemakerEnabled) {
+      // OFF: never pace
+      nextBeat = chooseIntrinsic();
+    } else if (isVOO) {
+      // VOO: always pace at the set rate
+      nextBeat = "Ventricular pacing";
+      // In VOO, timer doesn't matter, but keep it tidy:
+      timeSinceSense = 0;
+    } else if (isVVI) {
+      // VVI demand: pace if escape interval expired since last VS/captured VP.
+      // This preserves your escape interval logic (60/rate).
+      if (timeSinceSense >= escapeIntervalSec) {
+        nextBeat = "Ventricular pacing";
+        // After we schedule a pace, reset timer start for that paced event
+        // (capture will reset again if output is sufficient)
+        timeSinceSense = 0;
       } else {
+        // Otherwise wait for intrinsic
         nextBeat = chooseIntrinsic();
       }
-    } else {
-      // Sensed/captured: demand pacing if intrinsic slower than pacer rate
-      if (measuredRate !== null && Number.isFinite(measuredRate) && measuredRate < rate) {
-        if (output >= captureThreshold) {
-          nextBeat = choosePaced();
-          // After a paced beat, schedule intrinsic (like Python appending "Normal")
-          stitchBeatsNew._afterBeatLatch = chooseIntrinsic();
-        } else {
-          nextBeat = chooseIntrinsic();
-        }
-      } else {
-        nextBeat = chooseIntrinsic();
-      }
-    }
 
-    if (beatType === "Ventricular pacing" && stitchBeatsNew._afterBeatLatch) {
-      nextBeat = stitchBeatsNew._afterBeatLatch;
-      stitchBeatsNew._afterBeatLatch = null;
+      // Optional improvement: if intrinsic is predictably slower than the pacer,
+      // you can "preempt" (pace) earlier than waiting multiple beats.
+      // But the timer approach already enforces LRL correctly in a sequential generator.
+    } else {
+      // Fallback
+      nextBeat = chooseIntrinsic();
     }
 
     beatsGenerated += 1;
-
     if (offset >= maxDurationSec) break;
   }
-
-  stitchBeatsNew._afterBeatLatch = null;
 
   return { x, y, events };
 }
