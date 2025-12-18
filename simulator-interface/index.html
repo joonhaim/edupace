@@ -169,7 +169,7 @@
         </div>
       </header>
 
-      <div class="app-main view view-home is-active" data-view="home" data-title-key="home.title" data-subtitle-key="home.subtitle" data-show-search="true" data-show-settings="false">
+      <div class="app-main view view-home is-active" data-view="home" data-title-key="home.title" data-subtitle-key="home.subtitle" data-show-search="true" data-show-settings="true">
 
       <!-- Workspace -->
       <main class="workspace" aria-label="Dashboard workspace">
@@ -585,7 +585,142 @@
                                 </button>
                             </div>
 
-                            <div class="settings-layer is-hidden" data-settings-layer>
+                            </aside>
+                    </div>
+
+                    <footer class="sim-footer">
+                        <span>Ventricular single-chamber training only · EduPace</span>
+                    </footer>
+                </div>
+            </section>
+        </main>
+
+      </div>
+      <div
+        class="app-main app-main--stacked view view-logs"
+        data-view="logs"
+        data-title-key="nav.logs"
+        data-subtitle-key="logs.header.title"
+        data-show-search="false"
+        data-show-settings="true"
+        hidden
+      >
+        <main class="screen-stack">
+            <section aria-label="Session log">
+                <div class="logs-shell">
+                    <div class="logs-header">
+                        <div>
+                            <p class="eyebrow" data-i18n-key="logs.header.label">Recorded sessions</p>
+                            <h1 data-i18n-key="logs.header.title">Session log</h1>
+                        </div>
+                        <div class="logs-header-actions">
+                            <p data-i18n-key="logs.header.copy">Download completed runs as JSON or CSV.</p>
+                        </div>
+                    </div>
+
+                    <div class="logs-toolbar" aria-label="Log filters">
+                        <label class="logs-filter">
+                            <span class="filter-label" data-i18n-key="logs.filters.search">Search</span>
+                            <input id="logSearch" type="search" placeholder="Scenario, operator, notes" data-i18n-key="logs.filters.searchPlaceholder" data-i18n-attr="placeholder" />
+                        </label>
+                        <label class="logs-filter">
+                            <span class="filter-label" data-i18n-key="logs.filters.sort">Sort by</span>
+                            <select id="logSort">
+                                <option value="newest" data-i18n-key="logs.filters.newest">Newest first</option>
+                                <option value="oldest" data-i18n-key="logs.filters.oldest">Oldest first</option>
+                                <option value="duration" data-i18n-key="logs.filters.duration">Longest duration</option>
+                                <option value="events" data-i18n-key="logs.filters.events">Most events</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div id="logsEmpty" class="log-empty" role="status" data-i18n-key="logs.empty">
+                        No sessions have been logged yet. Complete a run to see it here.
+                    </div>
+
+                    <div class="logs-grid">
+                        <div id="logsList" class="log-list" aria-live="polite"></div>
+                        <div id="logDetailPanel" class="log-detail is-hidden" aria-live="polite"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+      </div>
+      <div
+        class="app-main app-main--stacked view view-instructions"
+        data-view="instructions"
+        data-title-key="nav.instructions"
+        data-subtitle-key="instructions.title"
+        data-show-search="false"
+        data-show-settings="true"
+        hidden
+      >
+        <main class="screen-stack">
+          <section aria-label="Instructions">
+            <div class="instructions-shell">
+              <div class="instructions-header">
+                <div>
+                  <p class="eyebrow" data-i18n-key="instructions.label">Quick start</p>
+                  <h2 data-i18n-key="instructions.title">Ready, connect, pace</h2>
+                  <p class="muted" data-i18n-key="instructions.tagline">Learn how to use EduPace in simple steps</p>
+                </div>
+                <div class="instruction-actions">
+                  <a class="btn btn-ghost" href="assets/pdf/EduPace User Manual.pdf" target="_blank" rel="noopener" data-i18n-key="instructions.manual">Open user manual (PDF)</a>
+                  <a class="btn btn-primary" href="#training" data-view-target="training" data-i18n-key="instructions.cta.training">Go to training</a>
+                </div>
+              </div>
+
+              <ol class="instruction-grid">
+                <li class="instruction-card">
+                  <div class="instruction-number">1</div>
+                  <div class="instruction-body">
+                    <p class="instruction-step" data-i18n-key="instructions.steps.connect.step">Setup</p>
+                    <h3 data-i18n-key="instructions.steps.connect.title">Connect the device</h3>
+                    <p data-i18n-key="instructions.steps.connect.body">
+                      Plug in the EduPace console via USB. Open the Training page and allow the browser to access the serial device by pressing on the "CONNECT" button.
+                    </p>
+                  </div>
+                </li>
+                <li class="instruction-card">
+                  <div class="instruction-number">2</div>
+                  <div class="instruction-body">
+                    <p class="instruction-step" data-i18n-key="instructions.steps.input.step">Mode</p>
+                    <h3 data-i18n-key="instructions.steps.input.title">Choose input mode</h3>
+                    <p data-i18n-key="instructions.steps.input.body">
+                      Select <strong>Hardware</strong> if the Arduino console is available. It is recommended to use Google Chrome or Edge.
+                      Otherwise switch to the <strong>Virtual controller</strong> for keyboard / mouse practice.
+                    </p>
+                  </div>
+                </li>
+                <li class="instruction-card">
+                  <div class="instruction-number">3</div>
+                  <div class="instruction-body">
+                    <p class="instruction-step" data-i18n-key="instructions.steps.scenario.step">Scenario</p>
+                    <h3 data-i18n-key="instructions.steps.scenario.title">Select a scenario</h3>
+                    <p data-i18n-key="instructions.steps.scenario.body">
+                      Pick a training case from the scenario dropdown (e.g. symptomatic bradycardia, undersensing, oversensing) and read the summary banner.
+                    </p>
+                  </div>
+                </li>
+                <li class="instruction-card">
+                  <div class="instruction-number">4</div>
+                  <div class="instruction-body">
+                    <p class="instruction-step" data-i18n-key="instructions.steps.parameters.step">Tune</p>
+                    <h3 data-i18n-key="instructions.steps.parameters.title">Adjust pacing parameters</h3>
+                    <p data-i18n-key="instructions.steps.parameters.body">
+                      Use the knobs (or virtual sliders) to set Rate, Output and Sensitivity. Watch the ECG, PACE/SENSE LEDs and HR tile to confirm capture and appropriate sensing.
+                    </p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+          </section>
+        </main>
+
+      </div>
+
+      <div class="settings-layer" data-settings-layer aria-hidden="true">
                                 <div
                                     class="card settings-card settings-window"
                                     data-settings-panel
@@ -1213,140 +1348,7 @@
                                 </div>
                             </div>
 
-                        </aside>
-                    </div>
-
-                    <footer class="sim-footer">
-                        <span>Ventricular single-chamber training only · EduPace</span>
-                    </footer>
-                </div>
-            </section>
-        </main>
-
-      </div>
-      <div
-        class="app-main app-main--stacked view view-logs"
-        data-view="logs"
-        data-title-key="nav.logs"
-        data-subtitle-key="logs.header.title"
-        data-show-search="false"
-        data-show-settings="true"
-        hidden
-      >
-        <main class="screen-stack">
-            <section aria-label="Session log">
-                <div class="logs-shell">
-                    <div class="logs-header">
-                        <div>
-                            <p class="eyebrow" data-i18n-key="logs.header.label">Recorded sessions</p>
-                            <h1 data-i18n-key="logs.header.title">Session log</h1>
-                        </div>
-                        <div class="logs-header-actions">
-                            <p data-i18n-key="logs.header.copy">Download completed runs as JSON or CSV.</p>
-                        </div>
-                    </div>
-
-                    <div class="logs-toolbar" aria-label="Log filters">
-                        <label class="logs-filter">
-                            <span class="filter-label" data-i18n-key="logs.filters.search">Search</span>
-                            <input id="logSearch" type="search" placeholder="Scenario, operator, notes" data-i18n-key="logs.filters.searchPlaceholder" data-i18n-attr="placeholder" />
-                        </label>
-                        <label class="logs-filter">
-                            <span class="filter-label" data-i18n-key="logs.filters.sort">Sort by</span>
-                            <select id="logSort">
-                                <option value="newest" data-i18n-key="logs.filters.newest">Newest first</option>
-                                <option value="oldest" data-i18n-key="logs.filters.oldest">Oldest first</option>
-                                <option value="duration" data-i18n-key="logs.filters.duration">Longest duration</option>
-                                <option value="events" data-i18n-key="logs.filters.events">Most events</option>
-                            </select>
-                        </label>
-                    </div>
-
-                    <div id="logsEmpty" class="log-empty" role="status" data-i18n-key="logs.empty">
-                        No sessions have been logged yet. Complete a run to see it here.
-                    </div>
-
-                    <div class="logs-grid">
-                        <div id="logsList" class="log-list" aria-live="polite"></div>
-                        <div id="logDetailPanel" class="log-detail is-hidden" aria-live="polite"></div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-      </div>
-      <div
-        class="app-main app-main--stacked view view-instructions"
-        data-view="instructions"
-        data-title-key="nav.instructions"
-        data-subtitle-key="instructions.title"
-        data-show-search="false"
-        data-show-settings="false"
-        hidden
-      >
-        <main class="screen-stack">
-          <section aria-label="Instructions">
-            <div class="instructions-shell">
-              <div class="instructions-header">
-                <div>
-                  <p class="eyebrow" data-i18n-key="instructions.label">Quick start</p>
-                  <h2 data-i18n-key="instructions.title">Ready, connect, pace</h2>
-                  <p class="muted" data-i18n-key="instructions.tagline">Learn how to use EduPace in simple steps</p>
-                </div>
-                <div class="instruction-actions">
-                  <a class="btn btn-ghost" href="assets/pdf/EduPace User Manual.pdf" target="_blank" rel="noopener" data-i18n-key="instructions.manual">Open user manual (PDF)</a>
-                  <a class="btn btn-primary" href="#training" data-view-target="training" data-i18n-key="instructions.cta.training">Go to training</a>
-                </div>
-              </div>
-
-              <ol class="instruction-grid">
-                <li class="instruction-card">
-                  <div class="instruction-number">1</div>
-                  <div class="instruction-body">
-                    <p class="instruction-step" data-i18n-key="instructions.steps.connect.step">Setup</p>
-                    <h3 data-i18n-key="instructions.steps.connect.title">Connect the device</h3>
-                    <p data-i18n-key="instructions.steps.connect.body">
-                      Plug in the EduPace console via USB. Open the Training page and allow the browser to access the serial device by pressing on the "CONNECT" button.
-                    </p>
-                  </div>
-                </li>
-                <li class="instruction-card">
-                  <div class="instruction-number">2</div>
-                  <div class="instruction-body">
-                    <p class="instruction-step" data-i18n-key="instructions.steps.input.step">Mode</p>
-                    <h3 data-i18n-key="instructions.steps.input.title">Choose input mode</h3>
-                    <p data-i18n-key="instructions.steps.input.body">
-                      Select <strong>Hardware</strong> if the Arduino console is available. It is recommended to use Google Chrome or Edge.
-                      Otherwise switch to the <strong>Virtual controller</strong> for keyboard / mouse practice.
-                    </p>
-                  </div>
-                </li>
-                <li class="instruction-card">
-                  <div class="instruction-number">3</div>
-                  <div class="instruction-body">
-                    <p class="instruction-step" data-i18n-key="instructions.steps.scenario.step">Scenario</p>
-                    <h3 data-i18n-key="instructions.steps.scenario.title">Select a scenario</h3>
-                    <p data-i18n-key="instructions.steps.scenario.body">
-                      Pick a training case from the scenario dropdown (e.g. symptomatic bradycardia, undersensing, oversensing) and read the summary banner.
-                    </p>
-                  </div>
-                </li>
-                <li class="instruction-card">
-                  <div class="instruction-number">4</div>
-                  <div class="instruction-body">
-                    <p class="instruction-step" data-i18n-key="instructions.steps.parameters.step">Tune</p>
-                    <h3 data-i18n-key="instructions.steps.parameters.title">Adjust pacing parameters</h3>
-                    <p data-i18n-key="instructions.steps.parameters.body">
-                      Use the knobs (or virtual sliders) to set Rate, Output and Sensitivity. Watch the ECG, PACE/SENSE LEDs and HR tile to confirm capture and appropriate sensing.
-                    </p>
-                  </div>
-                </li>
-              </ol>
-            </div>
-          </section>
-        </main>
-
-      </div>
+                        
   </div>
 </div>
 
