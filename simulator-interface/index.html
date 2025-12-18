@@ -1,91 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>EduPace</title>
-    <meta name="description"
-          content="EduPace is an educational simulator for temporary external single-chamber ventricular pacing.">
-    <meta name="application-name" content="EduPace">
-    <meta name="theme-color" content="#0b74c9">
-    <link rel="icon" type="image/png" href="/simulator-interface/assets/logos/edupace_logo2.png" sizes="180x180">
-    <link rel="apple-touch-icon" href="/simulator-interface/assets/logos/edupace_logo2.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="styles/main.css">
-    <script src="js/layout.js" defer></script>
-    <script type="module" src="js/navInit.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EduPace</title>
+
+  <meta
+    name="description"
+    content="EduPace is an educational simulator for temporary external single-chamber ventricular pacing."
+  />
+  <meta name="application-name" content="EduPace" />
+  <meta name="theme-color" content="#0b74c9" />
+
+  <link rel="icon" type="image/png" href="/simulator-interface/assets/logos/edupace_logo2.png" sizes="180x180" />
+  <link rel="apple-touch-icon" href="/simulator-interface/assets/logos/edupace_logo2.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Keep your existing CSS bundle -->
+  <link rel="stylesheet" href="styles/main.css" />
+
+  <!-- Keep existing layout/nav scripts (no breaking changes) -->
+  <script src="js/layout.js" defer></script>
+  <script type="module" src="js/navInit.js"></script>
 </head>
+
 <body class="page-home theme-transition">
-    <div class="app-shell">
-        <!-- Top nav -->
-        <div data-partial="nav" data-active-page="home"></div>
+  <!-- App-like shell -->
+  <div class="app-shell app-shell--desktop">
+    <!-- Sidebar: app navigation -->
+    <aside class="sidebar" aria-label="Primary navigation">
+      <a class="sidebar-brand" href="index.html" aria-label="EduPace home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">EduPace</span>
+      </a>
 
-        <!-- Main content -->
-        <main class="screen-stack">
-            <section aria-label="Home page">
-                <div class="landing-panel">
-                    <div class="landing-grid">
-                        <div class="landing-main">
-                            <p class="eyebrow">Training simulator · Temporary external pacemaker</p>
-                            <h1 class="landing-title">EduPace</h1>
-                            <p class="landing-subtitle">
-                                Hands-on practice for single-chamber ventricular pacing
-                            </p>
-                            <ul class="landing-highlights">
-                                <li>Real-time ECG with pacing spikes, capture, and sensing indicators</li>
-                                <li>Scenario-based training for bradycardia, thresholds, under- and oversensing</li>
-                                <li>Safe environment to learn, without patient risk</li>
-                            </ul>
-                            <div class="landing-actions">
-                                <a class="btn btn-primary" href="training.html">Open training</a>
-                                <a class="btn btn-ghost" href="instructions.html">Instructions</a>
-                            </div>
-                            <p class="landing-meta">
-                                Designed for CCU / ER nurse training
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </section>
+      <nav class="sidebar-nav" aria-label="Sections">
+        <a class="side-item active" href="index.html" aria-current="page">Home</a>
+        <a class="side-item" href="training.html">Training</a>
+        <a class="side-item" href="logs.html">Logs</a>
+        <a class="side-item" href="instructions.html">Instructions</a>
+      </nav>
 
-            <section aria-label="Training paths" class="home-training-section">
-                <div class="training-menu" aria-label="Choose your path">
-                    <div class="training-menu-header">
-                        <p class="eyebrow">Scenarios</p>
-                        <h2>Start training</h2>
-                        <p class="training-menu-body">
-                            Start with a guided module or try a clinical case. Selecting a scenario will open the training workspace with that case loaded.
-                        </p>
-                    </div>
-                    <div class="training-options-grid home-training-options">
-                        <article class="training-option" id="home-module-training">
-                            <div class="training-option-heading">
-                                <p class="eyebrow">Guided practice</p>
-                                <h3>Module Training</h3>
-                            </div>
-                            <p>
-                                Practice pacing skills with structured objectives, live feedback, and rapid iteration.
-                            </p>
-                            <div class="scenario-link-list" data-scenario-list="module"></div>
-                        </article>
-                        <article class="training-option" id="home-clinical-cases">
-                            <div class="training-option-heading">
-                                <p class="eyebrow">Real-world practice</p>
-                                <h3>Clinical Cases</h3>
-                            </div>
-                            <p>
-                                Explore minimally guided cases that mirror bedside decision-making.
-                            </p>
-                            <div class="scenario-link-list" data-scenario-list="clinical"></div>
-                        </article>
-                    </div>
-                </div>
-            </section>
-        </main>
-        <div data-partial="footer"></div>
+      <div class="sidebar-footer" aria-label="Status">
+        <!-- You can wire this up later (WebSerial, etc.) -->
+        <div class="status-pill">
+          <span class="dot" aria-hidden="true"></span>
+          <span>Controller: Disconnected</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main area -->
+    <div class="app-main">
+      <!-- Toolbar: contextual actions -->
+      <header class="toolbar" aria-label="Toolbar">
+        <div class="toolbar-title">
+          <strong>Home</strong>
+          <span class="muted">Temporary External Pacemaker Trainer</span>
+        </div>
+
+        <div class="toolbar-actions">
+          <label class="sr-only" for="home-scenario-search">Search scenarios</label>
+          <input
+            id="home-scenario-search"
+            class="search"
+            type="search"
+            placeholder="Search scenarios…"
+            autocomplete="off"
+          />
+
+          <!-- Keep your existing theme/language UX if you want;
+               these are just placeholders that match your icon-button styles -->
+          <button class="icon-button" type="button" aria-label="Theme">
+            <img src="assets/icons/sun.svg" alt="" />
+          </button>
+          <button class="icon-button language-toggle" type="button" aria-label="Language">
+            EN
+          </button>
+        </div>
+      </header>
+
+      <!-- Workspace -->
+      <main class="workspace" aria-label="Home workspace">
+        <section class="dash-grid" aria-label="Dashboard">
+          <!-- Quick start panel -->
+          <article class="panel panel-primary" aria-label="Quick start">
+            <p class="eyebrow">Quick start</p>
+            <h1 class="dash-title">Start training</h1>
+            <p class="muted">
+              Open the training workspace and load a scenario.
+            </p>
+
+            <div class="dash-actions">
+              <a class="btn btn-primary" href="training.html">Open training</a>
+              <a class="btn btn-ghost" href="instructions.html">Instructions</a>
+            </div>
+
+            <p class="landing-meta muted" style="margin-top: 0.9rem;">
+              Designed for CCU / ER nurse training
+            </p>
+          </article>
+
+          <!-- Scenario browser panel -->
+          <article class="panel" aria-label="Scenario browser">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Scenarios</p>
+                <h2 style="margin-bottom: 0;">Browse</h2>
+              </div>
+
+              <!-- Optional: you can wire these to toggle visibility between the two lists -->
+              <div class="segmented" role="tablist" aria-label="Scenario category">
+                <button class="seg active" type="button" aria-selected="true">Module</button>
+                <button class="seg" type="button" aria-selected="false">Clinical</button>
+              </div>
+            </div>
+
+            <!-- Keep your existing injection targets so homeScenarios.js still works -->
+            <div class="scenario-list" data-scenario-list="module"></div>
+            <div class="scenario-list" data-scenario-list="clinical" hidden></div>
+
+            <p class="muted" style="margin-top: 0.9rem;">
+              Selecting a scenario opens the training workspace with that case loaded.
+            </p>
+          </article>
+
+          <!-- Recent panel -->
+          <article class="panel" aria-label="Recent">
+            <div class="panel-header">
+              <h2 style="margin-bottom: 0;">Recent</h2>
+            </div>
+            <div class="recent-list">
+              <div class="empty muted">No recent sessions yet.</div>
+            </div>
+          </article>
+        </section>
+      </main>
+
+      <!-- Optional: keep footer partial if you still want it;
+           many “apps” don’t show a footer on the home screen -->
+      <div data-partial="footer"></div>
     </div>
+  </div>
 
-    <script type="module" src="js/homeScenarios.js"></script>
+  <script type="module" src="js/homeScenarios.js"></script>
 </body>
 </html>
