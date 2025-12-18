@@ -26,6 +26,7 @@
     --grid-line-dark: rgba(255, 255, 255, 0.05);
 
     --page-gap: clamp(1rem, 2.4vw, 2.5rem);
+    --content-max-width: min(1360px, calc(100vw - 4rem));
 }
 
 html, body {
@@ -200,9 +201,9 @@ a {
 
 .screen-stack {
     flex: 1;
-    max-width: 1120px;
+    max-width: var(--content-max-width);
     margin: 0 auto var(--page-gap);
-    padding: var(--page-gap) 1.2rem calc(var(--page-gap) * 1.1);
+    padding: var(--page-gap) clamp(1.4rem, 2.4vw, 2.6rem) calc(var(--page-gap) * 1.1);
     width: 100%;
 }
 
@@ -422,7 +423,7 @@ h1, h2, h3 {
 
 .view-stack {
   height: 100vh;
-  min-height: 0;
+  min-height: max(100vh, 760px);
   overflow: hidden;
   display: grid;
   grid-template-rows: auto 1fr;

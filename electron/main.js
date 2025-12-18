@@ -12,6 +12,7 @@ function createMainWindow() {
     width: 1440,
     height: 900,
     minWidth: 1180,
+    minHeight: 760,
     backgroundColor: '#000000',
     fullscreenable: true,
     webPreferences: {
@@ -67,8 +68,8 @@ function openAboutWindow() {
   }
 
   aboutWindow = new BrowserWindow({
-    width: 420,
-    height: 320,
+    width: 480,
+    height: 360,
     resizable: false,
     minimizable: false,
     maximizable: false,
