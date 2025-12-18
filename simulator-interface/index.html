@@ -173,44 +173,34 @@
       <!-- Workspace -->
       <main class="workspace" aria-label="Dashboard workspace">
         <section class="dash-grid" aria-label="Dashboard">
-            <div class="dash-col">
-                <!-- Quick start panel -->
-          <article class="panel panel-primary" aria-label="Quick start">
-            <p class="eyebrow" data-i18n-key="home.quickStart.label">Quick start</p>
-            <h1 class="dash-title" data-i18n-key="home.quickStart.title">Start training</h1>
-            <p class="muted" data-i18n-key="home.quickStart.body">
-              Open the training workspace and load a scenario.
-            </p>
+          <!-- Quick start tile -->
+          <article class="panel dash-card dash-card--hero panel-primary" aria-label="Quick start">
+            <div class="dash-card__body">
+              <div>
+                <p class="eyebrow" data-i18n-key="home.quickStart.label">Quick start</p>
+                <h1 class="dash-title" data-i18n-key="home.quickStart.title">Start training</h1>
+                <p class="muted" data-i18n-key="home.quickStart.body">
+                  Open the training workspace and load a scenario.
+                </p>
+              </div>
 
-            <div class="dash-actions">
-              <a class="btn btn-primary" href="#training" data-view-target="training" data-i18n-key="home.quickStart.open">
-                Open training
-              </a>
-              <a class="btn btn-ghost" href="#instructions" data-view-target="instructions" data-i18n-key="home.quickStart.instructions">
-                Instructions
-              </a>
-            </div>
+              <div class="dash-actions">
+                <a class="btn btn-primary" href="#training" data-view-target="training" data-i18n-key="home.quickStart.open">
+                  Open training
+                </a>
+                <a class="btn btn-ghost" href="#instructions" data-view-target="instructions" data-i18n-key="home.quickStart.instructions">
+                  Instructions
+                </a>
+              </div>
 
-            <p class="landing-meta muted" style="margin-top: 0.9rem;" data-i18n-key="home.quickStart.meta">
-              Designed for CCU / ER nurse training
-            </p>
-          </article>
-                <!-- Recent panel -->
-          <article class="panel" aria-label="Recent">
-            <div class="panel-header">
-              <h2 style="margin-bottom: 0;" data-i18n-key="home.recent.title">Recent</h2>
-            </div>
-            <div class="recent-list">
-              <div class="empty muted" data-i18n-key="home.recent.empty">No recent sessions yet.</div>
+              <p class="landing-meta muted" data-i18n-key="home.quickStart.meta">
+                Designed for CCU / ER nurse training
+              </p>
             </div>
           </article>
 
-            </div>
-
-<div class="dash-col">
-
-          <!-- Scenario browser panel -->
-          <article class="panel" aria-label="Scenario browser">
+          <!-- Scenario browser tile -->
+          <article class="panel dash-card dash-card--wide dash-card--tall" aria-label="Scenario browser">
             <div class="panel-header">
               <div>
                 <p class="eyebrow" data-i18n-key="home.scenarios.label">Scenarios</p>
@@ -223,18 +213,78 @@
               </div>
             </div>
 
-            <!-- Keep your existing injection targets so homeScenarios.js still works -->
             <div class="scenario-list" data-scenario-list="module" hidden></div>
             <div class="scenario-list" data-scenario-list="clinical"></div>
 
-            <p class="muted" style="margin-top: 0.9rem;" data-i18n-key="home.scenarios.hint">
+            <p class="muted dash-hint" data-i18n-key="home.scenarios.hint">
               Selecting a scenario opens the training workspace with that case loaded.
             </p>
           </article>
-    </div>
 
+          <!-- Session steps tile -->
+          <article class="panel dash-card" aria-label="Session steps">
+            <div class="dash-card__body dash-card__body--stacked">
+              <div class="panel-header">
+                <h2 class="dash-card__title" data-i18n-key="home.steps.title">Session steps</h2>
+                <span class="chip chip-muted" data-i18n-key="home.steps.tag">4 steps</span>
+              </div>
+              <ol class="dash-steps">
+                <li>
+                  <span class="dash-step-number">1</span>
+                  <div>
+                    <p class="eyebrow" data-i18n-key="instructions.steps.connect.step">Setup</p>
+                    <p class="dash-step-text" data-i18n-key="instructions.steps.connect.title">Connect the device</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="dash-step-number">2</span>
+                  <div>
+                    <p class="eyebrow" data-i18n-key="instructions.steps.input.step">Mode</p>
+                    <p class="dash-step-text" data-i18n-key="instructions.steps.input.title">Choose input mode</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="dash-step-number">3</span>
+                  <div>
+                    <p class="eyebrow" data-i18n-key="instructions.steps.scenario.step">Scenario</p>
+                    <p class="dash-step-text" data-i18n-key="instructions.steps.scenario.title">Select a scenario</p>
+                  </div>
+                </li>
+                <li>
+                  <span class="dash-step-number">4</span>
+                  <div>
+                    <p class="eyebrow" data-i18n-key="instructions.steps.parameters.step">Tune</p>
+                    <p class="dash-step-text" data-i18n-key="instructions.steps.parameters.title">Adjust pacing parameters</p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+          </article>
 
+          <!-- Recent panel -->
+          <article class="panel dash-card" aria-label="Recent">
+            <div class="panel-header">
+              <h2 style="margin-bottom: 0;" data-i18n-key="home.recent.title">Recent</h2>
+            </div>
+            <div class="recent-list">
+              <div class="empty muted" data-i18n-key="home.recent.empty">No recent sessions yet.</div>
+            </div>
+          </article>
 
+          <!-- Resources tile -->
+          <article class="panel dash-card dash-card--wide" aria-label="Resources">
+            <div class="dash-card__body dash-card__body--spread">
+              <div>
+                <p class="eyebrow" data-i18n-key="home.resources.label">Resources</p>
+                <h2 class="dash-card__title" data-i18n-key="home.resources.title">Keep training handy</h2>
+                <p class="muted" data-i18n-key="home.resources.body">Shortcuts to manuals and instructions.</p>
+              </div>
+              <div class="dash-links">
+                <a class="dash-link" href="assets/pdf/EduPace User Manual.pdf" target="_blank" rel="noopener" data-i18n-key="instructions.manual">Open user manual (PDF)</a>
+                <a class="dash-link" href="#instructions" data-view-target="instructions" data-i18n-key="home.quickStart.instructions">Instructions</a>
+              </div>
+            </div>
+          </article>
         </section>
       </main>
 
@@ -1223,54 +1273,68 @@
         hidden
       >
         <main class="screen-stack">
-            <section aria-label="Instructions">
-                <div class="instructions-shell">
-                    <div>
-                        <p class="eyebrow" data-i18n-key="instructions.label">Quick start</p>
-                        <h2 data-i18n-key="instructions.title">Run a pacing session in four steps</h2>
-                    </div>
-
-                    <ol class="instruction-list">
-                        <li>
-                            <h3 data-i18n-key="instructions.steps.connect.title">Connect the device</h3>
-                            <p data-i18n-key="instructions.steps.connect.body">
-                                Plug in the EduPace console via USB. Open the Training page and
-                                allow the browser to access the serial device by pressing on the "CONNECT" button.
-                            </p>
-                        </li>
-                        <li>
-                            <h3 data-i18n-key="instructions.steps.input.title">Choose input mode</h3>
-                            <p data-i18n-key="instructions.steps.input.body">
-                                Select <strong>Hardware</strong> if the Arduino console is available. It is recommended to use Google Chrome or Edge.
-                                Otherwise switch to the <strong>Virtual controller</strong> for
-                                keyboard / mouse practice.
-                            </p>
-                        </li>
-                        <li>
-                            <h3 data-i18n-key="instructions.steps.scenario.title">Select a scenario</h3>
-                            <p data-i18n-key="instructions.steps.scenario.body">
-                                Pick a training case from the scenario dropdown (e.g. symptomatic
-                                bradycardia, undersensing, oversensing) and read the summary banner.
-                            </p>
-                        </li>
-                        <li>
-                            <h3 data-i18n-key="instructions.steps.parameters.title">Adjust pacing parameters</h3>
-                            <p data-i18n-key="instructions.steps.parameters.body">
-                                Use the knobs (or virtual sliders) to set Rate, Output and Sensitivity.
-                                Watch the ECG, PACE/SENSE LEDs and HR tile to confirm capture and
-                                appropriate sensing.
-                            </p>
-                        </li>
-                    </ol>
-
-                    <div class="instruction-cta">
-                        <a class="btn btn-primary" href="#training" data-view-target="training">Go to training</a>
-                    </div>
+          <section aria-label="Instructions">
+            <div class="instructions-shell">
+              <div class="instructions-header">
+                <div>
+                  <p class="eyebrow" data-i18n-key="instructions.label">Quick start</p>
+                  <h2 data-i18n-key="instructions.title">Ready, connect, pace</h2>
+                  <p class="muted" data-i18n-key="instructions.tagline">Align with the EduPace UI and start a session quickly.</p>
                 </div>
-            </section>
+                <div class="instruction-actions">
+                  <a class="btn btn-ghost" href="assets/pdf/EduPace User Manual.pdf" target="_blank" rel="noopener" data-i18n-key="instructions.manual">Open user manual (PDF)</a>
+                  <a class="btn btn-primary" href="#training" data-view-target="training" data-i18n-key="instructions.cta.training">Go to training</a>
+                </div>
+              </div>
+
+              <ol class="instruction-grid">
+                <li class="instruction-card">
+                  <div class="instruction-number">1</div>
+                  <div class="instruction-body">
+                    <p class="instruction-step" data-i18n-key="instructions.steps.connect.step">Setup</p>
+                    <h3 data-i18n-key="instructions.steps.connect.title">Connect the device</h3>
+                    <p data-i18n-key="instructions.steps.connect.body">
+                      Plug in the EduPace console via USB. Open the Training page and allow the browser to access the serial device by pressing on the "CONNECT" button.
+                    </p>
+                  </div>
+                </li>
+                <li class="instruction-card">
+                  <div class="instruction-number">2</div>
+                  <div class="instruction-body">
+                    <p class="instruction-step" data-i18n-key="instructions.steps.input.step">Mode</p>
+                    <h3 data-i18n-key="instructions.steps.input.title">Choose input mode</h3>
+                    <p data-i18n-key="instructions.steps.input.body">
+                      Select <strong>Hardware</strong> if the Arduino console is available. It is recommended to use Google Chrome or Edge.
+                      Otherwise switch to the <strong>Virtual controller</strong> for keyboard / mouse practice.
+                    </p>
+                  </div>
+                </li>
+                <li class="instruction-card">
+                  <div class="instruction-number">3</div>
+                  <div class="instruction-body">
+                    <p class="instruction-step" data-i18n-key="instructions.steps.scenario.step">Scenario</p>
+                    <h3 data-i18n-key="instructions.steps.scenario.title">Select a scenario</h3>
+                    <p data-i18n-key="instructions.steps.scenario.body">
+                      Pick a training case from the scenario dropdown (e.g. symptomatic bradycardia, undersensing, oversensing) and read the summary banner.
+                    </p>
+                  </div>
+                </li>
+                <li class="instruction-card">
+                  <div class="instruction-number">4</div>
+                  <div class="instruction-body">
+                    <p class="instruction-step" data-i18n-key="instructions.steps.parameters.step">Tune</p>
+                    <h3 data-i18n-key="instructions.steps.parameters.title">Adjust pacing parameters</h3>
+                    <p data-i18n-key="instructions.steps.parameters.body">
+                      Use the knobs (or virtual sliders) to set Rate, Output and Sensitivity. Watch the ECG, PACE/SENSE LEDs and HR tile to confirm capture and appropriate sensing.
+                    </p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+          </section>
         </main>
 
-    </div>
+      </div>
   </div>
 </div>
 

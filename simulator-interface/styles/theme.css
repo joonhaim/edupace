@@ -37,6 +37,7 @@ body.simulation-dark .language-toggle {
 
 body.simulation-dark .landing-panel,
 body.simulation-dark .instructions-shell,
+body.simulation-dark .instruction-card,
 body.simulation-dark .card,
 body.simulation-dark .param-tile,
 body.simulation-dark .scenario-banner,
@@ -106,12 +107,13 @@ body.simulation-dark.page-home .landing-highlights li::before {
 body.simulation-dark.page-instructions h2,
 body.simulation-dark.page-instructions h3,
 body.simulation-dark.page-instructions p,
-body.simulation-dark.page-instructions .instruction-list li {
+body.simulation-dark.page-instructions .instruction-card {
     color: #e3e9f4;
 }
 
-body.simulation-dark.page-instructions .instruction-list li {
-    border-left-color: #2f6db5;
+body.simulation-dark.page-instructions .instruction-card {
+    border-color: #1c2738;
+    box-shadow: none;
 }
 
 body.simulation-dark .led-pace {

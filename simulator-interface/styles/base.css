@@ -523,16 +523,42 @@ h1, h2, h3 {
 /* Dashboard grid */
 .dash-grid {
     display: grid;
-    gap: 14px;
-    grid-template-columns: 1.1fr 1.4fr;
-    align-items: start;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    align-items: stretch;
+    grid-auto-rows: minmax(180px, auto);
 }
 
-.dash-col{
-  display: grid;
-  gap: 14px;
-  align-content: start;
-  min-width: 0;
+.dash-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dash-card__body {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.dash-card__body--stacked {
+    gap: 0.4rem;
+}
+
+.dash-card__body--spread {
+    gap: 0.5rem;
+}
+
+.dash-card__title {
+    margin: 0;
+}
+
+.dash-card--wide {
+    grid-column: span 2;
+}
+
+.dash-card--tall {
+    grid-row: span 2;
 }
 
 .panel {
@@ -593,6 +619,8 @@ h1, h2, h3 {
     .sidebar { display: none; }
     .dash-grid { grid-template-columns: 1fr; }
     .search { width: min(520px, 70vw); }
+    .dash-card--wide { grid-column: span 1; }
+    .dash-card--tall { grid-row: span 1; }
 }
 
 /* ===== Scenario browse list (airy, row-based) ===== */
