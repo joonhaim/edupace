@@ -136,6 +136,7 @@
                 type="button"
                 class="icon-button settings-toggle"
                 data-settings-toggle
+                data-global-settings-toggle
                 aria-expanded="false"
                 aria-controls="ecgSettingsPanel"
                 aria-label="Open settings"
@@ -168,13 +169,13 @@
         </div>
       </header>
 
-      <div class="app-main view view-home is-active" data-view="home" data-title-key="home.title" data-subtitle-key="home.subtitle" data-show-search="true">
+      <div class="app-main view view-home is-active" data-view="home" data-title-key="home.title" data-subtitle-key="home.subtitle" data-show-search="true" data-show-settings="false">
 
       <!-- Workspace -->
       <main class="workspace" aria-label="Dashboard workspace">
         <section class="dash-grid" aria-label="Dashboard">
           <!-- Quick start tile -->
-          <article class="panel dash-card dash-card--hero panel-primary" aria-label="Quick start">
+          <article class="panel dash-card dash-card--hero panel-primary dash-card--start" aria-label="Quick start">
             <div class="dash-card__body">
               <div>
                 <p class="eyebrow" data-i18n-key="home.quickStart.label">Quick start</p>
@@ -185,8 +186,13 @@
               </div>
 
               <div class="dash-actions">
-                <a class="btn btn-primary" href="#training" data-view-target="training" data-i18n-key="home.quickStart.open">
-                  Open training
+                <a
+                  class="btn btn-primary"
+                  href="#training"
+                  data-view-target="training"
+                  data-i18n-key="home.quickStart.open"
+                >
+                  Open training →
                 </a>
                 <a class="btn btn-ghost" href="#instructions" data-view-target="instructions" data-i18n-key="home.quickStart.instructions">
                   Instructions
@@ -197,7 +203,7 @@
           </article>
 
           <!-- Scenario browser tile -->
-          <article class="panel dash-card dash-card--wide dash-card--tall" aria-label="Scenario browser">
+          <article class="panel dash-card dash-card--tall dash-card--browse" aria-label="Scenario browser">
             <div class="panel-header">
               <div>
                 <p class="eyebrow" data-i18n-key="home.scenarios.label">Scenarios</p>
@@ -220,7 +226,7 @@
 
 
           <!-- Recent panel -->
-          <article class="panel dash-card" aria-label="Recent">
+          <article class="panel dash-card dash-card--recent" aria-label="Recent">
             <div class="panel-header">
               <h2 style="margin-bottom: 0;" data-i18n-key="home.recent.title">Recent</h2>
             </div>
@@ -229,8 +235,16 @@
             </div>
           </article>
 
+          <!-- My progress tile -->
+          <article class="panel dash-card dash-card--progress" aria-label="My progress">
+            <div class="panel-header">
+              <h2 style="margin-bottom: 0;">My progress</h2>
+            </div>
+            <div class="muted">Coming soon.</div>
+          </article>
+
           <!-- Resources tile -->
-          <article class="panel dash-card dash-card--wide" aria-label="Resources">
+          <article class="panel dash-card dash-card--wide dash-card--resources" aria-label="Resources">
             <div class="dash-card__body dash-card__body--spread">
               <div>
                 <p class="eyebrow" data-i18n-key="home.resources.label">Resources</p>
@@ -253,6 +267,7 @@
         data-title-key="nav.training"
         data-subtitle-key="training.header.title"
         data-show-search="false"
+        data-show-settings="true"
         hidden
       >
         <main class="screen-stack">
@@ -630,6 +645,15 @@
                                             aria-selected="false"
                                         >
                                             Simulation
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="settings-tab"
+                                            data-settings-tab="logs"
+                                            aria-controls="logSettings"
+                                            aria-selected="false"
+                                        >
+                                            Session logs
                                         </button>
                                     </div>
 
@@ -1144,6 +1168,42 @@
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <div class="settings-panel is-hidden" id="logSettings" data-settings-panel-target="logs">
+                                                <div class="settings-section">
+                                                    <div class="section-label">Session log</div>
+                                                    <div class="settings-grid">
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Date format</div>
+                                                                <p class="setting-hint">Choose how dates display in session logs.</p>
+                                                            </div>
+                                                            <div class="setting-field">
+                                                                <label class="setting-label" for="logDateFormat">Format</label>
+                                                                <select id="logDateFormat" class="setting-select" data-log-date-format>
+                                                                    <option value="DMY">DD/MM/YYYY</option>
+                                                                    <option value="MDY">MM/DD/YYYY</option>
+                                                                    <option value="YMD">YYYY-MM-DD</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Time format</div>
+                                                                <p class="setting-hint">Control the clock style in logs.</p>
+                                                            </div>
+                                                            <div class="setting-field">
+                                                                <label class="setting-label" for="logTimeFormat">Format</label>
+                                                                <select id="logTimeFormat" class="setting-select" data-log-time-format>
+                                                                    <option value="24h">24-hour</option>
+                                                                    <option value="12h">12-hour</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -1178,6 +1238,7 @@
         data-title-key="nav.logs"
         data-subtitle-key="logs.header.title"
         data-show-search="false"
+        data-show-settings="true"
         hidden
       >
         <main class="screen-stack">
@@ -1228,6 +1289,7 @@
         data-title-key="nav.instructions"
         data-subtitle-key="instructions.title"
         data-show-search="false"
+        data-show-settings="false"
         hidden
       >
         <main class="screen-stack">
