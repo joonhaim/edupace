@@ -430,11 +430,18 @@ h1, h2, h3 {
 .view {
   min-height: 0;
   overflow-y: auto;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: opacity 0.18s ease, transform 0.22s ease;
 }
 
 
 .view:not(.is-active) {
     display: none;
+}
+.view.is-active {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .app-main--stacked {
@@ -628,12 +635,14 @@ h1, h2, h3 {
     font-weight: 800;
     color: var(--muted);
     cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.16s ease;
 }
 
 .seg.active {
     background: var(--card);
     color: var(--deep-navy);
     box-shadow: 0 8px 20px rgba(12, 26, 45, 0.08);
+    transform: translateY(-1px);
 }
 
 .seg:disabled,

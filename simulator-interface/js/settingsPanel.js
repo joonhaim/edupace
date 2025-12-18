@@ -40,18 +40,23 @@ function initSettingsPanel() {
     if (!settingsCard) return;
 
     const getToggles = () => Array.from(document.querySelectorAll('[data-settings-toggle]'));
-    const syncToggleState = (isVisible = !settingsCard.classList.contains('is-hidden')) => {
+    const syncToggleState = (isVisible = settingsLayer?.classList.contains('is-open')) => {
         getToggles().forEach((toggle) => toggle.setAttribute('aria-expanded', String(isVisible)));
     };
 
     settingsCard.setAttribute('tabindex', '-1');
 
     const setVisibility = (isVisible) => {
-        settingsCard.classList.toggle('is-hidden', !isVisible);
-        if (settingsLayer) settingsLayer.classList.toggle('is-hidden', !isVisible);
+        const isOpen = Boolean(isVisible);
+        settingsCard.classList.toggle('is-visible', isOpen);
+        settingsCard.setAttribute('aria-hidden', String(!isOpen));
+        if (settingsLayer) {
+            settingsLayer.classList.toggle('is-open', isOpen);
+            settingsLayer.setAttribute('aria-hidden', String(!isOpen));
+        }
         syncToggleState(isVisible);
 
-        if (isVisible) {
+        if (isOpen) {
             settingsCard.focus({ preventScroll: true });
         }
     };
@@ -63,7 +68,7 @@ function initSettingsPanel() {
         const toggle = event.target.closest('[data-settings-toggle]');
         if (!toggle) return;
 
-        const willShow = settingsCard.classList.contains('is-hidden');
+        const willShow = settingsLayer ? !settingsLayer.classList.contains('is-open') : true;
         setVisibility(willShow);
     });
 
