@@ -7,6 +7,7 @@ const viewStack = new Map(
 const globalTitle = document.querySelector('[data-global-title]');
 const globalSubtitle = document.querySelector('[data-global-subtitle]');
 const globalSearch = document.querySelector('[data-global-search]');
+const globalSettingsToggle = document.querySelector('[data-global-settings-toggle]');
 
 let activeView = null;
 
@@ -44,6 +45,11 @@ function updateGlobalHeader(targetView) {
     if (globalSearch) {
         const showSearch = view.dataset.showSearch !== 'false';
         globalSearch.hidden = !showSearch;
+    }
+
+    if (globalSettingsToggle) {
+        const showSettings = view.dataset.showSettings === 'true';
+        globalSettingsToggle.hidden = !showSettings;
     }
 }
 

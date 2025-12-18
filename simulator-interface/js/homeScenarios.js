@@ -6,6 +6,8 @@ const scenarioLists = {
     clinical: document.querySelector('[data-scenario-list="clinical"]')
 };
 
+let scenarioCategoryToggles = [];
+
 let baseScenarios = [];
 let localizedScenarios = [];
 let searchTerm = '';
@@ -23,7 +25,7 @@ function setScenarioCategory(category = 'clinical') {
         target.hidden = !isActive;
     });
 
-    document.querySelectorAll('[data-scenario-category]').forEach((button) => {
+    scenarioCategoryToggles.forEach((button) => {
         const isActive = button.dataset.scenarioCategory === category;
         button.classList.toggle('active', isActive);
         button.setAttribute('aria-selected', String(isActive));
@@ -31,8 +33,8 @@ function setScenarioCategory(category = 'clinical') {
 }
 
 function bindScenarioToggles() {
-    const toggles = document.querySelectorAll('[data-scenario-category]');
-    toggles.forEach((toggle) => {
+    scenarioCategoryToggles = Array.from(document.querySelectorAll('[data-scenario-category]'));
+    scenarioCategoryToggles.forEach((toggle) => {
         toggle.addEventListener('click', () => setScenarioCategory(toggle.dataset.scenarioCategory));
     });
 }
@@ -70,6 +72,7 @@ function createEmptyState(target) {
 }
 
 function renderScenarioLists(scenarios) {
+    const totalItems = scenarios.length;
     const grouped = scenarios.reduce(
         (acc, scenario) => {
             const category = (scenario.category ?? 'module').toLowerCase();
@@ -86,7 +89,9 @@ function renderScenarioLists(scenarios) {
         const items = grouped[category] ?? [];
         target.innerHTML = '';
 
-        if (!items.length) {
+        const shouldShowEmptyState = !items.length && (!searchTerm.trim() || totalItems === 0);
+
+        if (shouldShowEmptyState) {
             createEmptyState(target);
             return;
         }
@@ -111,10 +116,30 @@ function filterScenarios(term = '', scenarios = localizedScenarios) {
     });
 }
 
+function updateCategoryVisibility() {
+    const isSearching = Boolean(searchTerm.trim());
+
+    scenarioCategoryToggles.forEach((toggle) => {
+        toggle.disabled = isSearching;
+        toggle.setAttribute('aria-disabled', String(isSearching));
+        toggle.classList.toggle('is-disabled', isSearching);
+    });
+
+    if (isSearching) {
+        Object.values(scenarioLists).forEach((target) => {
+            if (!target) return;
+            target.hidden = false;
+        });
+        return;
+    }
+
+    setScenarioCategory(activeCategory);
+}
+
 function applyScenarioFilters() {
     const filtered = filterScenarios(searchTerm, localizedScenarios);
     renderScenarioLists(filtered);
-    setScenarioCategory(activeCategory);
+    updateCategoryVisibility();
 }
 
 async function initHomeScenarios() {

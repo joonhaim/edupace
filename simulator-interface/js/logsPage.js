@@ -63,51 +63,11 @@ function resetDetailState(mode = 'view') {
 }
 
 function initLogSettingsPanel() {
-    const panel = document.querySelector('[data-log-settings-panel]');
-    const layer = document.querySelector('[data-log-settings-layer]');
-    const toggleSelector = '[data-settings-toggle]';
-
-    if (!panel || !layer) return;
+    const panel = document.querySelector('[data-settings-panel-target="logs"]');
+    if (!panel) return;
 
     const dateSelect = panel.querySelector('[data-log-date-format]');
     const timeSelect = panel.querySelector('[data-log-time-format]');
-
-    const syncToggleState = (isVisible) => {
-        const toggles = Array.from(document.querySelectorAll(toggleSelector));
-        toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', String(isVisible)));
-    };
-
-    panel.setAttribute('tabindex', '-1');
-
-    const setVisibility = (isVisible) => {
-        panel.classList.toggle('is-hidden', !isVisible);
-        layer.classList.toggle('is-hidden', !isVisible);
-        syncToggleState(isVisible);
-
-        if (isVisible) {
-            panel.focus({ preventScroll: true });
-        }
-    };
-
-    document.addEventListener('click', (event) => {
-        const toggle = event.target.closest(toggleSelector);
-        if (!toggle) return;
-        event.preventDefault();
-        const willShow = panel.classList.contains('is-hidden') || layer.classList.contains('is-hidden');
-        setVisibility(willShow);
-    });
-
-    layer.addEventListener('click', (event) => {
-        if (event.target === layer) {
-            setVisibility(false);
-        }
-    });
-
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            setVisibility(false);
-        }
-    });
 
     if (dateSelect) {
         dateSelect.value = logDisplaySettings.dateFormat;
@@ -118,8 +78,6 @@ function initLogSettingsPanel() {
         timeSelect.value = logDisplaySettings.timeFormat;
         timeSelect.addEventListener('change', () => applyLogSettings({ timeFormat: timeSelect.value }));
     }
-
-    setVisibility(false);
 }
 
 function createDownload(url, filename) {
