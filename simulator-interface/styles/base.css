@@ -594,3 +594,23 @@ h1, h2, h3 {
     .search { width: min(520px, 70vw); }
 }
 
+/* ===== Scenario browse list (airy, row-based) ===== */
+.scenario-list {
+  display: grid;
+  gap: 10px;          /* ⬅️ vertical breathing room */
+  margin-top: 8px;
+}
+
+/* Scenario row (keep it light) */
+.scenario-list > * {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: transparent;   /* ⬅️ important */
+  border: none;              /* ⬅️ important */
+  transition: background 0.15s ease;
+}
+
+/* Hover = subtle row highlight */
+.scenario-list > *:hover {
+  background: rgba(17, 30, 46, 0.04);
+}
