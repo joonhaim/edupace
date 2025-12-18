@@ -45,6 +45,25 @@ body.simulation-dark .connection-group {
     border-color: #1c2738;
     box-shadow: none;
 }
+body.simulation-dark .window-surface {
+    background: linear-gradient(160deg, #0f1624, #0c121e);
+    border-color: #1c2738;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+}
+body.simulation-dark .intro-panel {
+    background: linear-gradient(180deg, rgba(47, 109, 181, 0.12), rgba(15, 22, 36, 0.95));
+    border-color: #1c2738;
+}
+body.simulation-dark .pill {
+    background: rgba(47, 109, 181, 0.18);
+    border-color: #1f2b3f;
+    color: #e3e9f4;
+}
+body.simulation-dark .pill-quiet {
+    background: #111b2c;
+    border-color: #1f2b3f;
+    color: #c9d1dc;
+}
 body.simulation-dark .ecg-frame {
     background: #000;
     border-color: #1c2738;

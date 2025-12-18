@@ -84,59 +84,92 @@
 
       <!-- Workspace -->
       <main class="workspace" aria-label="Home workspace">
-        <section class="dash-grid" aria-label="Dashboard">
-          <!-- Quick start panel -->
-          <article class="panel panel-primary" aria-label="Quick start">
-            <p class="eyebrow">Quick start</p>
-            <h1 class="dash-title">Start training</h1>
-            <p class="muted">
-              Open the training workspace and load a scenario.
-            </p>
-
-            <div class="dash-actions">
-              <a class="btn btn-primary" href="training.html">Open training</a>
-              <a class="btn btn-ghost" href="instructions.html">Instructions</a>
-            </div>
-
-            <p class="landing-meta muted" style="margin-top: 0.9rem;">
-              Designed for CCU / ER nurse training
-            </p>
-          </article>
-
-          <!-- Scenario browser panel -->
-          <article class="panel" aria-label="Scenario browser">
-            <div class="panel-header">
-              <div>
-                <p class="eyebrow">Scenarios</p>
-                <h2 style="margin-bottom: 0;">Browse</h2>
-              </div>
-
-              <!-- Optional: you can wire these to toggle visibility between the two lists -->
-              <div class="segmented" role="tablist" aria-label="Scenario category">
-                <button class="seg active" type="button" aria-selected="true">Module</button>
-                <button class="seg" type="button" aria-selected="false">Clinical</button>
+        <div class="home-window window-surface">
+          <div class="home-intro">
+            <div class="intro-copy">
+              <p class="eyebrow">Desktop workspace</p>
+              <h1 class="home-headline">EduPace Studio</h1>
+              <p class="muted intro-subtitle">
+                Launch training, browse scenarios, and pick up right where you left off — all inside a calm, app-style
+                shell.
+              </p>
+              <div class="intro-pills" aria-label="Status highlights">
+                <span class="pill">Fast resume</span>
+                <span class="pill pill-quiet">Hardware or virtual console</span>
+                <span class="pill pill-quiet">Keeps your session layout</span>
               </div>
             </div>
-
-            <!-- Keep your existing injection targets so homeScenarios.js still works -->
-            <div class="scenario-list" data-scenario-list="module"></div>
-            <div class="scenario-list" data-scenario-list="clinical" hidden></div>
-
-            <p class="muted" style="margin-top: 0.9rem;">
-              Selecting a scenario opens the training workspace with that case loaded.
-            </p>
-          </article>
-
-          <!-- Recent panel -->
-          <article class="panel" aria-label="Recent">
-            <div class="panel-header">
-              <h2 style="margin-bottom: 0;">Recent</h2>
+            <div class="intro-panel">
+              <p class="eyebrow">Workspace</p>
+              <h3>Ready for your next session</h3>
+              <p class="muted">Switch between module and clinical cases without leaving the desktop frame.</p>
+              <div class="intro-stats" aria-label="Quick stats">
+                <div class="stat">
+                  <span class="stat-value">Module</span>
+                  <span class="stat-label">Training track</span>
+                </div>
+                <div class="stat">
+                  <span class="stat-value">Clinical</span>
+                  <span class="stat-label">Real-world cases</span>
+                </div>
+              </div>
             </div>
-            <div class="recent-list">
-              <div class="empty muted">No recent sessions yet.</div>
-            </div>
-          </article>
-        </section>
+          </div>
+
+          <section class="dash-grid" aria-label="Dashboard">
+            <!-- Quick start panel -->
+            <article class="panel panel-primary" aria-label="Quick start">
+              <p class="eyebrow">Quick start</p>
+              <h1 class="dash-title">Start training</h1>
+              <p class="muted">
+                Open the training workspace and load a scenario.
+              </p>
+
+              <div class="dash-actions">
+                <a class="btn btn-primary" href="training.html">Open training</a>
+                <a class="btn btn-ghost" href="instructions.html">Instructions</a>
+              </div>
+
+              <p class="landing-meta muted" style="margin-top: 0.9rem;">
+                Designed for CCU / ER nurse training
+              </p>
+            </article>
+
+            <!-- Scenario browser panel -->
+            <article class="panel" aria-label="Scenario browser">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Scenarios</p>
+                  <h2 style="margin-bottom: 0;">Browse</h2>
+                </div>
+
+                <!-- Optional: you can wire these to toggle visibility between the two lists -->
+                <div class="segmented" role="tablist" aria-label="Scenario category">
+                  <button class="seg active" type="button" aria-selected="true">Module</button>
+                  <button class="seg" type="button" aria-selected="false">Clinical</button>
+                </div>
+              </div>
+
+              <!-- Keep your existing injection targets so homeScenarios.js still works -->
+              <div class="scenario-list" data-scenario-list="module"></div>
+              <div class="scenario-list" data-scenario-list="clinical" hidden></div>
+
+              <p class="muted" style="margin-top: 0.9rem;">
+                Selecting a scenario opens the training workspace with that case loaded.
+              </p>
+            </article>
+
+            <!-- Recent panel -->
+            <article class="panel" aria-label="Recent">
+              <div class="panel-header">
+                <h2 style="margin-bottom: 0;">Recent</h2>
+              </div>
+              <div class="recent-list">
+                <div class="empty muted">No recent sessions yet.</div>
+              </div>
+            </article>
+          </section>
+        </div>
       </main>
 
       <!-- Optional: keep footer partial if you still want it;
