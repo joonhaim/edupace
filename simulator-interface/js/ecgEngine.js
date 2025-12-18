@@ -133,6 +133,11 @@ const overlayElements = {
 let calibrationInfoVisible = false;
 let caliperUnit = 'ms';
 
+function isFrameFullscreen() {
+    const frame = overlayElements.frame;
+    return document.fullscreenElement === frame || frame?.classList.contains('is-fullscreen');
+}
+
 function applyQrsMuteState(muted) {
     const isMuted = Boolean(muted);
     displaySettings.qrsBeepMuted = isMuted;
@@ -1342,20 +1347,7 @@ function setCalibrationVisibility(visible) {
     });
 }
 
-function handleFullscreenToggle() {
-    const target = overlayElements.frame;
-    if (!target) return;
-
-    if (document.fullscreenElement === target) {
-        document.exitFullscreen?.();
-    } else {
-        target.requestFullscreen?.();
-    }
-}
-
-function handleFullscreenChange() {
-    const isFullscreen = document.fullscreenElement === overlayElements.frame;
-
+function applyFullscreenState(isFullscreen) {
     overlayElements.frame?.classList.toggle('is-fullscreen', isFullscreen);
     document.body.classList.toggle('ecg-fullscreen-active', isFullscreen);
     syncAudioSuspension();
@@ -1374,6 +1366,34 @@ function handleFullscreenChange() {
     });
 }
 
+function handleFullscreenToggle() {
+    const target = overlayElements.frame;
+    if (!target) return;
+
+    const currentlyFullscreen = isFrameFullscreen();
+    if (document.fullscreenEnabled && target.requestFullscreen) {
+        if (currentlyFullscreen && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => applyFullscreenState(false));
+        } else {
+            target
+                .requestFullscreen()
+                .then(() => {})
+                .catch(() => {
+                    const fallbackState = !currentlyFullscreen;
+                    applyFullscreenState(fallbackState);
+                });
+        }
+        return;
+    }
+
+    const fallbackState = !currentlyFullscreen;
+    applyFullscreenState(fallbackState);
+}
+
+function handleFullscreenChange() {
+    applyFullscreenState(isFrameFullscreen());
+}
+
 function handleViewChange(event) {
     const targetView = event?.detail?.view;
     isTrainingViewVisible = targetView === 'training';
@@ -1388,9 +1408,7 @@ function handleViewChange(event) {
 }
 
 function syncAudioSuspension() {
-    const frame = overlayElements.frame;
-    const ecgFullscreen = document.fullscreenElement === frame || frame?.classList.contains('is-fullscreen');
-    const allowAudio = isTrainingViewVisible || ecgFullscreen;
+    const allowAudio = isTrainingViewVisible || isFrameFullscreen();
     heartRateEngine?.setSuspended(!allowAudio);
 }
 

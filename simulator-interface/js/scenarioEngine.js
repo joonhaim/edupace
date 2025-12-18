@@ -54,6 +54,17 @@ function normalizeCategory(scenario) {
     return category || 'module';
 }
 
+function findScenarioIndex(identifier) {
+    if (!identifier) return -1;
+    const normalizedId = identifier.trim().toLowerCase();
+    return scenarioState.scenarios.findIndex((scenario) => {
+        if (scenario.comingSoon) return false;
+        const idMatch = scenario.id?.toLowerCase() === normalizedId;
+        const codeMatch = scenario.code?.toLowerCase() === normalizedId;
+        return idMatch || codeMatch;
+    });
+}
+
 function getCategoryLabel(category) {
     if (category === 'module') return translateKey('training.menu.module');
     if (category === 'clinical') return translateKey('training.menu.clinical');
@@ -335,6 +346,18 @@ function startScenario(index) {
             detail: scenario
         })
     );
+
+    const params = new URLSearchParams(window.location.search);
+    const scenarioId = scenario.id || scenario.code;
+    if (scenarioId) {
+        params.set('scenario', scenarioId);
+    } else {
+        params.delete('scenario');
+    }
+
+    const queryString = params.toString();
+    const newUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}${window.location.hash}`;
+    history.replaceState(null, '', newUrl);
 }
 
 function refreshScenarioLanguage(language = getCurrentLanguage()) {
@@ -423,6 +446,14 @@ async function initScenarios() {
     if (initialIndex >= 0) {
         startScenario(initialIndex);
     }
+
+    document.addEventListener('edupace:start-scenario', (event) => {
+        const scenarioId = event.detail?.scenarioId || event.detail?.scenarioCode;
+        const requestedIndex = findScenarioIndex(scenarioId);
+        if (requestedIndex >= 0) {
+            startScenario(requestedIndex);
+        }
+    });
 
     document.addEventListener('edupace:language-changed', (event) => {
         const language = event.detail?.language || getCurrentLanguage();

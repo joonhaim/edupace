@@ -1,6 +1,10 @@
 const LANGUAGE_KEY = 'edupace-language';
 const DEFAULT_LANGUAGE = 'en';
 
+function normalizeLanguage(language) {
+    return language === 'nl' ? 'nl' : DEFAULT_LANGUAGE;
+}
+
 const TRANSLATIONS = {
     en: {
         'controls.settings': 'Open settings',
@@ -77,7 +81,7 @@ const TRANSLATIONS = {
         'logs.empty': 'No sessions have been logged yet. Complete a run to see it here.',
         'instructions.label': 'Quick start',
         'instructions.title': 'Ready, connect, pace',
-        'instructions.tagline': 'Align with the EduPace UI and start a session quickly.',
+        'instructions.tagline': 'Learn how to use EduPace in simple steps',
         'instructions.manual': 'Open user manual (PDF)',
         'instructions.cta.training': 'Go to training',
         'instructions.steps.connect.step': 'Setup',
@@ -168,7 +172,7 @@ const TRANSLATIONS = {
         'logs.empty': 'Er zijn nog geen sessies gelogd. Rond een run af om hem hier te zien.',
         'instructions.label': 'Snelstart',
         'instructions.title': 'Klaar, verbinden, pacen',
-        'instructions.tagline': 'Sluit aan bij de EduPace-interface en start snel een sessie.',
+        'instructions.tagline': 'Leer hoe je EduPace in eenvoudige stappen gebruikt',
         'instructions.manual': 'Open gebruikershandleiding (PDF)',
         'instructions.cta.training': 'Ga naar training',
         'instructions.steps.connect.step': 'Setup',
@@ -191,7 +195,9 @@ function getTranslation(language, key) {
 }
 
 function getCurrentLanguage() {
-    return document.documentElement.getAttribute('lang') || localStorage.getItem(LANGUAGE_KEY) || DEFAULT_LANGUAGE;
+    const documentLang = document.documentElement.getAttribute('lang');
+    const storedLang = localStorage.getItem(LANGUAGE_KEY);
+    return normalizeLanguage(documentLang || storedLang || DEFAULT_LANGUAGE);
 }
 
 function translateKey(key, language = getCurrentLanguage()) {
@@ -199,7 +205,7 @@ function translateKey(key, language = getCurrentLanguage()) {
 }
 
 function applyTranslations(language) {
-    const normalizedLanguage = language === 'nl' ? 'nl' : DEFAULT_LANGUAGE;
+    const normalizedLanguage = normalizeLanguage(language);
 
     document.querySelectorAll('[data-i18n-key]').forEach((element) => {
         const key = element.dataset.i18nKey;
@@ -237,7 +243,7 @@ function updateLanguageButtons(language) {
 }
 
 function applyLanguage(language) {
-    const normalizedLanguage = language === 'nl' ? 'nl' : DEFAULT_LANGUAGE;
+    const normalizedLanguage = normalizeLanguage(language);
     document.documentElement.setAttribute('lang', normalizedLanguage);
     localStorage.setItem(LANGUAGE_KEY, normalizedLanguage);
     updateLanguageButtons(normalizedLanguage);
