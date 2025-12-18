@@ -82,6 +82,7 @@ let activeBeatLabels = [];
 let devicePixelRatioScale = 1;
 let canvasDisplayWidth = 0;
 let canvasDisplayHeight = 0;
+let isTrainingViewVisible = false;
 let displaySettings = {
     gridlines: false,
     gridDensity: '2mm',
@@ -181,6 +182,7 @@ function initEcgEngine() {
     applyAnnotationStyles();
 
     heartRateEngine = createHeartRateEngine(document.getElementById('hrValue'));
+    syncAudioSuspension();
     applyQrsMuteState(displaySettings.qrsBeepMuted);
     updateQrsControlVisibility();
 
@@ -209,7 +211,9 @@ function initEcgEngine() {
     overlayElements.caliperUnitToggle?.addEventListener('click', toggleCaliperUnit);
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('edupace:view-change', handleViewChange);
     handleFullscreenChange();
+    handleViewChange({ detail: { view: (location.hash || '#home').replace('#', '') || 'home' } });
 
     overlayElements.qrsMuteToggle?.addEventListener('click', () => {
         applyQrsMuteState(!displaySettings.qrsBeepMuted);
@@ -1354,6 +1358,7 @@ function handleFullscreenChange() {
 
     overlayElements.frame?.classList.toggle('is-fullscreen', isFullscreen);
     document.body.classList.toggle('ecg-fullscreen-active', isFullscreen);
+    syncAudioSuspension();
 
     if (overlayElements.fullscreenToggle) {
         const label = isFullscreen ? 'Exit full screen' : 'Enter full screen';
@@ -1367,6 +1372,26 @@ function handleFullscreenChange() {
         syncCanvasSize();
         resetSweep();
     });
+}
+
+function handleViewChange(event) {
+    const targetView = event?.detail?.view;
+    isTrainingViewVisible = targetView === 'training';
+    syncAudioSuspension();
+
+    if (isTrainingViewVisible) {
+        requestAnimationFrame(() => {
+            syncCanvasSize();
+            resetSweep();
+        });
+    }
+}
+
+function syncAudioSuspension() {
+    const frame = overlayElements.frame;
+    const ecgFullscreen = document.fullscreenElement === frame || frame?.classList.contains('is-fullscreen');
+    const allowAudio = isTrainingViewVisible || ecgFullscreen;
+    heartRateEngine?.setSuspended(!allowAudio);
 }
 
 

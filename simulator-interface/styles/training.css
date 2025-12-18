@@ -28,11 +28,25 @@
     position: relative;
 }
 
+.connection-group--sidebar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+    padding-right: 1rem;
+}
+
+.connection-group--sidebar .connect-btn {
+    margin-left: 0;
+    width: 100%;
+}
+
 .device-popover {
     position: absolute;
-    top: calc(100% + 0.65rem);
+    bottom: calc(100% + 0.65rem);
     right: 0;
-    width: min(420px, 88vw);
+    left: 0;
+    width: 100%;
+    max-width: 320px;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -42,6 +56,7 @@
     flex-direction: column;
     gap: 0.8rem;
     z-index: 30;
+    margin: 0 auto;
 }
 
 .device-popover.is-visible {
@@ -2129,13 +2144,6 @@ body.simulation-light .theme-toggle {
 
 .perf-value {
     font-weight: 700;
-}
-
-.site-footer {
-    padding: 1.5rem;
-    text-align: center;
-        color: var(--muted);
-    font-size: 0.85rem;
 }
 
 .sim-footer {

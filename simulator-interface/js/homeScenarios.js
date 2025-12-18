@@ -1,16 +1,44 @@
+import { getCurrentLanguage, translateKey } from './languageToggle.js';
+import { localizeScenarioList } from './scenarioLocalization.js';
+
 const scenarioLists = {
     module: document.querySelector('[data-scenario-list="module"]'),
     clinical: document.querySelector('[data-scenario-list="clinical"]')
 };
 
+let baseScenarios = [];
+let localizedScenarios = [];
+
 function hasTargets() {
     return Object.values(scenarioLists).some(Boolean);
+}
+
+function setScenarioCategory(category = 'clinical') {
+    Object.entries(scenarioLists).forEach(([key, target]) => {
+        if (!target) return;
+        const isActive = key === category;
+        target.hidden = !isActive;
+    });
+
+    document.querySelectorAll('[data-scenario-category]').forEach((button) => {
+        const isActive = button.dataset.scenarioCategory === category;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', String(isActive));
+    });
+}
+
+function bindScenarioToggles() {
+    const toggles = document.querySelectorAll('[data-scenario-category]');
+    toggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => setScenarioCategory(toggle.dataset.scenarioCategory));
+    });
 }
 
 function createScenarioLink(scenario) {
     const link = document.createElement('a');
     link.className = 'scenario-link';
-    link.href = `training.html?scenario=${encodeURIComponent(scenario.id)}#scenario-section`;
+    link.href = '#training';
+    link.dataset.viewTarget = 'training';
     link.textContent = scenario.title;
 
     const summary = document.createElement('span');
@@ -24,7 +52,7 @@ function createScenarioLink(scenario) {
 function createEmptyState(target) {
     const empty = document.createElement('div');
     empty.className = 'scenario-link-empty';
-    empty.textContent = 'No scenarios available yet.';
+    empty.textContent = translateKey('home.scenarios.empty');
     target.appendChild(empty);
 }
 
@@ -60,24 +88,34 @@ function renderScenarioLists(scenarios) {
 async function initHomeScenarios() {
     if (!hasTargets()) return;
 
+    bindScenarioToggles();
+    setScenarioCategory('clinical');
+
     try {
         const response = await fetch('data/scenarios.json', { cache: 'no-store' });
         if (!response.ok) throw new Error(`Failed to load scenarios (${response.status})`);
         const payload = await response.json();
-        const scenarios = Array.isArray(payload) ? payload : payload.scenarios;
-        renderScenarioLists(Array.isArray(scenarios) ? scenarios : []);
+        baseScenarios = Array.isArray(payload) ? payload : payload.scenarios;
+        localizedScenarios = localizeScenarioList(Array.isArray(baseScenarios) ? baseScenarios : [], getCurrentLanguage());
+        renderScenarioLists(localizedScenarios);
     } catch (error) {
         Object.values(scenarioLists).forEach((target) => {
             if (!target) return;
             target.innerHTML = '';
             const warning = document.createElement('div');
             warning.className = 'scenario-link-empty';
-            warning.textContent = 'Unable to load scenarios.';
+            warning.textContent = translateKey('home.scenarios.error');
             target.appendChild(warning);
         });
         // eslint-disable-next-line no-console
         console.error(error);
     }
+
+    document.addEventListener('edupace:language-changed', (event) => {
+        const language = event.detail?.language || getCurrentLanguage();
+        localizedScenarios = localizeScenarioList(baseScenarios, language);
+        renderScenarioLists(localizedScenarios);
+    });
 }
 
 initHomeScenarios();

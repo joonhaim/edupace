@@ -1,3 +1,6 @@
+import { getCurrentLanguage, translateKey } from './languageToggle.js';
+import { localizeScenarioList } from './scenarioLocalization.js';
+
 const ALARM_LEVELS = ['normal', 'warning', 'critical'];
 
 const scenarioElements = {
@@ -37,15 +40,11 @@ const defaultTexts = textKeys.reduce((acc, key) => {
 }, {});
 
 const scenarioState = {
+    baseScenarios: [],
     scenarios: [],
     activeScenario: null,
     activeIndex: null,
     locked: false
-};
-
-const CATEGORY_LABELS = {
-    module: 'Module Training',
-    clinical: 'Clinical Cases'
 };
 
 const CATEGORY_ORDER = ['module', 'clinical'];
@@ -56,7 +55,9 @@ function normalizeCategory(scenario) {
 }
 
 function getCategoryLabel(category) {
-    return CATEGORY_LABELS[category] || 'Training modes';
+    if (category === 'module') return translateKey('training.menu.module');
+    if (category === 'clinical') return translateKey('training.menu.clinical');
+    return translateKey('training.menu.trainingModes');
 }
 
 function getCategoryClasses(category) {
@@ -180,9 +181,11 @@ async function loadScenarios() {
         }
         const payload = await response.json();
         const scenarios = Array.isArray(payload) ? payload : payload.scenarios;
-        scenarioState.scenarios = Array.isArray(scenarios) ? scenarios : [];
+        scenarioState.baseScenarios = Array.isArray(scenarios) ? scenarios : [];
+        scenarioState.scenarios = localizeScenarioList(scenarioState.baseScenarios, getCurrentLanguage());
     } catch (error) {
         console.error(error);
+        scenarioState.baseScenarios = [];
         scenarioState.scenarios = [];
     }
 
@@ -199,8 +202,8 @@ function renderScenarioMenu(menu, scenarios) {
 
     if (!scenarios.length) {
         const empty = document.createElement('div');
-        empty.className = 'scenario-option';
-        empty.textContent = 'No scenarios found';
+        empty.className = 'scenario-option scenario-option-empty';
+        empty.textContent = translateKey('training.menu.empty');
         empty.setAttribute('aria-disabled', 'true');
         empty.tabIndex = -1;
         list.appendChild(empty);
@@ -236,7 +239,7 @@ function renderScenarioMenu(menu, scenarios) {
         if (!items.length) {
             const empty = document.createElement('div');
             empty.className = 'scenario-option scenario-option-empty';
-            empty.textContent = 'No scenarios available';
+            empty.textContent = translateKey('training.menu.empty');
             empty.setAttribute('aria-disabled', 'true');
             empty.tabIndex = -1;
             section.appendChild(empty);
@@ -251,7 +254,7 @@ function renderScenarioMenu(menu, scenarios) {
             option.textContent = scenario.title;
             if (scenario.comingSoon) {
                 option.disabled = true;
-                option.title = 'Coming soon';
+                option.title = translateKey('training.menu.comingSoon');
             }
 
             option.addEventListener('click', () => {
@@ -334,6 +337,20 @@ function startScenario(index) {
     );
 }
 
+function refreshScenarioLanguage(language = getCurrentLanguage()) {
+    scenarioState.scenarios = localizeScenarioList(scenarioState.baseScenarios, language);
+    renderScenarioMenu(scenarioElements.scenarioMenu, scenarioState.scenarios);
+    highlightActiveOption();
+
+    if (Number.isInteger(scenarioState.activeIndex)) {
+        const scenario = scenarioState.scenarios[scenarioState.activeIndex];
+        if (scenario) {
+            scenarioState.activeScenario = scenario;
+            applyScenarioText(scenario);
+        }
+    }
+}
+
 async function initScenarios() {
     const menu = scenarioElements.scenarioMenu;
     const picker = scenarioElements.scenarioPicker;
@@ -343,8 +360,8 @@ async function initScenarios() {
         return;
     }
 
-    const scenarios = await loadScenarios();
-    renderScenarioMenu(menu, scenarios);
+    await loadScenarios();
+    renderScenarioMenu(menu, scenarioState.scenarios);
 
     picker.addEventListener('click', () => toggleMenu());
     const pickerArea = scenarioElements.scenarioPickerArea;
@@ -388,11 +405,11 @@ async function initScenarios() {
     const params = new URLSearchParams(window.location.search);
     const scenarioQuery = params.get('scenario');
 
-    let initialIndex = scenarios.findIndex((scenario) => !scenario.comingSoon);
+    let initialIndex = scenarioState.scenarios.findIndex((scenario) => !scenario.comingSoon);
 
     if (scenarioQuery) {
         const normalizedQuery = scenarioQuery.trim().toLowerCase();
-        const matchedIndex = scenarios.findIndex((scenario) => {
+        const matchedIndex = scenarioState.scenarios.findIndex((scenario) => {
             const idMatch = scenario.id?.toLowerCase() === normalizedQuery;
             const codeMatch = scenario.code?.toLowerCase() === normalizedQuery;
             return !scenario.comingSoon && (idMatch || codeMatch);
@@ -406,6 +423,11 @@ async function initScenarios() {
     if (initialIndex >= 0) {
         startScenario(initialIndex);
     }
+
+    document.addEventListener('edupace:language-changed', (event) => {
+        const language = event.detail?.language || getCurrentLanguage();
+        refreshScenarioLanguage(language);
+    });
 }
 
 export { initScenarios };
