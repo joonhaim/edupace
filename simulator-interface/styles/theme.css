@@ -159,8 +159,8 @@ body.simulation-dark .sim-summary {
 }
 
 body.simulation-dark .settings-layer {
-    background: rgba(7, 12, 20, 0.7);
-    backdrop-filter: blur(4px);
+    background: linear-gradient(270deg, rgba(7, 12, 20, 0.78), rgba(7, 12, 20, 0.32) 42%, rgba(7, 12, 20, 0.1));
+    backdrop-filter: blur(8px);
 }
 
 body.simulation-dark .mode-toggle {
@@ -187,7 +187,7 @@ body.simulation-dark .mode-pill input:checked ~ span {
 body.simulation-dark .settings-window {
     background: #0f1624;
     border-color: #1c2738;
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+    box-shadow: -20px 0 48px rgba(0, 0, 0, 0.5);
 }
 
 body.simulation-dark .settings-window .card-heading p {

@@ -324,8 +324,9 @@ justify-content: center;
 }
 
 .page-logs .settings-layer {
-    align-items: center;
-    background: rgba(12, 26, 45, 0.35);
+    align-items: stretch;
+    justify-content: flex-end;
+    background: rgba(12, 26, 45, 0.45);
 }
 
 .log-settings {
