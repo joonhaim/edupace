@@ -350,16 +350,15 @@ h1, h2, h3 {
   border: 1px solid rgba(17,30,46,0.14);
   background: rgba(255,255,255,0.72);
   box-shadow:
-    0 8px 18px rgba(12,26,45,0.06),
-    inset 0 1px 0 rgba(255,255,255,0.85);
-
+    0 8px 18px rgba(12,26,45,0.06);
   font-weight: 800;
   font-size: 0.78rem;
   letter-spacing: 0.10em;
   text-transform: uppercase;
   color: rgba(13,19,32,0.82);
 
-  max-width: 100%;
+ width:fit-content;
+    max-width: 100%;
   min-width: 0;
 }
 
@@ -373,7 +372,7 @@ h1, h2, h3 {
 
 .chip .status-text{
   min-width: 0;
-  max-width: 14ch; /* fits “Disconnected” + most EU translations */
+  max-width: 25ch; /* fits “Disconnected” + most EU translations */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -672,4 +671,44 @@ h1, h2, h3 {
 /* Hover = subtle row highlight */
 .scenario-list > *:hover {
   background: rgba(17, 30, 46, 0.04);
+}
+
+
+@keyframes dot-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.08);   /* very small */
+    opacity: 1;
+  }
+}
+
+@keyframes dot-glow-soft {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, currentColor 20%, transparent),
+      0 0 4px 1px color-mix(in srgb, currentColor 35%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, currentColor 24%, transparent),
+      0 0 6px 2px color-mix(in srgb, currentColor 45%, transparent);
+  }
+}
+
+/* base dot */
+.chip .status-dot{
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* only when live */
+.chip-connected .status-dot{
+  animation:
+    dot-breathe 2.8s ease-in-out infinite,
+    dot-glow-soft 2.8s ease-in-out infinite;
 }
