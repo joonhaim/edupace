@@ -3,26 +3,16 @@
     {
       "id": "M0",
       "code": "M0",
+      "category": "module",
       "title": "M0 · Normal Sinus",
       "description": "Maintain VVI standby pacing while observing intrinsic beats.",
       "summaryLabel": "Normal sinus rhythm monitoring",
       "primaryRhythm": "Normal sinus rhythm",
       "location": "Telemetry",
       "waveformId": "normal-sinus",
-      "vitals": {
-        "hr": 78,
-        "bp": "118/64",
-        "spo2": 99,
-        "temp": 36.8
-      },
-      "pacing": {
-        "mode": "VVI (standby)",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "normal",
-        "text": "No active alarms"
-      },
+      "vitals": { "hr": 78 },
+      "pacing": { "mode": "VVI (standby)", "poweredOn": false },
+      "alarm": { "level": "normal", "text": "No active alarms" },
       "objective": "Confirm the pacemaker remains inhibited while the patient maintains an intrinsic sinus rate.",
       "feedback": "No pacing spikes should be visible. If pacing occurs, lower the rate below the intrinsic rhythm or verify sensing leads.",
       "rules": []
@@ -30,41 +20,25 @@
     {
       "id": "M1",
       "code": "M1",
+      "category": "module",
       "title": "M1 · Symptomatic Bradycardia",
       "description": "Patient with symptomatic ventricular bradycardia requiring VVI demand pacing.",
       "summaryLabel": "Bradycardia requiring VVI pacing",
       "primaryRhythm": "Symptomatic ventricular bradycardia",
       "location": "ICU",
       "waveformId": "normal-sinus",
-      "vitals": {
-        "hr": 36,
-        "bp": "88/52",
-        "spo2": 96,
-        "temp": 36.7
-      },
-      "pacing": {
-        "mode": "VVI (demand)",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "warning",
-        "text": "Symptomatic bradycardia – initiate pacing"
-      },
+      "vitals": { "hr": 36 },
+      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
+      "alarm": { "level": "warning", "text": "Symptomatic bradycardia – initiate pacing" },
       "objective": "Increase the VVI pacing rate above the intrinsic 34–38 ppm rhythm with adequate output and sensitivity to achieve consistent ventricular capture.",
       "feedback": "Start VVI pacing, set the rate to 60–70 ppm, output to 5–10 mA, and sensitivity around 2 mV to obtain paced QRS complexes.",
       "rules": [
         {
           "id": "uc01-loss-of-capture",
           "description": "Loss of capture when pacing output is inadequate despite the higher rate.",
-          "condition": {
-            "rate": [55, 80],
-            "output": [0, 4.9]
-          },
+          "condition": { "rate": [55, 80], "output": [0, 4.9] },
           "effects": {
-            "alarm": {
-              "level": "warning",
-              "text": "Loss of capture – increase output"
-            },
+            "alarm": { "level": "warning", "text": "Loss of capture – increase output" },
             "feedback": "Raise the output to at least 5 mA and reassess capture at the paced rate.",
             "waveformId": "loss-of-capture"
           }
@@ -72,16 +46,9 @@
         {
           "id": "uc01-oversensing",
           "description": "Oversensing inhibits pacing when sensitivity is set too low (too sensitive).",
-          "condition": {
-            "rate": [60, 80],
-            "output": [5, 12],
-            "sensitivity": [0, 1.4]
-          },
+          "condition": { "rate": [60, 80], "output": [5, 12], "sensitivity": [0, 1.4] },
           "effects": {
-            "alarm": {
-              "level": "warning",
-              "text": "Oversensing – decrease sensitivity (raise mV)"
-            },
+            "alarm": { "level": "warning", "text": "Oversensing – decrease sensitivity (raise mV)" },
             "feedback": "Reduce sensitivity toward ~2 mV so that only true R-waves are sensed and pacing is not inappropriately inhibited.",
             "waveformId": "normal-sinus"
           }
@@ -89,21 +56,11 @@
         {
           "id": "uc01-vvi-capture",
           "description": "Stable ventricular capture once rate, output, and sensitivity are set appropriately.",
-          "condition": {
-            "rate": [60, 70],
-            "output": [5, 10],
-            "sensitivity": [1.5, 3]
-          },
+          "condition": { "rate": [60, 70], "output": [5, 10], "sensitivity": [1.5, 3] },
           "effects": {
-            "alarm": {
-              "level": "normal",
-              "text": "Capture achieved – maintain VVI pacing"
-            },
-            "feedback": "Paced rhythm should be stable at the selected rate with each pacing spike followed by a QRS complex and improved blood pressure.",
-            "vitals": {
-              "hr": 64,
-              "bp": "104/62"
-            },
+            "alarm": { "level": "normal", "text": "Capture achieved – maintain VVI pacing" },
+            "feedback": "Paced rhythm should be stable at the selected rate with each pacing spike followed by a QRS complex.",
+            "vitals": { "hr": 64 },
             "waveformId": "ventricular-paced"
           }
         }
@@ -112,41 +69,25 @@
     {
       "id": "M2",
       "code": "M2",
+      "category": "module",
       "title": "M2 · Capture Threshold Test",
       "description": "Determine the ventricular capture threshold and program an appropriate safety margin.",
       "summaryLabel": "Capture threshold testing",
       "primaryRhythm": "Sinus rhythm with ventricular pacing",
       "location": "ICU",
       "waveformId": "ventricular-paced",
-      "vitals": {
-        "hr": 70,
-        "bp": "104/60",
-        "spo2": 98,
-        "temp": 36.7
-      },
-      "pacing": {
-        "mode": "VVI (demand)",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "normal",
-        "text": "Begin threshold test – rate above intrinsic"
-      },
+      "vitals": { "hr": 70 },
+      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
+      "alarm": { "level": "normal", "text": "Begin threshold test – rate above intrinsic" },
       "objective": "Increase the VVI rate above the intrinsic rhythm, slowly reduce the output to find the minimal output that consistently captures, then program a final output with a 2–3× safety margin.",
-      "feedback": "Set the rate to ≥70 ppm, decrease output until capture is lost, then increase until every spike captures. Use that value as the threshold and set the final output about 2–3× higher.",
+      "feedback": "Set the rate to ≥70 ppm, decrease output until capture is lost, then increase until every spike captures. Set final output about 2–3× higher.",
       "rules": [
         {
           "id": "uc02-loss-of-capture-during-test",
           "description": "During the threshold search, output is too low and capture is lost.",
-          "condition": {
-            "rate": [70, 90],
-            "output": [0, 1.9]
-          },
+          "condition": { "rate": [70, 90], "output": [0, 1.9] },
           "effects": {
-            "alarm": {
-              "level": "warning",
-              "text": "Loss of capture – slowly increase output"
-            },
+            "alarm": { "level": "warning", "text": "Loss of capture – slowly increase output" },
             "feedback": "You are below the capture threshold. Increase the output in small steps until each pacing spike is followed by a QRS complex.",
             "waveformId": "loss-of-capture"
           }
@@ -154,15 +95,9 @@
         {
           "id": "uc02-threshold-found-no-margin",
           "description": "Output is set at the threshold with no safety margin.",
-          "condition": {
-            "rate": [70, 90],
-            "output": [2, 3]
-          },
+          "condition": { "rate": [70, 90], "output": [2, 3] },
           "effects": {
-            "alarm": {
-              "level": "warning",
-              "text": "Output at threshold – add safety margin"
-            },
+            "alarm": { "level": "warning", "text": "Output at threshold – add safety margin" },
             "feedback": "You have found the capture threshold, but the output should be increased to about 2–3× this value to ensure long-term capture.",
             "waveformId": "ventricular-paced"
           }
@@ -170,20 +105,11 @@
         {
           "id": "uc02-safe-final-output",
           "description": "Stable capture with appropriate safety margin programmed.",
-          "condition": {
-            "rate": [70, 90],
-            "output": [4, 8]
-          },
+          "condition": { "rate": [70, 90], "output": [4, 8] },
           "effects": {
-            "alarm": {
-              "level": "normal",
-              "text": "Stable capture – threshold and margin set"
-            },
+            "alarm": { "level": "normal", "text": "Stable capture – threshold and margin set" },
             "feedback": "All beats are paced at the programmed rate and each spike results in a QRS complex. The programmed output provides an adequate safety margin above the threshold.",
-            "vitals": {
-              "hr": 72,
-              "bp": "110/64"
-            },
+            "vitals": { "hr": 72 },
             "waveformId": "ventricular-paced"
           }
         }
@@ -192,60 +118,36 @@
     {
       "id": "M3",
       "code": "M3",
+      "category": "module",
       "title": "M3 · Sensing & Undersensing",
       "description": "Determine the ventricular sensing threshold and correct undersensing.",
       "summaryLabel": "Sensing threshold and undersensing",
       "primaryRhythm": "Intrinsic sinus rhythm with intermittent pacing",
       "location": "ICU",
       "waveformId": "normal-sinus",
-      "vitals": {
-        "hr": 78,
-        "bp": "112/66",
-        "spo2": 98,
-        "temp": 36.7
-      },
-      "pacing": {
-        "mode": "VVI (demand)",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "normal",
-        "text": "Set rate below intrinsic and minimize output"
-      },
-      "objective": "With the rate set below the intrinsic rhythm and output minimized, adjust the Sensitivity to find the sensing threshold, recognize undersensing, and program a safe sensitivity setting.",
-      "feedback": "Set the rate at 40–60 ppm and the output very low (e.g. 0.1–1 mA). Adjust sensitivity so that intrinsic R-waves are reliably sensed and pacing is inhibited whenever an intrinsic QRS is present.",
+      "vitals": { "hr": 78 },
+      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
+      "alarm": { "level": "normal", "text": "Set rate below intrinsic and minimize output" },
+      "objective": "With the rate set below the intrinsic rhythm and output minimized, adjust Sensitivity to find the sensing threshold, recognize undersensing, and program a safe sensitivity setting.",
+      "feedback": "Set rate at 40–60 ppm and output very low (0–2 mA). Decrease mV (more sensitive) until intrinsic R-waves are reliably sensed and pacing is inhibited.",
       "rules": [
         {
           "id": "uc03-undersensing",
-          "description": "Undersensing: pacemaker paces despite intrinsic QRS complexes because sensitivity (mV) is set too high (too insensitive).",
-          "condition": {
-            "rate": [40, 60],
-            "output": [0, 2],
-            "sensitivity": [4, 10]
-          },
+          "description": "Undersensing: pacemaker paces despite intrinsic QRS because sensitivity (mV) is too high (too insensitive).",
+          "condition": { "rate": [40, 60], "output": [0, 2], "sensitivity": [4, 10] },
           "effects": {
-            "alarm": {
-              "level": "warning",
-              "text": "Undersensing – increase sensitivity (lower mV)"
-            },
-            "feedback": "You see pacing spikes falling on top of intrinsic QRS complexes, and the SENSE indicator is not flashing reliably. Decrease the mV setting to increase sensitivity until all R-waves are detected.",
+            "alarm": { "level": "warning", "text": "Undersensing – increase sensitivity (lower mV)" },
+            "feedback": "Pacing spikes occur despite intrinsic QRS complexes. Lower the mV setting until R-waves are detected reliably and pacing is inhibited appropriately.",
             "waveformId": "undersensing"
           }
         },
         {
           "id": "uc03-optimal-sensing",
           "description": "Intrinsic rhythm is reliably sensed and pacing is appropriately inhibited.",
-          "condition": {
-            "rate": [40, 60],
-            "output": [0, 2],
-            "sensitivity": [1.5, 3]
-          },
+          "condition": { "rate": [40, 60], "output": [0, 2], "sensitivity": [1.5, 3] },
           "effects": {
-            "alarm": {
-              "level": "normal",
-              "text": "Sensing threshold set – pacing appropriately inhibited"
-            },
-            "feedback": "The SENSE indicator flashes with each intrinsic QRS, and pacing is inhibited whenever an intrinsic beat occurs. The sensitivity setting is within a safe range.",
+            "alarm": { "level": "normal", "text": "Sensing set – pacing appropriately inhibited" },
+            "feedback": "SENSE corresponds to intrinsic QRS complexes and pacing is inhibited whenever intrinsic beats occur.",
             "waveformId": "normal-sinus"
           }
         }
@@ -254,64 +156,37 @@
     {
       "id": "M4",
       "code": "M4",
+      "category": "module",
       "title": "M4 · Oversensing & Inhibition",
       "description": "Recognize oversensing that leads to inappropriate inhibition of pacing and correct it.",
       "summaryLabel": "Oversensing and pauses",
       "primaryRhythm": "Bradycardia with paced support",
       "location": "ICU",
       "waveformId": "oversensing",
-      "vitals": {
-        "hr": 40,
-        "bp": "90/54",
-        "spo2": 96,
-        "temp": 36.6
-      },
-      "pacing": {
-        "mode": "VVI (demand)",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "warning",
-        "text": "Oversensing – long pauses due to pacing inhibition"
-      },
-      "objective": "Identify oversensing (e.g. T-waves, noise, far-field signals) that inappropriately inhibits pacing and correct it by decreasing sensitivity (raising mV) without causing undersensing.",
-      "feedback": "When the sensitivity is set too low (very small mV), the SENSE indicator responds to noise or T-waves and pacing is inhibited, causing pauses. Raise the mV setting until only true R-waves are sensed and pacing resumes when needed.",
+      "vitals": { "hr": 40 },
+      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
+      "alarm": { "level": "warning", "text": "Oversensing – long pauses due to pacing inhibition" },
+      "objective": "Identify oversensing that inhibits pacing and correct it by decreasing sensitivity (raising mV) without causing undersensing.",
+      "feedback": "When mV is too low (too sensitive), sensing responds to noise/T-waves and pacing is inhibited. Raise mV until oversensing disappears while true QRS complexes are still sensed.",
       "rules": [
         {
           "id": "uc04-oversensing-active",
-          "description": "Oversensing due to excessively high sensitivity (low mV) leading to bradycardic pauses.",
-          "condition": {
-            "rate": [60, 80],
-            "output": [5, 10],
-            "sensitivity": [0, 1.4]
-          },
+          "description": "Oversensing due to very high sensitivity (low mV) leading to pauses.",
+          "condition": { "rate": [60, 80], "output": [5, 10], "sensitivity": [0, 1.4] },
           "effects": {
-            "alarm": {
-              "level": "warning",
-              "text": "Oversensing – pacing inappropriately inhibited"
-            },
-            "feedback": "Frequent SENSE flashes occur without true QRS complexes, and pacing spikes are inhibited, producing long pauses. Increase the mV setting until oversensing disappears.",
+            "alarm": { "level": "warning", "text": "Oversensing – pacing inappropriately inhibited" },
+            "feedback": "SENSE flashes occur without true QRS complexes and pacing is inhibited, producing long pauses. Increase the mV setting until oversensing disappears.",
             "waveformId": "oversensing"
           }
         },
         {
           "id": "uc04-resolved-oversensing",
-          "description": "Oversensing corrected, pacing now appropriately supports the patient without undersensing.",
-          "condition": {
-            "rate": [60, 80],
-            "output": [5, 10],
-            "sensitivity": [1.5, 4]
-          },
+          "description": "Oversensing corrected; pacing supports the patient appropriately.",
+          "condition": { "rate": [60, 80], "output": [5, 10], "sensitivity": [1.5, 4] },
           "effects": {
-            "alarm": {
-              "level": "normal",
-              "text": "Oversensing corrected – pacing appropriate"
-            },
-            "feedback": "The SENSE indicator corresponds to real QRS complexes only, and pacing occurs when intrinsic beats are absent. Heart rate and blood pressure improve.",
-            "vitals": {
-              "hr": 64,
-              "bp": "106/60"
-            },
+            "alarm": { "level": "normal", "text": "Oversensing corrected – pacing appropriate" },
+            "feedback": "SENSE corresponds to real QRS complexes only, and pacing occurs when intrinsic beats are absent.",
+            "vitals": { "hr": 64 },
             "waveformId": "ventricular-paced"
           }
         }
@@ -320,78 +195,47 @@
     {
       "id": "M5",
       "code": "M5",
-      "title": "M5 · Threshold Drift & LOC",
-      "description": "Recognize evolving loss of capture and readjust output after threshold drift or lead-related changes.",
+      "category": "module",
+      "title": "M5 · Threshold Drift & Loss of Capture",
+      "description": "Recognize evolving loss of capture and readjust output after threshold drift.",
       "summaryLabel": "Threshold drift and loss of capture",
       "primaryRhythm": "Ventricular pacing with evolving loss of capture",
       "location": "ICU",
       "waveformId": "intermittent-capture",
-      "vitals": {
-        "hr": 58,
-        "bp": "96/58",
-        "spo2": 97,
-        "temp": 36.7
-      },
-      "pacing": {
-        "mode": "VVI (demand)",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "warning",
-        "text": "Intermittent loss of capture – reassess threshold"
-      },
-      "objective": "Identify intermittent loss of capture due to increased capture threshold or lead issues, reassess the capture threshold, and increase output to restore stable capture.",
-      "feedback": "Previously stable pacing is now intermittently failing. Repeat a capture threshold test and increase the output to restore consistent capture, recognizing that thresholds can change over time.",
+      "vitals": { "hr": 58 },
+      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
+      "alarm": { "level": "warning", "text": "Intermittent loss of capture – reassess threshold" },
+      "objective": "Identify intermittent loss of capture and increase output to restore stable capture with a safety margin.",
+      "feedback": "Repeat a capture threshold check and increase output until every pacing spike captures again, then maintain a 2–3× safety margin.",
       "rules": [
         {
           "id": "uc05-complete-loss-of-capture",
-          "description": "Output has fallen well below the new threshold, leading to complete loss of capture.",
-          "condition": {
-            "rate": [60, 80],
-            "output": [0, 4.9]
-          },
+          "description": "Output is below threshold leading to complete loss of capture.",
+          "condition": { "rate": [60, 80], "output": [0, 4.9] },
           "effects": {
-            "alarm": {
-              "level": "critical",
-              "text": "Complete loss of capture – increase output immediately"
-            },
-            "feedback": "No QRS complexes follow pacing spikes. Increase the output and reassess the capture threshold. Consider lead position if very high outputs are required.",
+            "alarm": { "level": "critical", "text": "Complete loss of capture – increase output" },
+            "feedback": "No QRS complexes follow pacing spikes. Increase the output and reassess threshold.",
             "waveformId": "loss-of-capture"
           }
         },
         {
           "id": "uc05-intermittent-loss-of-capture",
-          "description": "Output is close to the new threshold, causing intermittent loss of capture.",
-          "condition": {
-            "rate": [60, 80],
-            "output": [5, 7]
-          },
+          "description": "Output near threshold causing intermittent loss of capture.",
+          "condition": { "rate": [60, 80], "output": [5, 7] },
           "effects": {
-            "alarm": {
-              "level": "warning",
-              "text": "Intermittent capture – increase safety margin"
-            },
-            "feedback": "Some pacing spikes capture while others do not. Increase the output to re-establish a 2–3× safety margin above the new threshold.",
+            "alarm": { "level": "warning", "text": "Intermittent capture – increase safety margin" },
+            "feedback": "Some spikes capture while others do not. Increase output to restore a safety margin.",
             "waveformId": "intermittent-capture"
           }
         },
         {
           "id": "uc05-restored-stable-capture",
-          "description": "Output adequately increased, capture restored with safety margin.",
-          "condition": {
-            "rate": [60, 80],
-            "output": [7, 12]
-          },
+          "description": "Output increased; capture restored with safety margin.",
+          "condition": { "rate": [60, 80], "output": [7, 12] },
           "effects": {
-            "alarm": {
-              "level": "normal",
-              "text": "Stable capture – monitor for further changes"
-            },
-            "feedback": "All pacing spikes now result in QRS complexes again. Monitor for further threshold changes and consider lead evaluation if unusually high outputs are required.",
-            "vitals": {
-              "hr": 66,
-              "bp": "110/64"
-            },
+            "alarm": { "level": "normal", "text": "Stable capture – continue monitoring" },
+            "feedback": "All spikes now result in QRS complexes again. Monitor for further threshold changes.",
+            "vitals": { "hr": 66 },
             "waveformId": "ventricular-paced"
           }
         }
@@ -400,43 +244,26 @@
     {
       "id": "M6",
       "code": "M6",
+      "category": "module",
       "title": "M6 · PVCs & PACs in VVI",
-      "description": "Recognize PVCs and PACs on the ECG during VVI pacing and understand their interaction with pacemaker timing.",
+      "description": "Recognize ectopic beats on the ECG during VVI pacing and understand their interaction with pacemaker timing.",
       "summaryLabel": "Ectopy recognition during pacing",
-      "primaryRhythm": "Ventricular pacing with PVCs and PACs",
+      "primaryRhythm": "Ventricular pacing with ectopy",
       "location": "Telemetry",
       "waveformId": "paced-with-ectopy",
-      "vitals": {
-        "hr": 72,
-        "bp": "112/64",
-        "spo2": 98,
-        "temp": 36.8
-      },
-      "pacing": {
-        "mode": "VVI (demand)",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "normal",
-        "text": "Isolated PVCs and PACs – observe"
-      },
-      "objective": "Identify PVCs and PACs on a paced ECG strip and explain how these ectopic beats reset or inhibit ventricular pacing without mistaking them for pacemaker malfunction.",
-      "feedback": "With appropriate VVI settings, you should see a paced rhythm interrupted by occasional PVCs and PACs. Recognize their morphology and timing effects without changing pacemaker parameters unnecessarily.",
+      "vitals": { "hr": 72 },
+      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
+      "alarm": { "level": "normal", "text": "Isolated ectopy – observe" },
+      "objective": "Identify ectopic beats and explain how sensed beats reset or inhibit pacing without mistaking ectopy for device malfunction.",
+      "feedback": "With appropriate VVI settings, you should see paced beats interrupted by occasional ectopy. Recognize morphology/timing and avoid unnecessary parameter changes.",
       "rules": [
         {
           "id": "uc06-appropriate-settings-with-ectopy",
-          "description": "Pacemaker appropriately programmed; ectopy is present but device function is normal.",
-          "condition": {
-            "rate": [60, 80],
-            "output": [5, 10],
-            "sensitivity": [1.5, 3]
-          },
+          "description": "Pacemaker appropriately programmed; ectopy present but device function is normal.",
+          "condition": { "rate": [60, 80], "output": [5, 10], "sensitivity": [1.5, 3] },
           "effects": {
-            "alarm": {
-              "level": "normal",
-              "text": "Ectopy present – pacemaker function normal"
-            },
-            "feedback": "You observe paced beats with occasional PVCs and PACs. The timing of pacing spikes adapts to sensed beats as expected; no parameter changes are required.",
+            "alarm": { "level": "normal", "text": "Ectopy present – pacemaker function normal" },
+            "feedback": "Occasional ectopy occurs while pacing behaviour remains appropriate. No parameter changes are required.",
             "waveformId": "paced-with-ectopy"
           }
         }
@@ -445,103 +272,64 @@
     {
       "id": "M7",
       "code": "M7",
+      "category": "module",
       "title": "M7 · Wide vs Narrow QRS",
-      "description": "Differentiate intrinsic narrow QRS complexes from wide QRS paced beats and PVCs.",
+      "description": "Differentiate intrinsic narrow QRS complexes from wide QRS paced beats and ectopic beats.",
       "summaryLabel": "QRS morphology interpretation",
       "primaryRhythm": "Mixed intrinsic and paced beats",
       "location": "Telemetry",
       "waveformId": "mixed-wide-narrow",
-      "vitals": {
-        "hr": 76,
-        "bp": "116/66",
-        "spo2": 98,
-        "temp": 36.8
-      },
-      "pacing": {
-        "mode": "VVI (demand)",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "normal",
-        "text": "Interpret QRS morphology – no immediate intervention"
-      },
-      "objective": "Distinguish intrinsic narrow QRS complexes from wide QRS paced beats and PVCs on the ECG, and understand that a wide QRS is expected for ventricular pacing.",
-      "feedback": "Identify which complexes are intrinsic (narrow QRS), which represent ventricular-paced beats (wide QRS following pacing spikes), and which are PVCs (wide, premature beats without preceding pacing spikes). Do not misinterpret normal paced QRS morphology as a pacemaker malfunction.",
+      "vitals": { "hr": 76 },
+      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
+      "alarm": { "level": "normal", "text": "Interpret QRS morphology" },
+      "objective": "Distinguish intrinsic narrow QRS from wide paced beats and ectopy, and understand that wide QRS is expected in ventricular pacing.",
+      "feedback": "Identify intrinsic beats vs paced beats (spike + wide QRS) vs ectopy (premature wide beat without spike).",
       "rules": [
         {
           "id": "uc07-correct-interpretation-parameters",
-          "description": "Pacemaker programmed appropriately; scenario focuses on ECG interpretation rather than parameter adjustment.",
-          "condition": {
-            "rate": [60, 80],
-            "output": [5, 10],
-            "sensitivity": [1.5, 3]
-          },
+          "description": "Parameters acceptable; scenario focuses on ECG interpretation.",
+          "condition": { "rate": [60, 80], "output": [5, 10], "sensitivity": [1.5, 3] },
           "effects": {
-            "alarm": {
-              "level": "normal",
-              "text": "Parameters acceptable – focus on morphology"
-            },
-            "feedback": "Pacemaker parameters are within normal ranges. Focus on distinguishing intrinsic narrow QRS, paced wide QRS, and PVCs based on morphology and the presence or absence of pacing spikes.",
+            "alarm": { "level": "normal", "text": "Parameters acceptable – focus on morphology" },
+            "feedback": "Focus on distinguishing intrinsic narrow QRS, paced wide QRS, and ectopy based on morphology and the presence/absence of pacing spikes.",
             "waveformId": "mixed-wide-narrow"
           }
         }
       ]
     },
+
     {
       "id": "C1",
       "code": "C1",
       "category": "clinical",
       "title": "C1 · Third-degree AV Block",
-      "description": "Placeholder clinical case that mirrors a complete heart block with minimal prompts.",
-      "summaryLabel": "Complete heart block, minimal guidance",
+      "description": "Complete AV dissociation with a slow ventricular escape rhythm.",
+      "summaryLabel": "Complete heart block",
       "primaryRhythm": "Third-degree atrioventricular block",
       "location": "Telemetry",
       "waveformId": "brady-escape",
-      "vitals": {
-        "hr": 32,
-        "bp": "82/48",
-        "spo2": 94,
-        "temp": 36.5
-      },
-      "pacing": {
-        "mode": "VVI (demand)",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "warning",
-        "text": "Complete heart block – stabilise the patient"
-      },
-      "objective": "Stabilise a patient with complete heart block by establishing reliable ventricular pacing and improving perfusion.",
-      "feedback": "Look for dissociated P waves with a slow ventricular escape rhythm. Initiate pacing with adequate rate and output, then reassess perfusion.",
+      "vitals": { "hr": 32 },
+      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
+      "alarm": { "level": "warning", "text": "Complete heart block – stabilise the patient" },
+      "objective": "Stabilise a patient with complete heart block by establishing reliable ventricular pacing.",
+      "feedback": "Initiate VVI pacing with adequate rate and output. Confirm capture (spike followed by QRS) and appropriate sensing.",
       "rules": []
     },
-
     {
       "id": "C2",
       "code": "C2",
       "category": "clinical",
       "title": "C2 · Second-degree AV Block (Mobitz II)",
-      "description": "Intermittent non-conducted P waves with sudden dropped QRS complexes; placeholder waveform until precise pattern is added.",
-      "summaryLabel": "Mobitz II with intermittent ventricular pauses",
+      "description": "Intermittent non-conducted P waves with dropped QRS complexes (placeholder rhythm using no-conduction template).",
+      "summaryLabel": "Mobitz II block",
       "primaryRhythm": "Second-degree AV block, Mobitz II",
       "location": "Telemetry",
-      "waveformId": "undersensing",
-      "vitals": {
-        "hr": 46,
-        "bp": "96/60",
-        "spo2": 96,
-        "temp": 36.6
-      },
-      "pacing": {
-        "mode": "DDD",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "warning",
-        "text": "Mobitz II block – anticipate progression"
-      },
-      "objective": "Recognise intermittent non-conducted P waves that create sudden ventricular pauses and be ready to support perfusion with pacing.",
-      "feedback": "Note the constant PR intervals with unexpected dropped QRS complexes. Prepare to initiate pacing if perfusion worsens or pauses lengthen.",
+      "waveformId": "mobitz2-no-conduction",
+      "vitals": { "hr": 46 },
+      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
+      "alarm": { "level": "warning", "text": "Mobitz II – dropped beats" },
+      "objective": "Recognise dropped ventricular beats and be prepared to provide pacing support if perfusion worsens.",
+      "feedback": "Identify conducted vs non-conducted P waves. If pauses are symptomatic, increase VVI rate and ensure adequate output and sensing.",
       "rules": []
     },
     {
@@ -549,27 +337,16 @@
       "code": "C3",
       "category": "clinical",
       "title": "C3 · Sick Sinus Syndrome",
-      "description": "Sinus node dysfunction with inappropriate bradycardia and pauses; waveform will be refined later.",
-      "summaryLabel": "Sinus node dysfunction with long pauses",
+      "description": "Sinus node dysfunction with inappropriate bradycardia and pauses (placeholder using brady escape rhythm).",
+      "summaryLabel": "Sinus pauses / bradycardia",
       "primaryRhythm": "Sick sinus syndrome",
       "location": "Telemetry",
       "waveformId": "brady-escape",
-      "vitals": {
-        "hr": 42,
-        "bp": "94/56",
-        "spo2": 95,
-        "temp": 36.7
-      },
-      "pacing": {
-        "mode": "AAI",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "warning",
-        "text": "Sinus pauses – evaluate for pacing support"
-      },
-      "objective": "Evaluate symptomatic bradycardia from sinus pauses and initiate pacing to maintain cardiac output as needed.",
-      "feedback": "Identify prolonged sinus pauses with slow escape beats. Consider atrial or dual-chamber pacing to prevent perfusion drops.",
+      "vitals": { "hr": 42 },
+      "pacing": { "mode": "VVI (standby)", "poweredOn": false },
+      "alarm": { "level": "warning", "text": "Sinus pauses – evaluate pacing support" },
+      "objective": "Recognise sinus pauses and decide when pacing support is needed to maintain perfusion.",
+      "feedback": "If symptomatic or prolonged pauses occur, enable pacing and set rate above the escape rhythm. Confirm capture and appropriate inhibition.",
       "rules": []
     },
     {
@@ -577,55 +354,16 @@
       "code": "C4",
       "category": "clinical",
       "title": "C4 · Slow Conduction",
-      "description": "Markedly delayed atrioventricular conduction leading to low ventricular rates; waveform placeholder pending precise trace.",
-      "summaryLabel": "Slow conduction with low ventricular response",
-      "primaryRhythm": "Marked first-degree block/slow ventricular conduction",
+      "description": "Markedly delayed conduction with a slow ventricular response (uses slow-conduction waveform).",
+      "summaryLabel": "Slow ventricular response",
+      "primaryRhythm": "Marked first-degree block / slow ventricular conduction",
       "location": "ICU",
-      "waveformId": "brady-escape",
-      "vitals": {
-        "hr": 50,
-        "bp": "102/62",
-        "spo2": 97,
-        "temp": 36.8
-      },
-      "pacing": {
-        "mode": "DDI",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "normal",
-        "text": "Slow ventricular response"
-      },
-      "objective": "Manage a patient with markedly delayed conduction by optimising pacing support if the slow ventricular response compromises perfusion.",
-      "feedback": "Watch for very prolonged conduction times and low ventricular rates. Increase pacing support to maintain adequate cardiac output if symptoms emerge.",
-      "rules": []
-    },
-    {
-      "id": "M8",
-      "code": "M8",
-      "title": "M8 · Random Mode",
-      "description": "Mixed scenario that combines elements of all previous cases with randomised rhythm, sensing, and capture patterns.",
-      "summaryLabel": "Random mixed case",
-      "primaryRhythm": "Mixed intrinsic, paced, and ectopic beats",
-      "location": "ICU",
-      "waveformId": "random-mode",
-      "vitals": {
-        "hr": 72,
-        "bp": "110/64",
-        "spo2": 98,
-        "temp": 36.8
-      },
-      "pacing": {
-        "mode": "VVI (demand)",
-        "poweredOn": false
-      },
-      "alarm": {
-        "level": "normal",
-        "text": "Randomised case – identify the main issue"
-      },
-      "objective": "Integrate all pacing skills to decide whether pacing is appropriate or malfunctioning and determine the correct intervention, or recognize when no change is needed.",
-      "feedback": "Start by interpreting the ECG and the behaviour of the PACE and SENSE indicators. Adjust rate, output, and sensitivity only when there is clear evidence of undersensing, oversensing, or loss of capture. This scenario is intentionally open-ended.",
-      "status": "draft",
+      "waveformId": "slow-conduction",
+      "vitals": { "hr": 50 },
+      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
+      "alarm": { "level": "normal", "text": "Slow conduction – monitor perfusion" },
+      "objective": "Identify slow conduction and support ventricular rate with pacing if clinically indicated.",
+      "feedback": "If perfusion is inadequate, enable pacing and set a safe lower rate limit. Ensure sensing is appropriate and pacing is not inhibited incorrectly.",
       "rules": []
     }
   ]
