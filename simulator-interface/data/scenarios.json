@@ -515,6 +515,91 @@
       "feedback": "Look for dissociated P waves with a slow ventricular escape rhythm. Initiate pacing with adequate rate and output, then reassess perfusion.",
       "rules": []
     },
+
+    {
+      "id": "C2",
+      "code": "C2",
+      "category": "clinical",
+      "title": "C2 · Second-degree AV Block (Mobitz II)",
+      "description": "Intermittent non-conducted P waves with sudden dropped QRS complexes; placeholder waveform until precise pattern is added.",
+      "summaryLabel": "Mobitz II with intermittent ventricular pauses",
+      "primaryRhythm": "Second-degree AV block, Mobitz II",
+      "location": "Telemetry",
+      "waveformId": "undersensing",
+      "vitals": {
+        "hr": 46,
+        "bp": "96/60",
+        "spo2": 96,
+        "temp": 36.6
+      },
+      "pacing": {
+        "mode": "DDD",
+        "poweredOn": false
+      },
+      "alarm": {
+        "level": "warning",
+        "text": "Mobitz II block – anticipate progression"
+      },
+      "objective": "Recognise intermittent non-conducted P waves that create sudden ventricular pauses and be ready to support perfusion with pacing.",
+      "feedback": "Note the constant PR intervals with unexpected dropped QRS complexes. Prepare to initiate pacing if perfusion worsens or pauses lengthen.",
+      "rules": []
+    },
+    {
+      "id": "C3",
+      "code": "C3",
+      "category": "clinical",
+      "title": "C3 · Sick Sinus Syndrome",
+      "description": "Sinus node dysfunction with inappropriate bradycardia and pauses; waveform will be refined later.",
+      "summaryLabel": "Sinus node dysfunction with long pauses",
+      "primaryRhythm": "Sick sinus syndrome",
+      "location": "Telemetry",
+      "waveformId": "brady-escape",
+      "vitals": {
+        "hr": 42,
+        "bp": "94/56",
+        "spo2": 95,
+        "temp": 36.7
+      },
+      "pacing": {
+        "mode": "AAI",
+        "poweredOn": false
+      },
+      "alarm": {
+        "level": "warning",
+        "text": "Sinus pauses – evaluate for pacing support"
+      },
+      "objective": "Evaluate symptomatic bradycardia from sinus pauses and initiate pacing to maintain cardiac output as needed.",
+      "feedback": "Identify prolonged sinus pauses with slow escape beats. Consider atrial or dual-chamber pacing to prevent perfusion drops.",
+      "rules": []
+    },
+    {
+      "id": "C4",
+      "code": "C4",
+      "category": "clinical",
+      "title": "C4 · Slow Conduction",
+      "description": "Markedly delayed atrioventricular conduction leading to low ventricular rates; waveform placeholder pending precise trace.",
+      "summaryLabel": "Slow conduction with low ventricular response",
+      "primaryRhythm": "Marked first-degree block/slow ventricular conduction",
+      "location": "ICU",
+      "waveformId": "brady-escape",
+      "vitals": {
+        "hr": 50,
+        "bp": "102/62",
+        "spo2": 97,
+        "temp": 36.8
+      },
+      "pacing": {
+        "mode": "DDI",
+        "poweredOn": false
+      },
+      "alarm": {
+        "level": "normal",
+        "text": "Slow ventricular response"
+      },
+      "objective": "Manage a patient with markedly delayed conduction by optimising pacing support if the slow ventricular response compromises perfusion.",
+      "feedback": "Watch for very prolonged conduction times and low ventricular rates. Increase pacing support to maintain adequate cardiac output if symptoms emerge.",
+      "rules": []
+    },
     {
       "id": "M8",
       "code": "M8",
