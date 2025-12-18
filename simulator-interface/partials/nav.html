@@ -6,31 +6,41 @@
         </a>
         <nav class="nav-buttons" aria-label="Primary navigation">
             <a class="nav-btn{{ACTIVE_HOME}}" href="index.html">Home</a>
-            <a class="nav-btn{{ACTIVE_SIMULATION}}" href="simulation.html">Simulation</a>
+            <a class="nav-btn{{ACTIVE_TRAINING}}" href="training.html">Training</a>
+            <a class="nav-btn{{ACTIVE_LOGS}}" href="logs.html">Logs</a>
             <a class="nav-btn{{ACTIVE_INSTRUCTIONS}}" href="instructions.html">Instructions</a>
         </nav>
         <div class="nav-actions">
-            <label class="language-label" for="languageSelect">Language</label>
-            <select id="languageSelect" aria-label="Language selector">
-                <option value="en">EN</option>
-                <option value="nl">NL</option>
-            </select>
             <button
                 type="button"
-                class="btn btn-ghost btn-small theme-toggle"
-                data-theme-toggle
-                aria-pressed="true"
-            >
-                Dark mode
-            </button>
-            <button
-                type="button"
-                class="btn btn-ghost btn-small settings-toggle"
+                class="icon-button settings-toggle"
                 data-settings-toggle
                 aria-expanded="false"
                 aria-controls="ecgSettingsPanel"
+                aria-label="Open settings"
             >
-                Settings
+                <img src="assets/icons/settings.svg" data-settings-icon alt="" aria-hidden="true" />
+                <span class="sr-only">Open settings</span>
+            </button>
+            <button
+                type="button"
+                class="icon-button theme-toggle"
+                data-theme-toggle
+                aria-pressed="true"
+                aria-label="Switch to dark mode"
+            >
+                <img src="assets/icons/theme-dark.svg" data-theme-icon alt="" aria-hidden="true" />
+                <span class="sr-only">Toggle theme</span>
+            </button>
+            <button
+                type="button"
+                class="icon-button language-toggle"
+                data-language-toggle
+                aria-pressed="false"
+                aria-label="Switch language"
+            >
+                <span data-language-label aria-hidden="true">EN</span>
+                <span class="sr-only">Toggle language</span>
             </button>
         </div>
     </div>
