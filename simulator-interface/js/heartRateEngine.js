@@ -43,7 +43,8 @@ function createHeartRateEngine(displayElement) {
     const audioState = {
         muted: false,
         mode: 'classic',
-        audioElement: null
+        audioElement: null,
+        suspended: false
     };
 
     let maxWaveAmplitude = 1;
@@ -65,7 +66,7 @@ function createHeartRateEngine(displayElement) {
     }
 
     function getBeepVolume() {
-        if (audioState.muted || audioState.mode === 'off') return 0;
+        if (audioState.muted || audioState.mode === 'off' || audioState.suspended) return 0;
         const modeVolume = audioState.mode === 'soft' ? 0.55 : 0.85;
         return clamp(modeVolume, 0, 1);
     }
@@ -127,6 +128,10 @@ function createHeartRateEngine(displayElement) {
 
     function setBeepMuted(muted) {
         audioState.muted = Boolean(muted);
+    }
+
+    function setSuspended(suspended) {
+        audioState.suspended = Boolean(suspended);
     }
 
     function purgeOldPeaks(currentTime) {
@@ -255,7 +260,8 @@ function createHeartRateEngine(displayElement) {
         reset,
         setMaxWaveAmplitude,
         setBeepMode,
-        setBeepMuted
+        setBeepMuted,
+        setSuspended
     };
 }
 

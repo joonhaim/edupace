@@ -26,6 +26,12 @@ function showView(targetView) {
 
     setActiveNav(targetView);
     history.replaceState(null, '', `#${targetView}`);
+
+    document.dispatchEvent(
+        new CustomEvent('edupace:view-change', {
+            detail: { view: targetView }
+        })
+    );
 }
 
 function handleNav(event) {
