@@ -5,6 +5,7 @@ function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
+    minWidth: 1180,
     backgroundColor: '#000000',
     fullscreenable: true,
     webPreferences: {
