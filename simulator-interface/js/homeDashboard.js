@@ -4,7 +4,6 @@ import { getSessionLogs, initSessionStore } from './sessionStore.js';
 
 const recentList = document.querySelector('[data-recent-list]');
 const recentEmpty = document.querySelector('[data-recent-empty]');
-const recentCount = document.querySelector('[data-recent-count]');
 
 const progressFill = document.querySelector('[data-progress-fill]');
 const progressCount = document.querySelector('[data-progress-count]');
@@ -42,21 +41,29 @@ function renderRecentSessions() {
     const latest = logs.slice(0, 2);
 
     recentEmpty.hidden = latest.length > 0;
-    if (recentCount) {
-        recentCount.textContent = logs.length ? `${Math.min(latest.length, 2)} of ${logs.length}` : '';
-        recentCount.hidden = !logs.length;
-    }
 
     latest.forEach((log) => {
-        const entry = document.createElement('div');
+        const entry = document.createElement('button');
+        entry.type = 'button';
         entry.className = 'recent-entry';
+        entry.dataset.viewTarget = 'logs';
+        const sessionTitle = log.scenarioTitle ?? 'Training session';
+        entry.setAttribute('aria-label', `Open session log for ${sessionTitle}`);
+        entry.addEventListener('click', () => {
+            if (!log.id) return;
+            document.dispatchEvent(
+                new CustomEvent('edupace:open-log-detail', {
+                    detail: { logId: log.id }
+                })
+            );
+        });
 
         const meta = document.createElement('div');
         meta.className = 'recent-entry__meta';
 
         const title = document.createElement('p');
         title.className = 'recent-entry__title';
-        title.textContent = log.scenarioTitle ?? 'Training session';
+        title.textContent = sessionTitle;
 
         const sub = document.createElement('p');
         sub.className = 'recent-entry__sub';

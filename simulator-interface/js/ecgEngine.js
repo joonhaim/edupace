@@ -135,7 +135,7 @@ let caliperUnit = 'ms';
 
 function isFrameFullscreen() {
     const frame = overlayElements.frame;
-    return document.fullscreenElement === frame || frame?.classList.contains('is-fullscreen');
+    return frame?.classList.contains('is-fullscreen');
 }
 
 function applyQrsMuteState(muted) {
@@ -464,9 +464,7 @@ function syncCanvasSize() {
     const frame = overlayElements.frame;
     const rect = canvas.getBoundingClientRect();
     const frameSize = getFrameContentSize();
-    const isFullscreen =
-        document.fullscreenElement === frame ||
-        frame?.classList.contains('is-fullscreen');
+    const isFullscreen = isFrameFullscreen();
 
     // Layout width always comes from the frame
     const newWidth = Math.max(
@@ -1370,24 +1368,8 @@ function handleFullscreenToggle() {
     const target = overlayElements.frame;
     if (!target) return;
 
-    const currentlyFullscreen = isFrameFullscreen();
-    if (document.fullscreenEnabled && target.requestFullscreen) {
-        if (currentlyFullscreen && document.exitFullscreen) {
-            document.exitFullscreen().catch(() => applyFullscreenState(false));
-        } else {
-            target
-                .requestFullscreen()
-                .then(() => {})
-                .catch(() => {
-                    const fallbackState = !currentlyFullscreen;
-                    applyFullscreenState(fallbackState);
-                });
-        }
-        return;
-    }
-
-    const fallbackState = !currentlyFullscreen;
-    applyFullscreenState(fallbackState);
+    const nextState = !isFrameFullscreen();
+    applyFullscreenState(nextState);
 }
 
 function handleFullscreenChange() {

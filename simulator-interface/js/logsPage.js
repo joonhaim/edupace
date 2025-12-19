@@ -635,6 +635,14 @@ async function initLogsPage() {
     bindBackgroundDeselect();
     renderLogs();
 
+    window.addEventListener('edupace:open-log-detail', (event) => {
+        const logId = event.detail?.logId;
+        if (!logId) return;
+        filterState.selectedId = logId;
+        selectionManuallyCleared = false;
+        renderLogs();
+    });
+
     window.addEventListener('edupace:session-logs-changed', () => {
         updateLogLocationUi();
         renderLogs();
