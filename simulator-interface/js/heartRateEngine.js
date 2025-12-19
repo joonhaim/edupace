@@ -44,7 +44,10 @@ function createHeartRateEngine(displayElement) {
         muted: false,
         mode: 'classic',
         audioElement: null,
-        suspended: false
+        suspended: false,
+        audioContext: null,
+        audioBuffer: null,
+        loadingPromise: null
     };
 
     let maxWaveAmplitude = 1;
@@ -80,9 +83,56 @@ function createHeartRateEngine(displayElement) {
         return audio;
     }
 
-    function playBeep() {
+    function ensureAudioContext() {
+        if (audioState.audioContext) return audioState.audioContext;
+
+        const Ctor = window.AudioContext || window.webkitAudioContext;
+        if (!Ctor) return null;
+
+        audioState.audioContext = new Ctor();
+        return audioState.audioContext;
+    }
+
+    async function ensureBeepBuffer() {
+        if (audioState.audioBuffer) return audioState.audioBuffer;
+
+        if (!audioState.loadingPromise) {
+            audioState.loadingPromise = (async () => {
+                const context = ensureAudioContext();
+                if (!context) return null;
+
+                const response = await fetch(RWAVE_BEEP_SRC);
+                const buffer = await response.arrayBuffer();
+                return await context.decodeAudioData(buffer);
+            })().catch(() => null);
+        }
+
+        audioState.audioBuffer = await audioState.loadingPromise;
+        return audioState.audioBuffer;
+    }
+
+    async function playBeep() {
         const baseVolume = getBeepVolume();
         if (baseVolume <= 0) return;
+
+        const buffer = await ensureBeepBuffer();
+        const context = buffer ? ensureAudioContext() : null;
+
+        if (buffer && context) {
+            const gainNode = context.createGain();
+            gainNode.gain.value = baseVolume;
+
+            const source = context.createBufferSource();
+            source.buffer = buffer;
+            source.connect(gainNode).connect(context.destination);
+
+            if (context.state === 'suspended') {
+                context.resume().catch(() => {});
+            }
+
+            source.start();
+            return;
+        }
 
         const baseAudio = ensureAudioElement();
         if (!baseAudio) return;
