@@ -1,6 +1,19 @@
 const STORAGE_KEY = 'edupace-session-logs';
+const LOG_PATH_KEY = 'edupace-log-path';
 
-function readLogs() {
+let logCache = [];
+let storagePath = null;
+let initPromise = null;
+
+function dispatchLogChange() {
+    window.dispatchEvent(
+        new CustomEvent('edupace:session-logs-changed', {
+            detail: { logs: [...logCache], path: storagePath }
+        })
+    );
+}
+
+function readLocalBackup() {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         return raw ? JSON.parse(raw) : [];
@@ -10,7 +23,7 @@ function readLogs() {
     }
 }
 
-function saveLogs(logs) {
+function saveLocalBackup(logs) {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
     } catch (error) {
@@ -18,45 +31,168 @@ function saveLogs(logs) {
     }
 }
 
-function addSessionLog(log) {
-    if (!log?.id) return;
-
-    const logs = readLogs();
-    const existingIndex = logs.findIndex((entry) => entry.id === log.id);
-
-    if (existingIndex >= 0) {
-        logs[existingIndex] = log;
-    } else {
-        logs.unshift(log);
+function loadStoredPath() {
+    try {
+        return localStorage.getItem(LOG_PATH_KEY);
+    } catch (error) {
+        console.warn('Unable to read log path', error);
+        return null;
     }
+}
 
-    saveLogs(logs);
+function persistPath(path) {
+    try {
+        if (path) {
+            localStorage.setItem(LOG_PATH_KEY, path);
+        }
+    } catch (error) {
+        console.warn('Unable to persist log path', error);
+    }
+}
+
+async function resolveLogDirectory(preferredPath) {
+    if (window.edupace?.logs?.getDefaultPath) {
+        try {
+            const path = await window.edupace.logs.getDefaultPath(preferredPath ?? storagePath ?? loadStoredPath());
+            storagePath = path;
+            persistPath(path);
+            return path;
+        } catch (error) {
+            console.warn('Unable to resolve log directory', error);
+        }
+    }
+    return preferredPath ?? storagePath ?? loadStoredPath();
+}
+
+async function readFromDisk(preferredPath) {
+    if (!window.edupace?.logs?.readFromDisk) return null;
+    try {
+        const data = await window.edupace.logs.readFromDisk(preferredPath ?? storagePath);
+        storagePath = data?.path ?? storagePath;
+        if (data?.path) persistPath(data.path);
+        return Array.isArray(data?.logs) ? data.logs : [];
+    } catch (error) {
+        console.warn('Unable to read logs from disk', error);
+        return null;
+    }
+}
+
+async function writeToDisk(logs = logCache, preferredPath = storagePath) {
+    if (!window.edupace?.logs?.writeToDisk) return null;
+    try {
+        const result = await window.edupace.logs.writeToDisk(logs, preferredPath);
+        if (result?.path) {
+            storagePath = result.path;
+            persistPath(result.path);
+        }
+        return result?.path ?? preferredPath;
+    } catch (error) {
+        console.warn('Unable to write logs to disk', error);
+        return null;
+    }
+}
+
+async function syncFromDisk() {
+    const diskLogs = await readFromDisk();
+    if (!diskLogs) return logCache;
+
+    logCache = Array.isArray(diskLogs) ? diskLogs : [];
+    saveLocalBackup(logCache);
+    dispatchLogChange();
+    return logCache;
+}
+
+async function initSessionStore() {
+    if (initPromise) return initPromise;
+
+    initPromise = (async () => {
+        logCache = readLocalBackup();
+        storagePath = storagePath ?? loadStoredPath();
+        await resolveLogDirectory(storagePath);
+        await syncFromDisk();
+        await writeToDisk(logCache);
+        dispatchLogChange();
+    })();
+
+    return initPromise;
 }
 
 function getSessionLogs() {
-    return readLogs();
+    return [...logCache];
 }
 
 function getSessionLogById(id) {
-    return readLogs().find((entry) => entry.id === id) ?? null;
+    return logCache.find((entry) => entry.id === id) ?? null;
+}
+
+function addSessionLog(log) {
+    if (!log?.id) return;
+
+    const existingIndex = logCache.findIndex((entry) => entry.id === log.id);
+
+    if (existingIndex >= 0) {
+        logCache[existingIndex] = log;
+    } else {
+        logCache.unshift(log);
+    }
+
+    saveLocalBackup(logCache);
+    const persistPromise = writeToDisk(logCache);
+    dispatchLogChange();
+    return persistPromise;
 }
 
 function deleteSessionLog(id) {
-    const logs = readLogs();
-    const nextLogs = logs.filter((entry) => entry.id !== id);
-    saveLogs(nextLogs);
-    return nextLogs;
+    const nextLogs = logCache.filter((entry) => entry.id !== id);
+    logCache = nextLogs;
+    saveLocalBackup(logCache);
+    const persistPromise = writeToDisk(logCache);
+    dispatchLogChange();
+    return persistPromise ?? nextLogs;
 }
 
 function updateSessionLogMetadata(id, metadata = {}) {
-    const logs = readLogs();
-    const index = logs.findIndex((entry) => entry.id === id);
+    const index = logCache.findIndex((entry) => entry.id === id);
     if (index === -1) return null;
 
-    const existingMeta = logs[index].metadata ?? {};
-    logs[index].metadata = { ...existingMeta, ...metadata };
-    saveLogs(logs);
-    return logs[index];
+    const existingMeta = logCache[index].metadata ?? {};
+    logCache[index].metadata = { ...existingMeta, ...metadata };
+    saveLocalBackup(logCache);
+    const persistPromise = writeToDisk(logCache);
+    dispatchLogChange();
+    return persistPromise ?? logCache[index];
+}
+
+function getLogStoragePath() {
+    return storagePath ?? loadStoredPath() ?? null;
+}
+
+async function chooseLogStoragePath() {
+    if (!window.edupace?.logs?.pickDirectory) return null;
+    try {
+        const chosenPath = await window.edupace.logs.pickDirectory();
+        if (chosenPath) {
+            storagePath = chosenPath;
+            persistPath(chosenPath);
+            await writeToDisk(logCache, chosenPath);
+            dispatchLogChange();
+        }
+        return chosenPath;
+    } catch (error) {
+        console.warn('Unable to select log directory', error);
+        return null;
+    }
+}
+
+async function openLogStoragePath() {
+    if (!window.edupace?.logs?.openDirectory) return null;
+    try {
+        const path = await window.edupace.logs.openDirectory(storagePath);
+        return path;
+    } catch (error) {
+        console.warn('Unable to open log directory', error);
+        return null;
+    }
 }
 
 function escapeCsvValue(value) {
@@ -151,9 +287,14 @@ function serializeSessionToCsv(session) {
 
 export {
     addSessionLog,
+    chooseLogStoragePath,
     deleteSessionLog,
     getSessionLogById,
     getSessionLogs,
+    getLogStoragePath,
+    initSessionStore,
+    openLogStoragePath,
     serializeSessionToCsv,
+    syncFromDisk,
     updateSessionLogMetadata
 };

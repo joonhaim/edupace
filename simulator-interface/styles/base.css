@@ -534,7 +534,8 @@ h1, h2, h3 {
     grid-template-areas:
         "start browse"
         "recent browse"
-        "progress resources";
+        "progress suggested"
+        "resources resources";
     align-items: stretch;
     grid-auto-rows: minmax(180px, auto);
 }
@@ -585,6 +586,10 @@ h1, h2, h3 {
 
 .dash-card--progress {
     grid-area: progress;
+}
+
+.dash-card--suggested {
+    grid-area: suggested;
 }
 
 .dash-card--resources {

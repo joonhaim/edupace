@@ -229,9 +229,10 @@
           <article class="panel dash-card dash-card--recent" aria-label="Recent">
             <div class="panel-header">
               <h2 style="margin-bottom: 0;" data-i18n-key="home.recent.title">Recent</h2>
+              <span class="chip chip-muted" data-recent-count></span>
             </div>
-            <div class="recent-list">
-              <div class="empty muted" data-i18n-key="home.recent.empty">No recent sessions yet.</div>
+            <div class="recent-list" data-recent-list>
+              <div class="empty muted" data-recent-empty data-i18n-key="home.recent.empty">No recent sessions yet.</div>
             </div>
           </article>
 
@@ -240,7 +241,29 @@
             <div class="panel-header">
               <h2 style="margin-bottom: 0;">My progress</h2>
             </div>
-            <div class="muted">Coming soon.</div>
+            <div class="progress-card" data-progress-card>
+              <div class="progress-meter" role="progressbar" aria-label="Scenario completion" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-fill" data-progress-fill style="width: 0%"></div>
+              </div>
+              <div class="progress-meta">
+                <div class="progress-count" data-progress-count>0 / 0 scenarios complete</div>
+                <p class="muted" data-progress-hint>We'll update this once you complete your first scenario.</p>
+              </div>
+            </div>
+          </article>
+
+          <!-- Suggested tile -->
+          <article class="panel dash-card dash-card--suggested" aria-label="Suggested scenario">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Suggested</p>
+                <h2 style="margin-bottom: 0;">Try next</h2>
+              </div>
+              <button class="icon-button" type="button" data-suggest-refresh aria-label="Shuffle suggestion">↻</button>
+            </div>
+            <div class="suggested-card" data-suggested-card>
+              <div class="muted" data-suggested-empty>Loading a clinical suggestion…</div>
+            </div>
           </article>
 
           <!-- Resources tile -->
@@ -1328,6 +1351,29 @@
                                                                 </select>
                                                             </div>
                                                         </div>
+
+                                                        <div class="setting-row full-span">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title">Log storage</div>
+                                                                <p class="setting-hint" data-log-path-hint>
+                                                                    Choose or open the folder where EduPace saves session logs.
+                                                                </p>
+                                                            </div>
+                                                            <div class="setting-field setting-field--stacked">
+                                                                <div class="path-chip" data-log-path-display>Detecting log folder…</div>
+                                                                <div class="setting-actions-inline">
+                                                                    <button class="btn btn-ghost btn-small" type="button" data-log-change-path>
+                                                                        Change location
+                                                                    </button>
+                                                                    <button class="btn btn-ghost btn-small" type="button" data-log-open-path>
+                                                                        Open folder
+                                                                    </button>
+                                                                    <button class="btn btn-ghost btn-small" type="button" data-log-refresh-path>
+                                                                        Refresh from disk
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1353,6 +1399,7 @@
 </div>
 
   <script type="module" src="js/homeScenarios.js"></script>
+  <script type="module" src="js/homeDashboard.js" defer></script>
   <script type="module" src="js/main.js" defer></script>
   <script type="module" src="js/logsPage.js" defer></script>
 </body>

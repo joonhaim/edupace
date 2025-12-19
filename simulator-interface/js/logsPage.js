@@ -1,7 +1,12 @@
 import {
+    chooseLogStoragePath,
     deleteSessionLog,
+    getLogStoragePath,
     getSessionLogs,
+    initSessionStore,
+    openLogStoragePath,
     serializeSessionToCsv,
+    syncFromDisk,
     updateSessionLogMetadata
 } from './sessionStore.js';
 
@@ -28,6 +33,7 @@ const defaultLogSettings = {
 const LOG_SETTINGS_KEY = 'edupace-log-settings';
 
 let logDisplaySettings = { ...defaultLogSettings };
+let logLocationElements = { display: null, openBtn: null, hint: null, refreshBtn: null };
 
 function loadLogSettings() {
     try {
@@ -55,6 +61,24 @@ function applyLogSettings(patch = {}) {
     renderLogs();
 }
 
+function describeLogLocation(path) {
+    if (path) return path;
+    return 'Browser storage (local only)';
+}
+
+function updateLogLocationUi(path = getLogStoragePath()) {
+    const { display, openBtn, hint, refreshBtn } = logLocationElements;
+    const hasNativeAccess = Boolean(window.edupace?.logs);
+    if (display) display.textContent = describeLogLocation(path);
+    if (openBtn) openBtn.disabled = !hasNativeAccess || !path;
+    if (refreshBtn) refreshBtn.disabled = !hasNativeAccess;
+    if (hint) {
+        hint.textContent = hasNativeAccess
+            ? 'Logs are kept as a JSON file you can browse on disk.'
+            : 'Logs stay in this browser storage unless you export them.';
+    }
+}
+
 function resetDetailState(mode = 'view') {
     detailState.mode = mode;
     detailState.editingId = null;
@@ -78,6 +102,31 @@ function initLogSettingsPanel() {
         timeSelect.value = logDisplaySettings.timeFormat;
         timeSelect.addEventListener('change', () => applyLogSettings({ timeFormat: timeSelect.value }));
     }
+
+    logLocationElements = {
+        display: panel.querySelector('[data-log-path-display]'),
+        openBtn: panel.querySelector('[data-log-open-path]'),
+        hint: panel.querySelector('[data-log-path-hint]'),
+        refreshBtn: panel.querySelector('[data-log-refresh-path]')
+    };
+
+    const changePathBtn = panel.querySelector('[data-log-change-path]');
+
+    changePathBtn?.addEventListener('click', async () => {
+        await chooseLogStoragePath();
+        await syncFromDisk();
+        updateLogLocationUi();
+        renderLogs();
+    });
+
+    logLocationElements.openBtn?.addEventListener('click', () => openLogStoragePath());
+    logLocationElements.refreshBtn?.addEventListener('click', async () => {
+        await syncFromDisk();
+        updateLogLocationUi();
+        renderLogs();
+    });
+
+    updateLogLocationUi();
 }
 
 function createDownload(url, filename) {
@@ -372,8 +421,8 @@ function renderDetail(log) {
     deleteBtn.type = 'button';
     deleteBtn.className = 'btn btn-ghost btn-small danger';
     deleteBtn.textContent = 'Delete entry';
-    deleteBtn.addEventListener('click', () => {
-        deleteSessionLog(log.id);
+    deleteBtn.addEventListener('click', async () => {
+        await deleteSessionLog(log.id);
         filterState.selectedId = null;
         resetDetailState();
         renderLogs();
@@ -436,8 +485,8 @@ function renderDetail(log) {
         saveBtn.type = 'button';
         saveBtn.className = 'btn btn-primary btn-small';
         saveBtn.textContent = 'Save';
-        saveBtn.addEventListener('click', () => {
-            updateSessionLogMetadata(log.id, { ...detailState.draft });
+        saveBtn.addEventListener('click', async () => {
+            await updateSessionLogMetadata(log.id, { ...detailState.draft });
             resetDetailState();
             renderLogs();
         });
@@ -576,13 +625,20 @@ function bindBackgroundDeselect() {
     });
 }
 
-function initLogsPage() {
+async function initLogsPage() {
     loadLogSettings();
+    await initSessionStore();
+    await syncFromDisk();
     initLogSettingsPanel();
     bindFilters();
     bindListDeselect();
     bindBackgroundDeselect();
     renderLogs();
+
+    window.addEventListener('edupace:session-logs-changed', () => {
+        updateLogLocationUi();
+        renderLogs();
+    });
 }
 
 if (document.readyState === 'loading') {
