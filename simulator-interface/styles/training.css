@@ -2191,6 +2191,11 @@ body.ecg-fullscreen-active .sim-main .graph-column > :not(.ecg-frame) {
 
 body.ecg-fullscreen-active .view-stack {
     padding: 0;
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    min-height: 100vh;
+    grid-template-rows: 1fr;
 }
 
 body.ecg-fullscreen-active .view.is-active {
@@ -2208,6 +2213,12 @@ body.ecg-fullscreen-active .sim-main {
     max-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+body.ecg-fullscreen-active .app-shell--desktop {
+    grid-template-columns: 1fr;
+    width: 100vw;
+    min-height: 100vh;
 }
 
 body.ecg-fullscreen-active .graph-column {

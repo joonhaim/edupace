@@ -1351,6 +1351,10 @@ function applyFullscreenState(isFullscreen) {
     document.body.classList.toggle('ecg-fullscreen-active', isFullscreen);
     syncAudioSuspension();
 
+    // Force layout recalculation so text/trace sizing returns to the previous state
+    canvasDisplayWidth = 0;
+    canvasDisplayHeight = 0;
+
     if (overlayElements.fullscreenToggle) {
         const label = isFullscreen ? 'Exit full screen' : 'Enter full screen';
         overlayElements.fullscreenToggle.setAttribute('aria-label', label);
