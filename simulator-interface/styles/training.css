@@ -2119,7 +2119,7 @@ body.ecg-fullscreen-active {
     padding: 1.25rem;
     box-sizing: border-box;
     background: linear-gradient(180deg, #0b1b2b 0%, #0f2438 100%);
-    z-index: 50;
+    z-index: 2000;
     overflow: hidden;
 }
 
@@ -2167,6 +2167,35 @@ body.ecg-fullscreen-active {
 .ecg-frame.is-fullscreen .caliper-unit-toggle {
     right: 1.4rem;
     bottom: 3.6rem;
+}
+
+body.ecg-fullscreen-active {
+    overflow: hidden;
+    background: #0f2438;
+}
+
+body.ecg-fullscreen-active .app-shell {
+    background: #0f2438;
+}
+
+body.ecg-fullscreen-active .sidebar,
+body.ecg-fullscreen-active .global-toolbar,
+body.ecg-fullscreen-active .control-column,
+body.ecg-fullscreen-active .calibration-performance,
+body.ecg-fullscreen-active .alarm-banner,
+body.ecg-fullscreen-active .session-actions,
+body.ecg-fullscreen-active .session-meta,
+body.ecg-fullscreen-active .sim-main .graph-column > :not(.ecg-frame) {
+    display: none !important;
+}
+
+body.ecg-fullscreen-active .view-stack {
+    padding: 0;
+}
+
+body.ecg-fullscreen-active .sim-main {
+    padding: 0;
+    grid-template-columns: 1fr;
 }
 
 .caliper-unit-toggle:hover,
