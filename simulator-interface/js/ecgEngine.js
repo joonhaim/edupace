@@ -639,10 +639,9 @@ function regenerateWaveform() {
     {
       waveformId: engineState.waveformId,
       durationSec: secondsVisible,
-
-      // NEW:
-      pacemakerEnabled: pacingEnabled,
-      mode // "VVI" | "VOO"
+        pacemakerEnabled: pacingEnabled,
+      mode,
+        patientHR: intrinsicRate
     }
   );
 
