@@ -2193,9 +2193,30 @@ body.ecg-fullscreen-active .view-stack {
     padding: 0;
 }
 
+body.ecg-fullscreen-active .view.is-active {
+    padding: 0;
+    margin: 0;
+    height: 100vh;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
 body.ecg-fullscreen-active .sim-main {
     padding: 0;
     grid-template-columns: 1fr;
+    min-height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body.ecg-fullscreen-active .graph-column {
+    flex: 1;
+    min-height: 0;
+}
+
+body.ecg-fullscreen-active .ecg-frame.is-fullscreen {
+    flex: 1;
 }
 
 .caliper-unit-toggle:hover,

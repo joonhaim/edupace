@@ -216,6 +216,7 @@ function initEcgEngine() {
     overlayElements.caliperUnitToggle?.addEventListener('click', toggleCaliperUnit);
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('keydown', handleFullscreenKeydown);
     document.addEventListener('edupace:view-change', handleViewChange);
     handleFullscreenChange();
     handleViewChange({ detail: { view: (location.hash || '#home').replace('#', '') || 'home' } });
@@ -1374,6 +1375,18 @@ function handleFullscreenToggle() {
 
 function handleFullscreenChange() {
     applyFullscreenState(isFrameFullscreen());
+}
+
+function handleFullscreenKeydown(event) {
+    if (event.defaultPrevented) return;
+
+    const isEscape = event.key === 'Escape' || event.key === 'Esc';
+    if (!isEscape) return;
+
+    if (isFrameFullscreen()) {
+        event.preventDefault();
+        applyFullscreenState(false);
+    }
 }
 
 function handleViewChange(event) {
