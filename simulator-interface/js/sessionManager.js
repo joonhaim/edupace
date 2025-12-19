@@ -1,4 +1,4 @@
-import { addSessionLog } from './sessionStore.js';
+import { addSessionLog, initSessionStore } from './sessionStore.js';
 
 const sessionElements = {
     startBtn: document.getElementById('startSessionBtn'),
@@ -368,7 +368,7 @@ function pauseSession() {
     updateControls();
 }
 
-function endSession() {
+async function endSession(reason = 'manual') {
     if (!sessionState.currentSession || !['running', 'paused'].includes(sessionState.currentSession.status)) {
         return;
     }
@@ -385,13 +385,18 @@ function endSession() {
     updateTimerDisplay();
     sessionState.currentSession.durationSeconds = Math.max(0, Math.round(getElapsedMs() / 1000));
     logEvent('session-ended', {
-        scenarioId: sessionState.currentSession.scenarioId
+        scenarioId: sessionState.currentSession.scenarioId,
+        reason
     });
 
     const payload = buildLogPayload();
-    addSessionLog(payload);
+    await addSessionLog(payload);
 
-    setStatusText('Session ended. View the log in the Logs tab.');
+    const statusText =
+        reason === 'navigation'
+            ? 'Session ended when leaving training. View the log in the Logs tab.'
+            : 'Session ended. View the log in the Logs tab.';
+    setStatusText(statusText);
     updateControls();
 }
 
@@ -404,7 +409,7 @@ function wireControls() {
             pauseSession();
         }
     });
-    sessionElements.endBtn?.addEventListener('click', endSession);
+    sessionElements.endBtn?.addEventListener('click', () => endSession('manual'));
 }
 
 function initSessionManager() {
@@ -412,6 +417,7 @@ function initSessionManager() {
         return;
     }
 
+    initSessionStore();
     wireControls();
     updateControls();
     updateTelemetryContext({ controlMode: getControlMode() });
@@ -430,6 +436,14 @@ function initSessionManager() {
 
     Array.from(sessionElements.controlModeRadios ?? []).forEach((radio) => {
         radio.addEventListener('change', () => handleControlModeChange(radio.value));
+    });
+
+    document.addEventListener('edupace:view-change', (event) => {
+        const targetView = event.detail?.view;
+        const status = sessionState.currentSession?.status;
+        if (targetView !== 'training' && (status === 'running' || status === 'paused')) {
+            endSession('navigation');
+        }
     });
 }
 

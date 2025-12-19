@@ -1624,6 +1624,10 @@ body.simulation-light .theme-toggle {
     color: var(--deep-navy);
 }
 
+.setting-field--stacked {
+    gap: 0.5rem;
+}
+
 .setting-label {
     font-size: 0.9rem;
 }
@@ -1635,6 +1639,26 @@ body.simulation-light .theme-toggle {
     font-weight: 700;
     color: var(--deep-navy);
     background: #ffffff;
+}
+
+.setting-actions-inline {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.path-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    font-weight: 700;
+    color: var(--deep-navy);
+    min-height: 40px;
 }
 
 .color-options {
