@@ -1,6 +1,6 @@
-import { ecgWave, heartRate, stitchBeatsNew } from '../ecg/ecgCore.js';
-import { createHeartRateEngine } from './heartRateEngine.js';
-import { sendLedCommand } from './arduinoSerialAdapter.js';
+import { ecgWave, heartRate, stitchBeatsNew } from './ecgCore.js';
+import { createHeartRateEngine } from '../js/heartRateEngine.js';
+import { sendLedCommand } from '../js/arduinoSerialAdapter.js';
 
 
 const DEFAULT_SECONDS_VISIBLE = 6;
