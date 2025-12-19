@@ -140,6 +140,12 @@
     gap: 1rem;
 }
 
+@media (min-width: 720px) {
+    .instruction-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 .instruction-card {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -263,6 +269,22 @@
     border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--surface-2);
+    width: 100%;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recent-entry:hover {
+    border-color: rgba(59, 130, 246, 0.35);
+    transform: translateY(-1px);
+}
+
+.recent-entry:focus-visible {
+    outline: none;
+    border-color: rgba(59, 130, 246, 0.45);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
 .recent-entry__meta {
@@ -301,7 +323,7 @@
     position: absolute;
     inset: 0;
     width: 0%;
-    background: linear-gradient(90deg, var(--primary), #5fb4ff);
+    background: linear-gradient(90deg, #6faaf8 0%, #8cc0ff 100%);
     transition: width 0.35s ease;
 }
 

@@ -17,6 +17,10 @@ const DEFAULT_STRIP_DURATION_SEC = 10;
 // Safety limit to avoid infinite loops in pathological conditions
 const MAX_BEATS_PER_STRIP = 40;
 
+const AMP_JITTER = 0.05;
+
+const MIN_HR = 30;
+const MAX_HR = 200;
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
@@ -59,6 +63,18 @@ function argMin(arr) {
     }
   }
   return idx;
+}
+
+// Keep beats longer at brady, shorter at tachy.
+// At 200 bpm RR = 0.30 s, so beat duration must be <= ~0.30 (or allow overlap).
+function beatDurationSecForHR(hr) {
+  const minBeat = 0.28; // supports 200 bpm with minimal overlap
+  const maxBeat = 0.90; // looks nice at 30 bpm
+
+  if (!Number.isFinite(hr) || hr <= 0) return 0.80;
+
+  const t = clamp((hr - MIN_HR) / (MAX_HR - MIN_HR), 0, 1);
+  return maxBeat + (minBeat - maxBeat) * t;
 }
 
 function clamp(value, min, max) {
@@ -652,11 +668,15 @@ function detectCompleteBlockEvents(x, y) {
 // -----------------------------------------------------------------------------
 
 export function heartRate(patientHR) {
-  if (!Number.isFinite(patientHR) || patientHR <= 0) return 0.4;
+  if (!Number.isFinite(patientHR) || patientHR <= 0) return 0.2;
+
   const rr = 60 / patientHR;
-  const g = rr - BEAT_DURATION_SEC;
-  return g > 0 ? g : 0;
+  const beatDur = beatDurationSecForHR(patientHR);
+
+  // allow negative -> overlap at high HR
+  return rr - beatDur;
 }
+
 
 // -----------------------------------------------------------------------------
 // Stitch beats with pacemaker logic (supports OFF, VVI, VOO)
@@ -725,6 +745,18 @@ export function stitchBeatsNew(
   const captureThreshold = 1.5; // mA
   const escapeIntervalSec = Number.isFinite(rate) && rate > 0 ? 60 / rate : Infinity;
 
+  // -----------------------------
+// Timing bases (intrinsic vs paced)
+// -----------------------------
+const patientHR =
+  Number.isFinite(options.patientHR) && options.patientHR > 0
+    ? options.patientHR
+    : 70;
+
+const rrIntrinsic = 60 / clamp(patientHR, MIN_HR, MAX_HR);
+const rrPaced = escapeIntervalSec; // 60 / rate
+
+
   // Async pacing should be regular
   if (pacemakerEnabled && isVOO) regularity = "Regular";
 
@@ -745,10 +777,6 @@ export function stitchBeatsNew(
         : "Mobitz type II - no conduction";
     }
     return "Normal";
-  };
-
-  const choosePaced = () => {
-    return pacemakerEnabled ? "Ventricular pacing" : chooseIntrinsic();
   };
 
   // -----------------------------
@@ -779,34 +807,29 @@ export function stitchBeatsNew(
   // -----------------------------
   // Morphology scaling
   // -----------------------------
-  const buildScaledBeat = (beatType) => {
-    const { x: xr, y: yr } = ecgFunc(beatType);
-    let xb = xr.slice();
-    let yb = yr.slice();
+  const buildScaledBeat = (beatType, hrForThisBeat) => {
+  const { x: xr, y: yr } = ecgFunc(beatType);
+  let xb = xr.slice();
+  let yb = yr.slice();
 
-    const spanX = maxArray(xb) - minArray(xb) || 1;
-    const spanY = maxArray(yb) - minArray(yb) || 1;
+  const spanX = maxArray(xb) - minArray(xb) || 1;
+  const spanY = maxArray(yb) - minArray(yb) || 1;
 
-    // Each beat occupies BEAT_DURATION_SEC
-    const sx = BEAT_DURATION_SEC / spanX;
+  const beatDur = beatDurationSecForHR(hrForThisBeat);
+  const sx = beatDur / spanX;
 
-    // Mild amplitude jitter
-    const ampJitter = 1 + (Math.random() * 2 - 1) * 0.15;
-    let sy = (1.0 * ampJitter) / spanY;
+  const ampJitter = 1 + (Math.random() * 2 - 1) * AMP_JITTER;
+  let sy = (1.0 * ampJitter) / spanY;
 
-    // Dropped Mobitz beat: tiny signal
-    if (beatType === "Mobitz type II - no conduction") sy *= 0.08;
+  if (beatType === "Mobitz type II - no conduction") sy *= 0.08;
 
-    xb = xb.map((v) => v * sx);
-    yb = yb.map((v) => v * sy);
+  xb = xb.map((v) => v * sx);
+  yb = yb.map((v) => v * sy);
 
-    return { x: xb, y: yb };
-  };
+  return { x: xb, y: yb, beatDur };
+};
 
-  // -----------------------------
-  // Timing helpers
-  // -----------------------------
-  const rrFromGap = (gapVal) => BEAT_DURATION_SEC + Math.max(0, gapVal);
+
 
   // -----------------------------
   // Strip synthesis
@@ -823,34 +846,54 @@ export function stitchBeatsNew(
   while (offset < maxDurationSec && beatsGenerated < MAX_BEATS_PER_STRIP) {
     const beatType = nextBeat;
 
-    const { x: xTemp, y: yTemp } = buildScaledBeat(beatType);
+    const isPaced = beatType === "Ventricular pacing";
+const hrForThisBeat = isPaced ? rate : patientHR;
 
-    // Gap jitter (does not drift base gap)
-    let gapThisBeat = gap;
-    if (regularity === "Irregular" && gap > 0) {
-      const frac = 0.06;
-      gapThisBeat = Math.max(0, gap + (Math.random() * 2 - 1) * frac * gap);
-    }
+const { x: xTemp, y: yTemp, beatDur } = buildScaledBeat(beatType, hrForThisBeat);
 
-    const beatSpan = maxArray(xTemp) - minArray(xTemp); // ~ BEAT_DURATION_SEC after scaling
-    const startTime = beatsGenerated === 0 ? 0 : offset + gapThisBeat;
+// Choose target RR (paced beats follow pacer RR, intrinsic follows patient RR)
+let targetRR = isPaced ? rrPaced : rrIntrinsic;
+
+// Apply irregularity ONLY to intrinsic timing (paced beats should stay regular)
+if (!isPaced && regularity === "Irregular") {
+  const frac = 0.06;
+  targetRR = Math.max(0.05, targetRR * (1 + (Math.random() * 2 - 1) * frac));
+}
+
+// Convert RR to "gap after beat"
+let gapThisBeat = targetRR - beatDur;
+
+// Allow small overlap at high HR, but limit it
+gapThisBeat = clamp(gapThisBeat, -0.08, 3.0);
+
+const beatSpan = beatDur; // use beatDur instead of recomputing span
+const startTime = beatsGenerated === 0 ? 0 : offset + gapThisBeat;
+
+// --- HARD STOP: don't let a beat cross the requested strip duration ---
+// This prevents "one extra beat" at the loop boundary when the strip is repeated.
+const beatEnd = startTime + beatDur;
+
+// If the next beat would start past the strip, stop.
+if (startTime >= maxDurationSec) break;
+
+// If the beat would extend past the strip end, stop (or trim if you prefer).
+if (beatEnd > maxDurationSec) break;
 
     // Append beat samples
     const xShifted = xTemp.map((v) => v + startTime);
     x = x.concat(xShifted);
     y = y.concat(yTemp);
 
-    // Determine sensed / captured
-    const isPaced = beatType === "Ventricular pacing";
-    const captured = isPaced && output >= captureThreshold;
+
 
     // Simplified sensing rule for intrinsic beats:
     // if R amplitude exceeds sensitivity threshold -> VS
     const sensedIntrinsic = !isPaced && maxArray(yTemp) >= sensitivity;
-
+    const captured = isPaced && output >= captureThreshold;
     const sensedOrCaptured = sensedIntrinsic || captured;
 
     recordEvent(beatType, xShifted, yTemp, sensedOrCaptured);
+
 
     // Advance absolute offset
     offset = maxArray(xShifted);
