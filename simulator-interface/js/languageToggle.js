@@ -1,14 +1,18 @@
 const LANGUAGE_KEY = 'edupace-language';
 const DEFAULT_LANGUAGE = 'en';
 
+function normalizeLanguage(language) {
+    return language === 'nl' ? 'nl' : DEFAULT_LANGUAGE;
+}
+
 const TRANSLATIONS = {
     en: {
         'controls.settings': 'Open settings',
         'controls.theme': 'Toggle theme',
         'controls.language': 'Toggle language',
-        'nav.home': 'Home',
+        'nav.home': 'Dashboard',
         'nav.training': 'Training',
-        'nav.logs': 'Logs',
+        'nav.logs': 'Session Log',
         'nav.instructions': 'Instructions',
         'connection.title': 'Device connection',
         'connection.help': 'Plug in EduPace to pair via USB.',
@@ -19,17 +23,17 @@ const TRANSLATIONS = {
         'connection.choose': 'Choose a device',
         'connection.subtitle': 'Plug in EduPace and pick a USB serial connection.',
         'connection.empty': 'No serial devices found. Plug in your console and scan again.',
-        'connection.refresh': 'Refresh list',
-        'connection.scan': 'Scan & grant access',
+        'connection.refresh': 'Refresh',
+        'connection.scan': 'Scan',
         'connection.support': 'Supports Chrome, Edge, or the EduPace desktop app.',
-        'home.title': 'Home',
+        'home.title': 'Dashboard',
         'home.subtitle': 'Temporary External Pacemaker Trainer',
         'home.searchLabel': 'Search scenarios',
         'home.searchPlaceholder': 'Search scenarios…',
         'home.quickStart.label': 'Quick start',
         'home.quickStart.title': 'Start training',
         'home.quickStart.body': 'Open the training workspace and load a scenario.',
-        'home.quickStart.open': 'Open training',
+        'home.quickStart.open': 'Open training →',
         'home.quickStart.instructions': 'Instructions',
         'home.quickStart.meta': 'Designed for CCU / ER nurse training',
         'home.scenarios.label': 'Scenarios',
@@ -41,6 +45,11 @@ const TRANSLATIONS = {
         'home.scenarios.error': 'Unable to load scenarios.',
         'home.recent.title': 'Recent',
         'home.recent.empty': 'No recent sessions yet.',
+        'home.steps.title': 'Session steps',
+        'home.steps.tag': '4 steps',
+        'home.resources.label': 'Resources',
+        'home.resources.title': 'Keep training handy',
+        'home.resources.body': 'Shortcuts to manuals and instructions.',
         'training.header.tag': 'Hands-on practice',
         'training.header.title': 'Training workspace',
         'training.scenario.pill': 'Scenario',
@@ -60,7 +69,7 @@ const TRANSLATIONS = {
         'training.menu.empty': 'No scenarios available',
         'training.menu.comingSoon': 'Coming soon',
         'logs.header.label': 'Recorded sessions',
-        'logs.header.title': 'Session logs',
+        'logs.header.title': 'Session log',
         'logs.header.copy': 'Download completed runs as JSON or CSV.',
         'logs.filters.search': 'Search',
         'logs.filters.searchPlaceholder': 'Scenario, operator, notes',
@@ -71,13 +80,20 @@ const TRANSLATIONS = {
         'logs.filters.events': 'Most events',
         'logs.empty': 'No sessions have been logged yet. Complete a run to see it here.',
         'instructions.label': 'Quick start',
-        'instructions.title': 'Run a pacing session in four steps',
+        'instructions.title': 'Ready, connect, pace',
+        'instructions.tagline': 'Learn how to use EduPace in simple steps',
+        'instructions.manual': 'Open user manual (PDF)',
+        'instructions.cta.training': 'Go to training',
+        'instructions.steps.connect.step': 'Setup',
         'instructions.steps.connect.title': 'Connect the device',
         'instructions.steps.connect.body': 'Plug in the EduPace console via USB. Open the Training page and allow the browser to access the serial device by pressing on the "CONNECT" button.',
+        'instructions.steps.input.step': 'Mode',
         'instructions.steps.input.title': 'Choose input mode',
         'instructions.steps.input.body': 'Select Hardware if the Arduino console is available. It is recommended to use Google Chrome or Edge. Otherwise switch to the Virtual controller for keyboard / mouse practice.',
+        'instructions.steps.scenario.step': 'Scenario',
         'instructions.steps.scenario.title': 'Select a scenario',
         'instructions.steps.scenario.body': 'Pick a training case from the scenario dropdown (e.g. symptomatic bradycardia, undersensing, oversensing) and read the summary banner.',
+        'instructions.steps.parameters.step': 'Tune',
         'instructions.steps.parameters.title': 'Adjust pacing parameters',
         'instructions.steps.parameters.body': 'Use the knobs (or virtual sliders) to set Rate, Output and Sensitivity. Watch the ECG, PACE/SENSE LEDs and HR tile to confirm capture and appropriate sensing.'
     },
@@ -85,9 +101,9 @@ const TRANSLATIONS = {
         'controls.settings': 'Open instellingen',
         'controls.theme': 'Schakel thema',
         'controls.language': 'Wissel taal',
-        'nav.home': 'Home',
+        'nav.home': 'Dashboard',
         'nav.training': 'Training',
-        'nav.logs': 'Logs',
+        'nav.logs': 'Sessielog',
         'nav.instructions': 'Instructies',
         'connection.title': 'Apparaatverbinding',
         'connection.help': 'Sluit EduPace via USB aan.',
@@ -98,17 +114,17 @@ const TRANSLATIONS = {
         'connection.choose': 'Kies een apparaat',
         'connection.subtitle': 'Sluit EduPace aan en kies een USB-seriële verbinding.',
         'connection.empty': 'Geen seriële apparaten gevonden. Sluit de console aan en scan opnieuw.',
-        'connection.refresh': 'Lijst vernieuwen',
-        'connection.scan': 'Scannen en toegang verlenen',
+        'connection.refresh': 'Vernieuwen',
+        'connection.scan': 'Scannen',
         'connection.support': 'Ondersteunt Chrome, Edge of de EduPace-desktopapp.',
-        'home.title': 'Home',
+        'home.title': 'Dashboard',
         'home.subtitle': 'Tijdelijke externe pacemakertrainer',
         'home.searchLabel': 'Zoek scenario’s',
         'home.searchPlaceholder': 'Zoek scenario’s…',
         'home.quickStart.label': 'Snelstart',
         'home.quickStart.title': 'Begin met trainen',
         'home.quickStart.body': 'Open de trainingsomgeving en laad een scenario.',
-        'home.quickStart.open': 'Open training',
+        'home.quickStart.open': 'Training openen →',
         'home.quickStart.instructions': 'Instructies',
         'home.quickStart.meta': 'Ontworpen voor training van CCU/SEH-verpleegkundigen',
         'home.scenarios.label': 'Scenario’s',
@@ -120,6 +136,11 @@ const TRANSLATIONS = {
         'home.scenarios.error': 'Scenario’s konden niet worden geladen.',
         'home.recent.title': 'Recent',
         'home.recent.empty': 'Nog geen sessies.',
+        'home.steps.title': 'Sessiestappen',
+        'home.steps.tag': '4 stappen',
+        'home.resources.label': 'Bronnen',
+        'home.resources.title': 'Alles bij de hand',
+        'home.resources.body': 'Snel naar handleiding en instructies.',
         'training.header.tag': 'Praktijk',
         'training.header.title': 'Trainingsomgeving',
         'training.scenario.pill': 'Scenario',
@@ -139,7 +160,7 @@ const TRANSLATIONS = {
         'training.menu.empty': 'Geen scenario’s beschikbaar',
         'training.menu.comingSoon': 'Binnenkort beschikbaar',
         'logs.header.label': 'Opgeslagen sessies',
-        'logs.header.title': 'Sessielogs',
+        'logs.header.title': 'Sessielog',
         'logs.header.copy': 'Download afgeronde sessies als JSON of CSV.',
         'logs.filters.search': 'Zoeken',
         'logs.filters.searchPlaceholder': 'Scenario, operator, notities',
@@ -150,13 +171,20 @@ const TRANSLATIONS = {
         'logs.filters.events': 'Meeste gebeurtenissen',
         'logs.empty': 'Er zijn nog geen sessies gelogd. Rond een run af om hem hier te zien.',
         'instructions.label': 'Snelstart',
-        'instructions.title': 'Voer een pacingsessie uit in vier stappen',
+        'instructions.title': 'Klaar, verbinden, pacen',
+        'instructions.tagline': 'Leer hoe je EduPace in eenvoudige stappen gebruikt',
+        'instructions.manual': 'Open gebruikershandleiding (PDF)',
+        'instructions.cta.training': 'Ga naar training',
+        'instructions.steps.connect.step': 'Setup',
         'instructions.steps.connect.title': 'Verbind het apparaat',
         'instructions.steps.connect.body': 'Sluit de EduPace-console via USB aan. Open de Trainingspagina en geef de browser toegang tot het seriële apparaat door op de knop "CONNECT" te drukken.',
+        'instructions.steps.input.step': 'Modus',
         'instructions.steps.input.title': 'Kies invoermodus',
         'instructions.steps.input.body': 'Selecteer Hardware als de Arduino-console beschikbaar is. Gebruik bij voorkeur Google Chrome of Edge. Schakel anders over op de Virtuele controller voor oefening met toetsenbord of muis.',
+        'instructions.steps.scenario.step': 'Scenario',
         'instructions.steps.scenario.title': 'Selecteer een scenario',
         'instructions.steps.scenario.body': 'Kies een training uit het scenariomenu (bijv. symptomatische bradycardie, undersensing, oversensing) en lees de samenvatting.',
+        'instructions.steps.parameters.step': 'Afstemmen',
         'instructions.steps.parameters.title': 'Pas pacingparameters aan',
         'instructions.steps.parameters.body': 'Gebruik de knoppen of schuifregelaars om Rate, Output en Sensitivity in te stellen. Let op het ECG, de PACE/SENSE-leds en het HR-vak om capture en juiste sensing te bevestigen.'
     }
@@ -167,7 +195,9 @@ function getTranslation(language, key) {
 }
 
 function getCurrentLanguage() {
-    return document.documentElement.getAttribute('lang') || localStorage.getItem(LANGUAGE_KEY) || DEFAULT_LANGUAGE;
+    const documentLang = document.documentElement.getAttribute('lang');
+    const storedLang = localStorage.getItem(LANGUAGE_KEY);
+    return normalizeLanguage(documentLang || storedLang || DEFAULT_LANGUAGE);
 }
 
 function translateKey(key, language = getCurrentLanguage()) {
@@ -175,7 +205,7 @@ function translateKey(key, language = getCurrentLanguage()) {
 }
 
 function applyTranslations(language) {
-    const normalizedLanguage = language === 'nl' ? 'nl' : DEFAULT_LANGUAGE;
+    const normalizedLanguage = normalizeLanguage(language);
 
     document.querySelectorAll('[data-i18n-key]').forEach((element) => {
         const key = element.dataset.i18nKey;
@@ -213,7 +243,7 @@ function updateLanguageButtons(language) {
 }
 
 function applyLanguage(language) {
-    const normalizedLanguage = language === 'nl' ? 'nl' : DEFAULT_LANGUAGE;
+    const normalizedLanguage = normalizeLanguage(language);
     document.documentElement.setAttribute('lang', normalizedLanguage);
     localStorage.setItem(LANGUAGE_KEY, normalizedLanguage);
     updateLanguageButtons(normalizedLanguage);

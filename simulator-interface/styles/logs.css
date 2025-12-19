@@ -1,7 +1,7 @@
 .logs-shell {
-    max-width: 1120px;
+    max-width: var(--content-max-width);
     margin: auto;
-    padding: 0 1rem 2.2rem;
+    padding: 0 clamp(1.4rem, 2.4vw, 2.6rem) 2.2rem;
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
@@ -324,8 +324,9 @@ justify-content: center;
 }
 
 .page-logs .settings-layer {
-    align-items: center;
-    background: rgba(12, 26, 45, 0.35);
+    align-items: stretch;
+    justify-content: flex-end;
+    background: rgba(12, 26, 45, 0.45);
 }
 
 .log-settings {

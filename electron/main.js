@@ -1,5 +1,8 @@
-const { app, BrowserWindow, Menu, shell } = require('electron');
+const { app, BrowserWindow, Menu, shell, ipcMain, dialog } = require('electron');
+const fs = require('fs');
 const path = require('path');
+
+const LOG_FILE_NAME = 'session-logs.json';
 
 let mainWindow = null;
 let aboutWindow = null;
@@ -12,6 +15,7 @@ function createMainWindow() {
     width: 1440,
     height: 900,
     minWidth: 1180,
+    minHeight: 760,
     backgroundColor: '#000000',
     fullscreenable: true,
     webPreferences: {
@@ -55,6 +59,71 @@ function createMainWindow() {
   ses.setDevicePermissionHandler(({ deviceType }) => {
     return deviceType === 'serial';
   });
+
+  ipcMain.handle('edupace:get-default-log-dir', (_, preferredPath) => {
+    return resolveLogDirectory(preferredPath);
+  });
+
+  ipcMain.handle('edupace:pick-log-dir', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory', 'createDirectory'],
+      title: 'Choose a folder for EduPace session logs'
+    });
+
+    if (result.canceled || !result.filePaths?.length) {
+      return null;
+    }
+
+    return resolveLogDirectory(result.filePaths[0]);
+  });
+
+  ipcMain.handle('edupace:read-logs', async (_, preferredPath) => {
+    const data = await readLogFile(preferredPath);
+    return data;
+  });
+
+  ipcMain.handle('edupace:write-logs', async (_, payload = {}) => {
+    const directory = await writeLogFile(payload.logs ?? [], payload.path);
+    return { path: directory };
+  });
+
+  ipcMain.handle('edupace:open-log-dir', async (_, preferredPath) => {
+    const directory = resolveLogDirectory(preferredPath);
+    await shell.openPath(directory);
+    return directory;
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Session log storage helpers
+// -----------------------------------------------------------------------------
+function resolveLogDirectory(requestedPath) {
+  const targetPath = requestedPath || path.join(app.getPath('documents'), 'EduPace Logs');
+  if (!fs.existsSync(targetPath)) {
+    fs.mkdirSync(targetPath, { recursive: true });
+  }
+  return targetPath;
+}
+
+async function readLogFile(directory) {
+  const dir = resolveLogDirectory(directory);
+  const filePath = path.join(dir, LOG_FILE_NAME);
+
+  if (!fs.existsSync(filePath)) {
+    return { logs: [], path: dir };
+  }
+
+  const raw = await fs.promises.readFile(filePath, 'utf-8');
+  const logs = JSON.parse(raw || '[]');
+  return { logs, path: dir };
+}
+
+async function writeLogFile(logs, directory) {
+  const dir = resolveLogDirectory(directory);
+  const filePath = path.join(dir, LOG_FILE_NAME);
+  const payload = JSON.stringify(logs ?? [], null, 2);
+  await fs.promises.writeFile(filePath, payload, 'utf-8');
+  return dir;
 }
 
 // -----------------------------------------------------------------------------
@@ -67,8 +136,8 @@ function openAboutWindow() {
   }
 
   aboutWindow = new BrowserWindow({
-    width: 420,
-    height: 320,
+    width: 480,
+    height: 360,
     resizable: false,
     minimizable: false,
     maximizable: false,
