@@ -1,4 +1,4 @@
-import { ecgWave, heartRate, stitchBeatsNew } from './ecgCore.js';
+import { createEcgSignalGenerator } from './ecgSignalGenerator.js';
 import { createHeartRateEngine } from '../js/heartRateEngine.js';
 import { sendLedCommand } from '../js/arduinoSerialAdapter.js';
 
@@ -25,44 +25,14 @@ const TRACE_COLOR_MAP = {
     white: '#f5f7fa'
 };
 
-const ASYNC_SENSITIVITY_THRESHOLD = 20;
-
 let baseCanvasAspectRatio = null;
 
-
-function resolveAsyncMode({ sensitivity, mode, asynchronous }) {
-    if (typeof asynchronous === 'boolean') {
-        return asynchronous;
-    }
-
-    if (typeof mode === 'string' && mode.trim().toUpperCase() === 'ASYNC') {
-        return true;
-    }
-
-    if (typeof sensitivity === 'number') {
-        return sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
-    }
-
-    return false;
-}
-
-const engineState = {
-    patientRate: 70,
-    pacingRate: 70,
-    output: 5,
-    sensitivity: 2.0,
-    regularity: 'Regular',
-    asynchronous: false,
-    baseSignal: 'Normal',
-    poweredOn: false,
-    waveformId: 'normal-sinus'
-};
+const signalGenerator = createEcgSignalGenerator();
 
 let canvas;
 let ctx;
 let gridCanvas;
 let gridCtx;
-let waveformPoints = [];
 let waveformDuration = 0;
 let maxWaveAmplitude = 1;
 let sweepX = 0;
@@ -232,56 +202,26 @@ function initEcgEngine() {
 }
 
 function handleParameterChange(event) {
-    const { rate, output, sensitivity, power, mode, asynchronous } = event.detail ?? {};
-    if (Number.isFinite(rate)) engineState.pacingRate = rate;
-    if (Number.isFinite(output)) engineState.output = output;
-    if (Number.isFinite(sensitivity)) {
-        engineState.sensitivity = sensitivity;
-    }
-
-    engineState.asynchronous = resolveAsyncMode({
-        sensitivity: Number.isFinite(sensitivity) ? sensitivity : engineState.sensitivity,
-        mode,
-        asynchronous
-    });
-
-    if (typeof power === 'boolean') engineState.poweredOn = power;
+    signalGenerator.updateParameters(event.detail ?? {});
     regenerateWaveform();
 }
 
 function handleScenarioChange(event) {
-    const hr = event.detail?.vitals?.hr;
-    if (Number.isFinite(hr)) engineState.patientRate = hr;
-    if (typeof event.detail?.pacing?.poweredOn === 'boolean') {
-        engineState.poweredOn = event.detail.pacing.poweredOn;
-    } else {
-        engineState.poweredOn = false;
-    }
-    if (event.detail?.waveformId) {
-    engineState.waveformId = event.detail.waveformId;
-    engineState.baseSignal = mapWaveformId(event.detail.waveformId);
-}
+    signalGenerator.updateScenario(event.detail ?? {});
     regenerateWaveform();
 }
 
 function handleRuleEffects(event) {
-    const hr = event.detail?.effects?.vitals?.hr;
-    if (Number.isFinite(hr)) engineState.patientRate = hr;
-    if (event.detail?.effects?.waveformId) {
-    engineState.waveformId = event.detail.effects.waveformId;
-    engineState.baseSignal = mapWaveformId(event.detail.effects.waveformId);
-}
+    signalGenerator.updateRuleEffects(event.detail ?? {});
     regenerateWaveform();
 }
 
 function handleWaveformChange(event) {
     const waveformId = event.detail?.waveformId;
     if (waveformId) {
-    engineState.waveformId = waveformId;
-    engineState.baseSignal = mapWaveformId(waveformId);
-    regenerateWaveform();
-}
-
+        signalGenerator.updateWaveformId(waveformId);
+        regenerateWaveform();
+    }
 }
 
 function configureTraceStyle() {
@@ -333,42 +273,6 @@ function applyAnnotationStyles() {
     }
 }
 
-function mapWaveformId(waveformId) {
-    switch (waveformId) {
-        // Intrinsic baseline
-        case 'normal-sinus':
-            return 'Normal';
-
-        // Special strip handled inside stitchBeatsNew (complete AV block style strip)
-        case 'brady-escape':
-            return 'Normal';
-
-        // Scenarios handled via stitchBeatsNew waveformId options
-        case 'mobitz-ii':
-        case 'mobitz-type-ii':
-            return 'Normal';
-
-        case 'slow-conduction':
-            return 'Normal';
-
-        // Paced / legacy scenario ids
-        case 'ventricular-paced':
-        case 'intermittent-capture':
-        case 'loss-of-capture':
-        case 'paced-with-ectopy':
-        case 'mixed-wide-narrow':
-        case 'oversensing':
-        case 'undersensing':
-        case 'random-mode':
-            return 'Normal';
-
-        default:
-            return 'Normal';
-    }
-}
-
-
-
 function flashLed(element, type) {
     if (!element) return;
 
@@ -389,7 +293,8 @@ function flashLed(element, type) {
 }
 
 function processLedEvents(windowStart, windowEnd) {
-    if (!engineState.poweredOn || !waveformDuration || !waveformEvents.length) return;
+    const { poweredOn } = signalGenerator.getState();
+    if (!poweredOn || !waveformDuration || !waveformEvents.length) return;
 
     waveformEvents.forEach((event) => {
         if (!event || typeof event.time !== 'number') return;
@@ -425,7 +330,8 @@ function scheduleBeatLabel(type, occurrenceTime, x, y, secondsVisible) {
 }
 
 function processBeatLabelEvents(windowStart, windowEnd, startX, endX, height, secondsVisible) {
-    if (!engineState.poweredOn || !waveformDuration || !waveformEvents.length) return;
+    const { poweredOn } = signalGenerator.getState();
+    if (!poweredOn || !waveformDuration || !waveformEvents.length) return;
 
     const showVP = displaySettings.pacingSpikeLabel;
     const showVS = displaySettings.intrinsicBeatLabels;
@@ -585,88 +491,20 @@ function handleResize() {
 }
 
 function regenerateWaveform() {
-  // -----------------------------
-  // 1) Intrinsic rate always comes from the patient/scenario
-  //    (pacing logic lives inside stitchBeatsNew now)
-  // -----------------------------
-  const intrinsicRate =
-    Number.isFinite(engineState.patientRate) && engineState.patientRate > 0
-      ? engineState.patientRate
-      : 70;
+    signalGenerator.regenerate(getSecondsVisible() || DEFAULT_SECONDS_VISIBLE);
 
-  const gap = heartRate(intrinsicRate);
+    const meta = signalGenerator.getMeta();
+    waveformDuration = meta.waveformDuration ?? 0;
+    waveformEvents = meta.waveformEvents ?? [];
+    maxWaveAmplitude = meta.maxWaveAmplitude ?? 1;
 
-  // Pacemaker is enabled only if powered on and has a valid rate
-  const pacingEnabled =
-    engineState.poweredOn &&
-    Number.isFinite(engineState.pacingRate) &&
-    engineState.pacingRate > 0;
-
-  // -----------------------------
-  // 2) Decide pacer mode
-  //    UI currently resolves "async" as boolean.
-  //    We map that to VOO when true, VVI when false.
-  // -----------------------------
-  const mode = pacingEnabled
-    ? (engineState.asynchronous ? "VOO" : "VVI")
-    : "VVI"; // doesn't matter when off
-
-  const pacerRate = pacingEnabled ? engineState.pacingRate : intrinsicRate;
-  const pacingOutput = pacingEnabled ? engineState.output : 0;
-
-  // -----------------------------
-  // 3) Morphology resolver
-  // -----------------------------
-  const ecgFunc = (type) => {
-    const resolvedType = type === "Normal" ? engineState.baseSignal : type;
-    return ecgWave(resolvedType);
-  };
-
-  const secondsVisible = getSecondsVisible() || DEFAULT_SECONDS_VISIBLE;
-
-  // -----------------------------
-  // 4) Generate strip
-  //    Key: pass pacemakerEnabled + mode into options
-  // -----------------------------
-  const { x, y, events } = stitchBeatsNew(
-    ecgFunc,
-    gap,
-    engineState.regularity,
-    engineState.sensitivity,
-    pacerRate,          // LRL in ppm (used for escape interval 60/rate)
-    pacingOutput,       // mA
-    mode === "VOO",     // legacy async boolean (kept for backward compat)
-    {
-      waveformId: engineState.waveformId,
-      durationSec: secondsVisible,
-        pacemakerEnabled: pacingEnabled,
-      mode,
-        patientHR: intrinsicRate
-    }
-  );
-
-  if (!Array.isArray(x) || !Array.isArray(y) || x.length === 0 || y.length === 0) {
-    waveformPoints = [];
-    waveformEvents = [];
-    waveformDuration = 0;
-    maxWaveAmplitude = 1;
+    heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
     heartRateEngine?.reset();
     clearBeatLabels();
-    return;
-  }
 
-  waveformDuration = Math.max(...x, 0);
-  waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
-  waveformEvents = Array.isArray(events) ? events : [];
-  maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
-
-  heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
-  heartRateEngine?.reset();
-  clearBeatLabels();
-
-  if (waveformDuration > 0) {
-    sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
-  }
+    if (waveformDuration > 0) {
+        sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
+    }
 }
 
 
@@ -776,14 +614,15 @@ function drawWaveform(width, height) {
 
 function drawSensitivityGuide(width, height) {
     if (!ctx || !displaySettings.sensitivityGuide) return;
-    if (!Number.isFinite(engineState.sensitivity)) return;
-    if (engineState.asynchronous) return;
+    const state = signalGenerator.getState();
+    if (!Number.isFinite(state.sensitivity)) return;
+    if (state.asynchronous) return;
 
     const { midY, scaleY } = getWaveformGeometry(height);
     if (!scaleY) return;
 
-    const y = clamp(valueToY(engineState.sensitivity, midY, scaleY), 0, height);
-    const label = `${engineState.sensitivity.toFixed(1)} mV`;
+    const y = clamp(valueToY(state.sensitivity, midY, scaleY), 0, height);
+    const label = `${state.sensitivity.toFixed(1)} mV`;
 
     ctx.save();
     ctx.strokeStyle = 'rgba(244, 114, 182, 0.85)';
@@ -869,7 +708,7 @@ function drawBeatLabels(width, height) {
 }
 
 function advanceSweep(deltaSeconds) {
-    if (!traceCtx || !traceCanvas || !waveformPoints.length || waveformDuration <= 0) return;
+    if (!traceCtx || !traceCanvas || waveformDuration <= 0) return;
 
     const { width, height } = getDisplaySize();
     const secondsVisible = getSecondsVisible();
@@ -939,28 +778,7 @@ function getWaveformGeometry(height) {
 }
 
 function sampleWaveform(timeSeconds) {
-    if (!waveformDuration || !waveformPoints.length) return 0;
-
-    const wrappedTime = ((timeSeconds % waveformDuration) + waveformDuration) % waveformDuration;
-    let left = 0;
-    let right = waveformPoints.length - 1;
-
-    while (right - left > 1) {
-        const mid = Math.floor((left + right) / 2);
-        if (waveformPoints[mid].time <= wrappedTime) {
-            left = mid;
-        } else {
-            right = mid;
-        }
-    }
-
-    const leftPoint = waveformPoints[left];
-    const rightPoint = waveformPoints[Math.min(left + 1, waveformPoints.length - 1)];
-
-    if (rightPoint.time === leftPoint.time) return leftPoint.value;
-
-    const ratio = (wrappedTime - leftPoint.time) / (rightPoint.time - leftPoint.time);
-    return leftPoint.value + ratio * (rightPoint.value - leftPoint.value);
+    return signalGenerator.sample(timeSeconds);
 }
 
 function broadcastPauseState(paused) {
