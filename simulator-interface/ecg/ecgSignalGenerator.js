@@ -1,4 +1,5 @@
-import { ecgWave, heartRate, stitchBeatsNew } from './ecgCore.js';
+import { compileWaveform } from './ecgWaveforms.js';
+import { heartRate, stitchBeatsNew } from './ecgPacingEngine.js';
 
 const DEFAULT_SECONDS_VISIBLE = 6;
 const ASYNC_SENSITIVITY_THRESHOLD = 20;
@@ -10,18 +11,13 @@ const defaultEngineState = {
     sensitivity: 2.0,
     regularity: 'Regular',
     asynchronous: false,
-    baseSignal: 'Normal',
     poweredOn: false,
-    waveformId: 'normal-sinus'
+    waveformId: 'c0-normal-sinus'
 };
 
-function resolveAsyncMode({ sensitivity, mode, asynchronous }) {
+function resolveAsyncMode({ sensitivity, asynchronous }) {
     if (typeof asynchronous === 'boolean') {
         return asynchronous;
-    }
-
-    if (typeof mode === 'string' && mode.trim().toUpperCase() === 'ASYNC') {
-        return true;
     }
 
     if (typeof sensitivity === 'number') {
@@ -29,40 +25,6 @@ function resolveAsyncMode({ sensitivity, mode, asynchronous }) {
     }
 
     return false;
-}
-
-function mapWaveformId(waveformId) {
-    switch (waveformId) {
-        // Intrinsic baseline
-        case 'normal-sinus':
-            return 'Normal';
-
-        // Special strip handled inside stitchBeatsNew (complete AV block style strip)
-        case 'brady-escape':
-            return 'Normal';
-
-        // Scenarios handled via stitchBeatsNew waveformId options
-        case 'mobitz-ii':
-        case 'mobitz-type-ii':
-            return 'Normal';
-
-        case 'slow-conduction':
-            return 'Normal';
-
-        // Paced / legacy scenario ids
-        case 'ventricular-paced':
-        case 'intermittent-capture':
-        case 'loss-of-capture':
-        case 'paced-with-ectopy':
-        case 'mixed-wide-narrow':
-        case 'oversensing':
-        case 'undersensing':
-        case 'random-mode':
-            return 'Normal';
-
-        default:
-            return 'Normal';
-    }
 }
 
 export function createEcgSignalGenerator() {
@@ -91,28 +53,21 @@ export function createEcgSignalGenerator() {
         const pacingEnabled =
             engineState.poweredOn && Number.isFinite(engineState.pacingRate) && engineState.pacingRate > 0;
 
-        const mode = pacingEnabled ? (engineState.asynchronous ? 'VOO' : 'VVI') : 'VVI';
         const pacerRate = pacingEnabled ? engineState.pacingRate : intrinsicRate;
         const pacingOutput = pacingEnabled ? engineState.output : 0;
 
-        const ecgFunc = (type) => {
-            const resolvedType = type === 'Normal' ? engineState.baseSignal : type;
-            return ecgWave(resolvedType);
-        };
-
         const { x, y, events } = stitchBeatsNew(
-            ecgFunc,
+            compileWaveform,
             gap,
             engineState.regularity,
             engineState.sensitivity,
             pacerRate,
             pacingOutput,
-            mode === 'VOO',
+            pacingEnabled && engineState.asynchronous,
             {
                 waveformId: engineState.waveformId,
                 durationSec: secondsVisible,
                 pacemakerEnabled: pacingEnabled,
-                mode,
                 patientHR: intrinsicRate
             }
         );
@@ -153,7 +108,7 @@ export function createEcgSignalGenerator() {
         return leftPoint.value + ratio * (rightPoint.value - leftPoint.value);
     };
 
-    const updateParameters = ({ rate, output, sensitivity, power, mode, asynchronous }) => {
+    const updateParameters = ({ rate, output, sensitivity, power, asynchronous }) => {
         if (Number.isFinite(rate)) engineState.pacingRate = rate;
         if (Number.isFinite(output)) engineState.output = output;
         if (Number.isFinite(sensitivity)) {
@@ -162,7 +117,6 @@ export function createEcgSignalGenerator() {
 
         engineState.asynchronous = resolveAsyncMode({
             sensitivity: Number.isFinite(sensitivity) ? sensitivity : engineState.sensitivity,
-            mode,
             asynchronous
         });
 
@@ -194,7 +148,6 @@ export function createEcgSignalGenerator() {
     const updateWaveformId = (waveformId) => {
         if (!waveformId) return;
         engineState.waveformId = waveformId;
-        engineState.baseSignal = mapWaveformId(waveformId);
     };
 
     const getMeta = () => ({
