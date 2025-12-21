@@ -138,8 +138,6 @@ export function compileWaveform(signalType) {
     y = [...preP.y, ...P.y, ...preQRS.y, ...QRS.y, ...preT.y, ...Tseg.y, ...postT.y];
 
   } else if (signalType === "Ventricular spike only") {
-    // Derived strictly from the Ventricular pacing waveform's pacer spike segment.
-    // (Still “using your waveforms only”.)
     const points_pre = [[1, 0, 0],[1, 1, 0],[1, 2, 0],[1, 2.5, 0]];
     const points_prePacemaker = [[1, 5.5, 0],[1, 6, 0],[1, 7, 0],[1, 8, 0]];
     const points_Pacemaker = [[1, 8.3, 0],[10, 8.4, 14],[1, 8.5, 0]];

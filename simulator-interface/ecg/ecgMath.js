@@ -1,4 +1,3 @@
-// Reusable math helpers for ECG synthesis
 export const T = Array.from({ length: 101 }, (_, i) => i / 100);
 
 export function clamp(value, min, max) {
