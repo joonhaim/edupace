@@ -10,69 +10,16 @@
       "primaryRhythm": "Normal sinus rhythm",
       "location": "Telemetry",
       "waveformId": "c0-normal-sinus",
-      "vitals": { "hr": 72 },
-      "pacing": { "poweredOn": false },
-      "alarm": { "level": "normal", "text": "Stable intrinsic rhythm" },
-      "rules": []
-    },
-    {
-      "id": "C1",
-      "code": "C1",
-      "category": "clinical",
-      "title": "C1 · Bradycardia",
-      "description": "Slow intrinsic ventricular rhythm that benefits from VVI pacing support.",
-      "summaryLabel": "Symptomatic bradycardia",
-      "primaryRhythm": "Ventricular bradycardia",
-      "location": "ICU",
-      "waveformId": "c0-normal-sinus",
-      "vitals": { "hr": 38 },
-      "pacing": { "poweredOn": false },
-      "alarm": { "level": "warning", "text": "Bradycardia – consider pacing" },
-      "rules": []
-    },
-    {
-      "id": "C2",
-      "code": "C2",
-      "category": "clinical",
-      "title": "C2 · Third-degree AV Block",
-      "description": "Complete heart block with atrial activity dissociated from a slow ventricular escape rhythm.",
-      "summaryLabel": "Complete AV block",
-      "primaryRhythm": "Complete AV block",
-      "location": "Telemetry",
-      "waveformId": "c2-third-degree-av-block",
-      "vitals": { "hr": 32 },
-      "pacing": { "poweredOn": false },
-      "alarm": { "level": "warning", "text": "High-degree block – standby pacing" },
-      "rules": []
-    },
-    {
-      "id": "C3",
-      "code": "C3",
-      "category": "clinical",
-      "title": "C3 · Second-degree AV Block (Mobitz II)",
-      "description": "Intermittent conduction with non-conducted P-waves and potential pauses.",
-      "summaryLabel": "Mobitz II block",
-      "primaryRhythm": "Second-degree AV block",
-      "location": "Telemetry",
-      "waveformId": "c3-second-degree-av-block",
-      "vitals": { "hr": 45 },
-      "pacing": { "poweredOn": false },
-      "alarm": { "level": "warning", "text": "Dropped beats – monitor closely" },
-      "rules": []
-    },
-    {
-      "id": "C4",
-      "code": "C4",
-      "category": "clinical",
-      "title": "C4 · Slow Conduction",
-      "description": "Prolonged PR and ventricular conduction creating wide, delayed complexes.",
-      "summaryLabel": "Slow ventricular conduction",
-      "primaryRhythm": "Slow conduction",
-      "location": "Telemetry",
-      "waveformId": "c5-slow-conduction",
-      "vitals": { "hr": 60 },
-      "pacing": { "poweredOn": false },
-      "alarm": { "level": "normal", "text": "Monitor for pacing needs" },
+      "vitals": {
+        "hr": 72
+      },
+      "pacing": {
+        "poweredOn": false
+      },
+      "alarm": {
+        "level": "normal",
+        "text": "Stable intrinsic rhythm"
+      },
       "rules": []
     }
   ]
