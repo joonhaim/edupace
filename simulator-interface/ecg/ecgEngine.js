@@ -294,13 +294,19 @@ function flashLed(element, type) {
 
 function processLedEvents(windowStart, windowEnd) {
     const { poweredOn } = signalGenerator.getState();
-    if (!poweredOn || !waveformDuration || !waveformEvents.length) return;
+    if (!poweredOn || !waveformEvents.length) return;
+
+    const hasFiniteDuration = Number.isFinite(waveformDuration) && waveformDuration > 0;
 
     waveformEvents.forEach((event) => {
         if (!event || typeof event.time !== 'number') return;
 
-        const cyclesOffset = Math.max(0, Math.ceil((windowStart - event.time) / waveformDuration));
-        const occurrence = event.time + cyclesOffset * waveformDuration;
+        const cyclesOffset = hasFiniteDuration
+            ? Math.max(0, Math.ceil((windowStart - event.time) / waveformDuration))
+            : 0;
+        const occurrence = hasFiniteDuration
+            ? event.time + cyclesOffset * waveformDuration
+            : event.time;
 
         if (occurrence >= windowStart && occurrence <= windowEnd) {
             if (event.type === 'pace') {
@@ -331,7 +337,7 @@ function scheduleBeatLabel(type, occurrenceTime, x, y, secondsVisible) {
 
 function processBeatLabelEvents(windowStart, windowEnd, startX, endX, height, secondsVisible) {
     const { poweredOn } = signalGenerator.getState();
-    if (!poweredOn || !waveformDuration || !waveformEvents.length) return;
+    if (!poweredOn || !waveformEvents.length) return;
 
     const showVP = displaySettings.pacingSpikeLabel;
     const showVS = displaySettings.intrinsicBeatLabels;
@@ -342,11 +348,17 @@ function processBeatLabelEvents(windowStart, windowEnd, startX, endX, height, se
 
     const xSpan = endX - startX;
     if (!Number.isFinite(xSpan) || xSpan === 0) return;
+    const hasFiniteDuration = Number.isFinite(waveformDuration) && waveformDuration > 0;
+
     waveformEvents.forEach((event) => {
         if (!event || typeof event.time !== 'number') return;
 
-        const cyclesOffset = Math.max(0, Math.ceil((windowStart - event.time) / waveformDuration));
-        const occurrence = event.time + cyclesOffset * waveformDuration;
+        const cyclesOffset = hasFiniteDuration
+            ? Math.max(0, Math.ceil((windowStart - event.time) / waveformDuration))
+            : 0;
+        const occurrence = hasFiniteDuration
+            ? event.time + cyclesOffset * waveformDuration
+            : event.time;
 
         if (occurrence < windowStart || occurrence > windowEnd) return;
 
@@ -502,7 +514,7 @@ function regenerateWaveform() {
     heartRateEngine?.reset();
     clearBeatLabels();
 
-    if (waveformDuration > 0) {
+    if (Number.isFinite(waveformDuration) && waveformDuration > 0) {
         sweepTime = ((sweepTime % waveformDuration) + waveformDuration) % waveformDuration;
     }
 }

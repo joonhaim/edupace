@@ -22,7 +22,7 @@ import { compileWaveform } from "./ecgWaveforms.js";
 const CAPTURE_THRESHOLD_MA = 1.5;
 
 // Keep the engine effectively "non-looping" for practical usage.
-const WAVEFORM_DURATION_SEC = 24 * 60 * 60; // 24 hours
+const WAVEFORM_DURATION_SEC = Number.POSITIVE_INFINITY;
 
 // How far ahead we generate beats beyond the latest requested sample time.
 const LOOKAHEAD_SEC = 12;
@@ -1042,11 +1042,18 @@ export function createEcgSignalGenerator() {
     updateParameters(partial) {
       if (!partial || typeof partial !== "object") return;
 
-      if (typeof partial.poweredOn === "boolean") state.poweredOn = partial.poweredOn;
-      if (Number.isFinite(partial.rate)) state.rate = clamp(partial.rate, 30, 200);
-      if (Number.isFinite(partial.output)) state.output = clamp(partial.output, 0, 25);
-      if (Number.isFinite(partial.sensitivity)) state.sensitivity = clamp(partial.sensitivity, 0.1, 20);
-      if (typeof partial.asynchronous === "boolean") state.asynchronous = partial.asynchronous;
+      const normalized = { ...partial };
+
+      if (typeof partial.power === "boolean" && typeof partial.poweredOn !== "boolean") {
+        normalized.poweredOn = partial.power;
+      }
+
+      if (typeof normalized.poweredOn === "boolean") state.poweredOn = normalized.poweredOn;
+      if (Number.isFinite(normalized.rate)) state.rate = clamp(normalized.rate, 30, 200);
+      if (Number.isFinite(normalized.output)) state.output = clamp(normalized.output, 0, 25);
+      if (Number.isFinite(normalized.sensitivity))
+        state.sensitivity = clamp(normalized.sensitivity, 0.1, 20);
+      if (typeof normalized.asynchronous === "boolean") state.asynchronous = normalized.asynchronous;
 
       invalidateFuture(lastSampleTime);
     },
