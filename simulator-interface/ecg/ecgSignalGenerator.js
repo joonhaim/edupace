@@ -207,6 +207,14 @@ export function createEcgSignalGenerator() {
         state.lastDemandReset = at;
         state.nextEscapeTime = at + escapeInterval;
 
+        // Always render a spike to make pacing visibly obvious.
+        pushBeat({
+            start: at,
+            duration: 0.12,
+            template: 'spike',
+            amplitude: 1
+        });
+
         const captureEligible = at - state.lastDepolarizationTime >= REFRACTORY_SECONDS;
         const output = Number.isFinite(state.parameters.output)
             ? state.parameters.output
@@ -224,13 +232,6 @@ export function createEcgSignalGenerator() {
                 amplitude: amplitudeScale
             });
             state.lastDepolarizationTime = startTime;
-        } else {
-            pushBeat({
-                start: at,
-                duration: 0.12,
-                template: 'spike',
-                amplitude: 1
-            });
         }
     }
 
