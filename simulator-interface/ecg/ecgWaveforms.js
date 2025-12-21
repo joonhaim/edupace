@@ -137,21 +137,7 @@ export function compileWaveform(signalType) {
     x = [...preP.x, ...P.x, ...preQRS.x, ...QRS.x, ...preT.x, ...Tseg.x, ...postT.x];
     y = [...preP.y, ...P.y, ...preQRS.y, ...QRS.y, ...preT.y, ...Tseg.y, ...postT.y];
 
-  } else if (signalType === "Ventricular spike only") {
-    const points_pre = [[1, 0, 0],[1, 1, 0],[1, 2, 0],[1, 2.5, 0]];
-    const points_prePacemaker = [[1, 5.5, 0],[1, 6, 0],[1, 7, 0],[1, 8, 0]];
-    const points_Pacemaker = [[1, 8.3, 0],[10, 8.4, 14],[1, 8.5, 0]];
-    const points_post = [[1, 9, 0],[1, 10, 0],[1, 11, 0],[1, 12, 0]];
-
-    const a = bPolynomial(T, points_pre);
-    const b = bPolynomial(T, points_prePacemaker);
-    const c = bPolynomial(T, points_Pacemaker);
-    const d = bPolynomial(T, points_post);
-
-    x = [...a.x, ...b.x, ...c.x, ...d.x];
-    y = [...a.y, ...b.y, ...c.y, ...d.y];
-
-  } else {
+  }  else {
     throw new Error(`Unknown signalType: ${signalType}`);
   }
 
