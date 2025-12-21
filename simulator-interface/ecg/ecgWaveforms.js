@@ -1,4 +1,4 @@
-import { T, bPolynomial } from "./ecgCore.js";
+import { T, bPolynomial } from "./ecgMath.js";
 const CACHE = new Map();
 
 /**
