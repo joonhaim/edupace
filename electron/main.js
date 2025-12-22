@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const LOG_FILE_NAME = 'session-logs.json';
+const ARDUINO_VENDOR_ID = 0x2341;
+const ARDUINO_PRODUCT_ID = 0x0266;
 
 let mainWindow = null;
 let aboutWindow = null;
@@ -91,6 +93,34 @@ function createMainWindow() {
     const directory = resolveLogDirectory(preferredPath);
     await shell.openPath(directory);
     return directory;
+  });
+}
+
+function setupSerialPortSelection() {
+  app.on('select-serial-port', (event, portList, _, callback) => {
+    event.preventDefault();
+
+    if (!Array.isArray(portList) || portList.length === 0) {
+      callback('');
+      return;
+    }
+
+    const preferred = portList.find((port) => {
+      return port.vendorId === ARDUINO_VENDOR_ID && port.productId === ARDUINO_PRODUCT_ID;
+    });
+
+    const chosenPort = preferred ?? portList[0];
+    callback(chosenPort.portId);
+  });
+
+  app.on('serial-port-added', (_, port) => {
+    const label = port?.displayName || port?.portId || 'Unknown serial device';
+    console.info(`[serial] Added: ${label}`);
+  });
+
+  app.on('serial-port-removed', (_, port) => {
+    const label = port?.displayName || port?.portId || 'Unknown serial device';
+    console.info(`[serial] Removed: ${label}`);
   });
 }
 
@@ -257,6 +287,7 @@ function buildMenu() {
 // App lifecycle
 // -----------------------------------------------------------------------------
 app.whenReady().then(() => {
+  setupSerialPortSelection();
   createMainWindow();
   buildMenu();
 
