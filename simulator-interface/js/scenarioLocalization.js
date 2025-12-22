@@ -210,6 +210,17 @@ const SCENARIO_TRANSLATIONS = {
             }
         }
     },
+    C0: {
+        title: 'C0 · Normaal sinusritme',
+        description: 'Stabiel intrinsiek ventriculair ritme.',
+        summaryLabel: 'Normaal sinusritme',
+        primaryRhythm: 'Normaal sinusritme',
+        location: 'Telemetrie',
+        pacingMode: 'VVI (stand-by)',
+        alarmText: 'Geen alarmen',
+        objective: 'Observeer pacingremming.',
+        feedback: 'Geen pacingspikes verwacht. Controleer ventriculaire sensing.'
+    },
     C1: {
         title: 'C1 · Derdegraads AV-blok',
         description: 'Placeholder-casus voor totaal AV-blok met minimale begeleiding.',

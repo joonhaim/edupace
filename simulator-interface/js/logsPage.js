@@ -9,6 +9,7 @@ import {
     syncFromDisk,
     updateSessionLogMetadata
 } from './sessionStore.js';
+import { translateKey } from './languageToggle.js';
 
 const filterState = {
     search: '',
@@ -34,6 +35,14 @@ const LOG_SETTINGS_KEY = 'edupace-log-settings';
 
 let logDisplaySettings = { ...defaultLogSettings };
 let logLocationElements = { display: null, openBtn: null, hint: null, refreshBtn: null };
+
+function translateTemplate(key, replacements = {}) {
+    let text = translateKey(key) || key;
+    Object.entries(replacements).forEach(([token, value]) => {
+        text = text.replaceAll(`{${token}}`, value);
+    });
+    return text;
+}
 
 function loadLogSettings() {
     try {
@@ -63,7 +72,7 @@ function applyLogSettings(patch = {}) {
 
 function describeLogLocation(path) {
     if (path) return path;
-    return 'Browser storage (local only)';
+    return translateKey('logs.location.browserOnly');
 }
 
 function updateLogLocationUi(path = getLogStoragePath()) {
@@ -74,8 +83,8 @@ function updateLogLocationUi(path = getLogStoragePath()) {
     if (refreshBtn) refreshBtn.disabled = !hasNativeAccess;
     if (hint) {
         hint.textContent = hasNativeAccess
-            ? 'Logs are kept as a JSON file you can browse on disk.'
-            : 'Logs stay in this browser storage unless you export them.';
+            ? translateKey('logs.location.nativeHint')
+            : translateKey('logs.location.browserHint');
     }
 }
 
@@ -199,9 +208,9 @@ function formatDuration(seconds) {
 }
 
 function formatDate(timestamp) {
-    if (!timestamp) return 'Unknown time';
+    if (!timestamp) return translateKey('logs.time.unknown');
     const date = new Date(timestamp);
-    if (Number.isNaN(date.getTime())) return 'Unknown time';
+    if (Number.isNaN(date.getTime())) return translateKey('logs.time.unknown');
 
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -261,7 +270,7 @@ function buildMetaRow(label, value, options = {}) {
 
     const valueEl = document.createElement('p');
     valueEl.className = 'meta-value';
-    valueEl.textContent = value || 'Not provided';
+    valueEl.textContent = value || translateKey('logs.meta.notProvided');
 
     if (!value) {
         valueEl.classList.add('is-placeholder');
@@ -278,7 +287,7 @@ function buildMetaRow(label, value, options = {}) {
     if (typeof options.onActivate === 'function') {
         row.classList.add('is-activatable');
         row.addEventListener('dblclick', options.onActivate);
-        row.setAttribute('title', 'Double-click to edit');
+        row.setAttribute('title', translateKey('logs.meta.editHint'));
     }
 
     row.append(labelEl, valueEl);
@@ -313,18 +322,21 @@ function renderLogCard(log) {
 
     const title = document.createElement('div');
     title.className = 'log-title';
-    title.textContent = log.scenarioTitle || 'Unknown scenario';
+    title.textContent = log.scenarioTitle || translateKey('logs.unknownScenario');
 
     const meta = document.createElement('div');
     meta.className = 'log-meta';
-    meta.textContent = `${formatDate(log.startedAt)} • ${formatDuration(log.durationSeconds)} • ${
-        log.events?.length ?? 0
-    } events`;
+    const eventSummary = translateTemplate('logs.events.count', { count: log.events?.length ?? 0 });
+    meta.textContent = translateTemplate('logs.card.meta', {
+        date: formatDate(log.startedAt),
+        duration: formatDuration(log.durationSeconds),
+        events: eventSummary
+    });
 
     const label = document.createElement('div');
     label.className = 'log-label';
     const labelText = log.metadata?.label || log.metadata?.operator;
-    label.textContent = labelText ? labelText : 'Add label or operator';
+    label.textContent = labelText ? labelText : translateKey('logs.card.addLabel');
 
     card.append(title, meta, label);
 
@@ -346,7 +358,7 @@ function renderDetail(log) {
     if (!log) {
         const empty = document.createElement('div');
         empty.className = 'detail-empty';
-        empty.textContent = 'Select a session to view its details.';
+        empty.textContent = translateKey('logs.detail.empty');
         panel.append(empty);
         return;
     }
@@ -356,18 +368,21 @@ function renderDetail(log) {
     const headingText = document.createElement('div');
     headingText.className = 'detail-heading-text';
     const title = document.createElement('h2');
-    title.textContent = log.scenarioTitle || 'Unknown scenario';
+    title.textContent = log.scenarioTitle || translateKey('logs.unknownScenario');
     const sub = document.createElement('p');
     sub.className = 'detail-subtitle';
-    sub.textContent = `${formatDate(log.startedAt)} • ${formatDuration(log.durationSeconds)} • ${
-        log.events?.length ?? 0
-    } events`;
+    const detailEventSummary = translateTemplate('logs.events.count', { count: log.events?.length ?? 0 });
+    sub.textContent = translateTemplate('logs.card.meta', {
+        date: formatDate(log.startedAt),
+        duration: formatDuration(log.durationSeconds),
+        events: detailEventSummary
+    });
     headingText.append(title, sub);
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'detail-close';
-    closeBtn.setAttribute('aria-label', 'Close session details');
+    closeBtn.setAttribute('aria-label', translateKey('logs.detail.close'));
     closeBtn.textContent = '×';
     closeBtn.addEventListener('click', clearSelectedLog);
 
@@ -377,10 +392,13 @@ function renderDetail(log) {
     summary.className = 'detail-summary';
 
     const summaryItems = [
-        { label: 'Session ID', value: log.id },
-        { label: 'Started', value: formatDate(log.startedAt) },
-        { label: 'Duration', value: formatDuration(log.durationSeconds) },
-        { label: 'Events', value: `${log.events?.length ?? 0} events` }
+        { label: translateKey('logs.detail.sessionId'), value: log.id },
+        { label: translateKey('logs.detail.started'), value: formatDate(log.startedAt) },
+        { label: translateKey('logs.detail.duration'), value: formatDuration(log.durationSeconds) },
+        {
+            label: translateKey('logs.detail.events'),
+            value: translateTemplate('logs.events.count', { count: log.events?.length ?? 0 })
+        }
     ];
 
     summaryItems.forEach((item) => {
@@ -408,19 +426,19 @@ function renderDetail(log) {
     const downloadJson = document.createElement('button');
     downloadJson.type = 'button';
     downloadJson.className = 'btn btn-ghost btn-small';
-    downloadJson.textContent = 'Download JSON';
+    downloadJson.textContent = translateKey('logs.actions.downloadJson');
     downloadJson.addEventListener('click', () => downloadLog(log, 'json'));
 
     const downloadCsv = document.createElement('button');
     downloadCsv.type = 'button';
     downloadCsv.className = 'btn btn-ghost btn-small';
-    downloadCsv.textContent = 'Download CSV';
+    downloadCsv.textContent = translateKey('logs.actions.downloadCsv');
     downloadCsv.addEventListener('click', () => downloadLog(log, 'csv'));
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
     deleteBtn.className = 'btn btn-ghost btn-small danger';
-    deleteBtn.textContent = 'Delete entry';
+    deleteBtn.textContent = translateKey('logs.actions.delete');
     deleteBtn.addEventListener('click', async () => {
         await deleteSessionLog(log.id);
         filterState.selectedId = null;
@@ -439,11 +457,11 @@ function renderDetail(log) {
         metaList.classList.add('is-edit');
 
         const labelField = document.createElement('label');
-        labelField.textContent = 'Label';
+        labelField.textContent = translateKey('logs.form.label');
         const labelInput = document.createElement('input');
         labelInput.type = 'text';
         labelInput.value = draft.label;
-        labelInput.placeholder = 'e.g., Weekly practice';
+        labelInput.placeholder = translateKey('logs.form.labelPlaceholder');
         labelInput.dataset.field = 'label';
         labelInput.addEventListener('input', (event) => {
             detailState.draft = { ...(detailState.draft ?? draft), label: event.target.value };
@@ -451,11 +469,11 @@ function renderDetail(log) {
         labelField.appendChild(labelInput);
 
         const operatorField = document.createElement('label');
-        operatorField.textContent = 'Operator';
+        operatorField.textContent = translateKey('logs.form.operator');
         const operatorInput = document.createElement('input');
         operatorInput.type = 'text';
         operatorInput.value = draft.operator;
-        operatorInput.placeholder = 'Name of person running the session';
+        operatorInput.placeholder = translateKey('logs.form.operatorPlaceholder');
         operatorInput.dataset.field = 'operator';
         operatorInput.addEventListener('input', (event) => {
             detailState.draft = { ...(detailState.draft ?? draft), operator: event.target.value };
@@ -463,10 +481,10 @@ function renderDetail(log) {
         operatorField.appendChild(operatorInput);
 
         const notesField = document.createElement('label');
-        notesField.textContent = 'Notes / annotations';
+        notesField.textContent = translateKey('logs.form.notes');
         const notesInput = document.createElement('textarea');
         notesInput.value = draft.notes;
-        notesInput.placeholder = 'Observations, alarms, adjustments, etc.';
+        notesInput.placeholder = translateKey('logs.form.notesPlaceholder');
         notesInput.dataset.field = 'notes';
         notesInput.addEventListener('input', (event) => {
             detailState.draft = { ...(detailState.draft ?? draft), notes: event.target.value };
@@ -484,7 +502,7 @@ function renderDetail(log) {
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
         saveBtn.className = 'btn btn-primary btn-small';
-        saveBtn.textContent = 'Save';
+        saveBtn.textContent = translateKey('logs.actions.save');
         saveBtn.addEventListener('click', async () => {
             await updateSessionLogMetadata(log.id, { ...detailState.draft });
             resetDetailState();
@@ -494,7 +512,7 @@ function renderDetail(log) {
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
         cancelBtn.className = 'btn btn-ghost btn-small';
-        cancelBtn.textContent = 'Cancel';
+        cancelBtn.textContent = translateKey('logs.actions.cancel');
         cancelBtn.addEventListener('click', () => {
             resetDetailState();
             renderDetail(log);
@@ -517,15 +535,15 @@ function renderDetail(log) {
     } else {
         metaList.classList.add('is-view');
         metaList.append(
-            buildMetaRow('Label', log.metadata?.label, {
+            buildMetaRow(translateKey('logs.form.label'), log.metadata?.label, {
                 field: 'label',
                 onActivate: () => enterEditMode(log, 'label')
             }),
-            buildMetaRow('Operator', log.metadata?.operator, {
+            buildMetaRow(translateKey('logs.form.operator'), log.metadata?.operator, {
                 field: 'operator',
                 onActivate: () => enterEditMode(log, 'operator')
             }),
-            buildMetaRow('Notes', log.metadata?.notes, {
+            buildMetaRow(translateKey('logs.form.notesShort'), log.metadata?.notes, {
                 muted: true,
                 field: 'notes',
                 onActivate: () => enterEditMode(log, 'notes')
@@ -535,7 +553,7 @@ function renderDetail(log) {
         const editBtn = document.createElement('button');
         editBtn.type = 'button';
         editBtn.className = 'btn btn-primary btn-small';
-        editBtn.textContent = 'Edit';
+        editBtn.textContent = translateKey('logs.actions.edit');
         editBtn.addEventListener('click', (event) => {
             event.stopPropagation();
             enterEditMode(log);
@@ -567,7 +585,7 @@ function renderLogs() {
 
     if (!logs.length) {
         emptyState.style.display = 'block';
-        emptyState.textContent = 'No sessions match the current filters yet.';
+        emptyState.textContent = translateKey('logs.list.empty');
         resetDetailState();
         renderDetail(null);
         selectionManuallyCleared = false;
