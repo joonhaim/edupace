@@ -719,13 +719,6 @@ export function stitchBeatsNew(
       ? options.durationSec
       : DEFAULT_STRIP_DURATION_SEC;
 
-  // Special prebuilt strip
-  if (scenarioWaveform === "brady-escape") {
-    const { x: stripX, y: stripY } = buildCompleteAvBlockStrip(maxDurationSec);
-    const events = detectCompleteBlockEvents(stripX, stripY);
-    return { x: stripX, y: stripY, events };
-  }
-
   // -----------------------------
   // Pacemaker configuration
   // -----------------------------
@@ -733,6 +726,13 @@ export function stitchBeatsNew(
     typeof options.pacemakerEnabled === "boolean"
       ? options.pacemakerEnabled
       : true;
+
+  // Special prebuilt strip (ONLY when pacer is OFF)
+  if (scenarioWaveform === "brady-escape" && !pacemakerEnabled) {
+    const { x: stripX, y: stripY } = buildCompleteAvBlockStrip(maxDurationSec);
+    const events = detectCompleteBlockEvents(stripX, stripY);
+    return { x: stripX, y: stripY, events };
+  }
 
   const modeRaw = typeof options.mode === "string" ? options.mode : null;
   const mode = (modeRaw || (asynchronous ? "VOO" : "VVI")).toUpperCase();
@@ -770,6 +770,7 @@ const rrPaced = escapeIntervalSec; // 60 / rate
   // Beat selectors
   // -----------------------------
   const chooseIntrinsic = () => {
+    if (scenarioWaveform === "brady-escape") return "Mobitz type II - no conduction";
     if (scenarioWaveform === "slow-conduction") return "Slow conduction";
     if (scenarioWaveform === "mobitz-ii" || scenarioWaveform === "mobitz-type-ii") {
       return Math.random() <= mobitzProbConduction
@@ -778,6 +779,7 @@ const rrPaced = escapeIntervalSec; // 60 / rate
     }
     return "Normal";
   };
+
 
   // -----------------------------
   // Event marker helper
@@ -789,7 +791,7 @@ const rrPaced = escapeIntervalSec; // 60 / rate
 
     let time;
     if (beatType === "Ventricular pacing") {
-      time = beatX[argMin(beatY)]; // pacing spike is the sharp negative deflection
+      time = beatX[argMax(beatY)]; // pacing spike is the sharp negative deflection
     } else {
       time = beatX[argMax(beatY)]; // intrinsic R peak
     }
