@@ -823,9 +823,9 @@ const rrPaced = escapeIntervalSec; // 60 / rate
   // ---- SCALE AMPLITUDE INTO mV-LIKE UNITS ----
   // Typical intrinsic R wave ≈ 5 mV
   const targetPeakMv =
-    beatType === "Ventricular pacing" ? 5.0 :
+    beatType === "Ventricular pacing" ? 1.0 :
     beatType === "Mobitz type II - no conduction" ? 0.4 :
-    4.0;
+    1.0;
 
   const ampJitter = 1 + (Math.random() * 2 - 1) * AMP_JITTER;
   const sy = (targetPeakMv * ampJitter) / spanY;
