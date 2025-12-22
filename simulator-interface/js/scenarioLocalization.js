@@ -216,64 +216,54 @@ const SCENARIO_TRANSLATIONS = {
         summaryLabel: 'Normaal sinusritme',
         primaryRhythm: 'Normaal sinusritme',
         location: 'Telemetrie',
-        pacingMode: 'VVI (stand-by)',
+        pacingMode: 'VVI',
         alarmText: 'Geen alarmen',
-        objective: 'Observeer pacingremming.',
-        feedback: 'Geen pacingspikes verwacht. Controleer ventriculaire sensing.'
+        objective: 'Observeer pacinginhibitie.',
+        feedback: 'Geen pacingspikes verwacht. Controleer de ventriculaire sensing.'
     },
     C1: {
         title: 'C1 · Derdegraads AV-blok',
-        description: 'Placeholder-casus voor totaal AV-blok met minimale begeleiding.',
-        summaryLabel: 'Compleet hartblok, beperkte begeleiding',
-        primaryRhythm: 'Derdegraads atrioventriculair blok',
+        description: 'Compleet AV-blok met ventriculair escape-ritme.',
+        summaryLabel: 'Compleet hartblok',
+        primaryRhythm: 'Derdegraads AV-blok',
         location: 'Telemetrie',
-        pacingMode: 'VVI (demand)',
-        alarmText: 'Compleet hartblok – stabiliseer patiënt',
-        objective:
-            'Stabiliseer een patiënt met compleet hartblok door betrouwbare ventriculaire pacing en verbetering van perfusie te realiseren.',
-        feedback:
-            'Zoek naar gedissocieerde P-toppen met een traag ventriculair escape-ritme. Start pacing met passende rate en output en beoordeel de perfusie opnieuw.'
+        pacingMode: 'VVI',
+        alarmText: 'Compleet hartblok',
+        objective: 'Start betrouwbare ventriculaire pacing.',
+        feedback: 'Stel de rate boven het escape-ritme in en bevestig capture.'
     },
     C2: {
         title: 'C2 · Tweedegraads AV-blok (Mobitz II)',
-        description:
-            'Intermitterende niet-geleide P-toppen met plots uitvallende QRS-complexen; tijdelijke waveform tot patroon is uitgewerkt.',
-        summaryLabel: 'Mobitz II met intermitterende ventriculaire pauzes',
-        primaryRhythm: 'Tweedegraads AV-blok, Mobitz II',
+        description: 'Uitvallende ventriculaire slagen met pauzes.',
+        summaryLabel: 'Mobitz II-blok',
+        primaryRhythm: 'Tweedegraads AV-blok (Mobitz II)',
         location: 'Telemetrie',
-        pacingMode: 'DDD',
-        alarmText: 'Mobitz II-blok – verwacht progressie',
-        objective:
-            'Herken intermitterende niet-geleide P-toppen die plotselinge ventriculaire pauzes veroorzaken en wees klaar om de perfusie zo nodig met pacing te ondersteunen.',
-        feedback:
-            'Let op constante PR-intervallen met onverwachte uitval van QRS-complexen. Bereid je voor om te pacen als de perfusie verslechtert of pauzes langer worden.'
+        pacingMode: 'VVI',
+        alarmText: 'Uitvallende slagen',
+        objective: 'Voorkom bradycarde pauzes.',
+        feedback: 'Schakel pacing in bij symptomen.'
     },
     C3: {
         title: 'C3 · Sick-sinussyndroom',
-        description: 'Sinusknoopdisfunctie met ongepaste bradycardie en pauzes; waveform wordt later verfijnd.',
-        summaryLabel: 'Sinusknoopdisfunctie met lange pauzes',
+        description: 'Sinusbradycardie met pauzes.',
+        summaryLabel: 'Sinuspauzes',
         primaryRhythm: 'Sick-sinussyndroom',
         location: 'Telemetrie',
-        pacingMode: 'AAI',
-        alarmText: 'Sinuspauzes – beoordeel pacingbehoefte',
-        objective:
-            'Beoordeel symptomatische bradycardie door sinuspauzes en start pacing om de cardiac output zo nodig te behouden.',
-        feedback:
-            'Herken verlengde sinuspauzes met trage escape-slagen. Overweeg atriale of tweekamerpacing om perfusiedalingen te voorkomen.'
+        pacingMode: 'VVI',
+        alarmText: 'Sinuspauzes',
+        objective: 'Houd de ventriculaire frequentie op peil.',
+        feedback: 'Stel de rate boven het escape-ritme in.'
     },
     C4: {
         title: 'C4 · Trage geleiding',
-        description:
-            'Sterk vertraagde AV-geleiding met lage ventriculaire respons; tijdelijke waveform tot definitieve tracing.',
-        summaryLabel: 'Trage geleiding met lage ventriculaire respons',
-        primaryRhythm: 'Ernstige eerstegraads blok/trage ventriculaire geleiding',
+        description: 'Vertraagde geleiding met trage ventriculaire respons.',
+        summaryLabel: 'Trage geleiding',
+        primaryRhythm: 'Trage ventriculaire geleiding',
         location: 'IC',
-        pacingMode: 'DDI',
-        alarmText: 'Trage ventriculaire respons',
-        objective:
-            'Beheer een patiënt met sterk vertraagde geleiding door pacingondersteuning te optimaliseren als de trage ventriculaire respons de perfusie ondermijnt.',
-        feedback:
-            'Let op zeer langdurige geleidingstijden en lage ventriculaire frequentie. Verhoog de pacingondersteuning om adequate cardiac output te behouden als er symptomen ontstaan.'
+        pacingMode: 'VVI',
+        alarmText: 'Trage geleiding',
+        objective: 'Beoordeel de noodzaak van pacing.',
+        feedback: 'Activeer pacing als de perfusie onvoldoende is.'
     },
     M8: {
         title: 'M8 · Willekeurige modus',
