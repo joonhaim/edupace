@@ -1,4 +1,4 @@
-import { getCurrentLanguage } from './languageToggle.js';
+import { getCurrentLanguage, translateKey } from './languageToggle.js';
 import { localizeScenarioList } from './scenarioLocalization.js';
 import { getSessionLogs, initSessionStore } from './sessionStore.js';
 
@@ -16,10 +16,18 @@ let baseScenarios = [];
 let localizedScenarios = [];
 let clinicalScenarios = [];
 
+function translateTemplate(key, replacements = {}) {
+    let text = translateKey(key) || key;
+    Object.entries(replacements).forEach(([token, value]) => {
+        text = text.replaceAll(`{${token}}`, value);
+    });
+    return text;
+}
+
 function formatDate(timestamp) {
-    if (!timestamp) return 'Unknown time';
+    if (!timestamp) return translateKey('home.recent.unknownTime');
     const date = new Date(timestamp);
-    if (Number.isNaN(date.getTime())) return 'Unknown time';
+    if (Number.isNaN(date.getTime())) return translateKey('home.recent.unknownTime');
     const formatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
     return formatter.format(date);
 }
@@ -106,17 +114,20 @@ function summarizeCompletion() {
 
     if (progressCount) {
         const safeTotal = totalScenarios || '—';
-        progressCount.textContent = `${completed} / ${safeTotal} scenarios complete`;
+        progressCount.textContent = translateTemplate('home.progress.count', {
+            completed,
+            total: safeTotal
+        });
     }
 
     if (progressHint) {
         if (!totalScenarios) {
-            progressHint.textContent = 'Loading scenarios…';
+            progressHint.textContent = translateKey('home.progress.loading');
         } else if (!completed) {
-            progressHint.textContent = 'Start any scenario to see your progress fill up.';
+            progressHint.textContent = translateKey('home.progress.startHint');
         } else {
             const remaining = Math.max(totalScenarios - completed, 0);
-            progressHint.textContent = `${remaining} to go for full coverage.`;
+            progressHint.textContent = translateTemplate('home.progress.remaining', { remaining });
         }
     }
 }
@@ -148,7 +159,7 @@ function renderSuggestedCard() {
     if (!scenario) {
         const empty = document.createElement('div');
         empty.className = 'muted';
-        empty.textContent = 'Add clinical scenarios to see suggestions here.';
+        empty.textContent = translateKey('home.suggested.empty');
         suggestedCard.appendChild(empty);
         return;
     }
@@ -159,7 +170,10 @@ function renderSuggestedCard() {
 
     const summary = document.createElement('p');
     summary.className = 'suggested-summary';
-    summary.textContent = scenario.summaryLabel || scenario.description || 'Practice this case next.';
+    summary.textContent =
+        scenario.summaryLabel ||
+        scenario.description ||
+        translateKey('home.suggested.fallbackSummary');
 
     const actions = document.createElement('div');
     actions.className = 'suggested-actions';
@@ -168,7 +182,7 @@ function renderSuggestedCard() {
     startLink.className = 'btn btn-primary';
     startLink.href = '#training';
     startLink.dataset.viewTarget = 'training';
-    startLink.textContent = 'Start in training';
+    startLink.textContent = translateKey('home.suggested.start');
     startLink.addEventListener('click', () => {
         const scenarioId = scenario.id || scenario.code;
         document.dispatchEvent(
@@ -181,7 +195,7 @@ function renderSuggestedCard() {
     const learnMore = document.createElement('button');
     learnMore.type = 'button';
     learnMore.className = 'btn btn-ghost';
-    learnMore.textContent = 'Shuffle';
+    learnMore.textContent = translateKey('home.suggested.shuffle');
     learnMore.addEventListener('click', renderSuggestedCard);
 
     actions.append(startLink, learnMore);

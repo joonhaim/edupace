@@ -897,35 +897,53 @@ function advanceSweep(deltaSeconds) {
 }
 
 function drawSweepSegment(startX, endX, startTime, endTime, midY, scaleY, width, height) {
-    if (!traceCtx) return;
-    const clearStart = Math.max(0, Math.min(startX, endX));
-    const clearEnd = Math.min(width, Math.max(startX, endX) + traceCtx.lineWidth * 2);
-    traceCtx.clearRect(clearStart, 0, clearEnd - clearStart, height);
+  if (!traceCtx) return;
 
-    const distance = Math.max(1, Math.abs(endX - startX));
-    const timeSpan = endTime - startTime;
-    const step = Math.max(1, Math.floor(distance / 6));
+  const clearStart = Math.max(0, Math.min(startX, endX));
+  const clearEnd = Math.min(width, Math.max(startX, endX) + traceCtx.lineWidth * 2);
+  traceCtx.clearRect(clearStart, 0, clearEnd - clearStart, height);
 
-    traceCtx.beginPath();
-    for (let offset = 0; offset <= distance; offset += step) {
-        const ratio = offset / distance;
-        const x = startX + ratio * (endX - startX);
-        const time = startTime + ratio * timeSpan;
-        const value = sampleWaveform(time);
-        const y = valueToY(value, midY, scaleY);
-        heartRateEngine?.processSample(time, value);
-        if (offset === 0) {
-            traceCtx.moveTo(x, y);
-        } else {
-            traceCtx.lineTo(x, y);
-        }
+  const distance = Math.max(1, Math.abs(endX - startX));
+  const timeSpan = endTime - startTime;
+
+  const samplesPerPixel = 4;
+  const step = 1 / samplesPerPixel;
+
+  traceCtx.beginPath();
+  let first = true;
+
+  for (let offset = 0; offset <= distance; offset += 1) {
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (let k = 0; k < samplesPerPixel; k++) {
+      const sub = offset + k * step;
+      const ratio = sub / distance;
+      const time = startTime + ratio * timeSpan;
+
+      const value = sampleWaveform(time);
+      const yy = valueToY(value, midY, scaleY);
+      heartRateEngine?.processSample(time, value);
+
+      if (yy < minY) minY = yy;
+      if (yy > maxY) maxY = yy;
     }
-    const finalValue = sampleWaveform(endTime);
-    heartRateEngine?.processSample(endTime, finalValue);
-    const finalY = valueToY(finalValue, midY, scaleY);
-    traceCtx.lineTo(endX, finalY);
-    traceCtx.stroke();
+
+    const ratio = offset / distance;
+    const x = startX + ratio * (endX - startX);
+
+    if (first) {
+      traceCtx.moveTo(x, minY);
+      first = false;
+    } else {
+      traceCtx.lineTo(x, minY);
+    }
+    traceCtx.lineTo(x, maxY);
+  }
+
+  traceCtx.stroke();
 }
+
 
 function valueToY(value, midY, scaleY) {
     return midY - value * scaleY;
