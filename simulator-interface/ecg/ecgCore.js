@@ -791,7 +791,7 @@ const rrPaced = escapeIntervalSec; // 60 / rate
 
     let time;
     if (beatType === "Ventricular pacing") {
-      time = beatX[argMax(beatY)]; // pacing spike is the sharp negative deflection
+      time = beatX[argMin(beatY)]; // pacing spike is the sharp negative deflection
     } else {
       time = beatX[argMax(beatY)]; // intrinsic R peak
     }
@@ -820,16 +820,22 @@ const rrPaced = escapeIntervalSec; // 60 / rate
   const beatDur = beatDurationSecForHR(hrForThisBeat);
   const sx = beatDur / spanX;
 
-  const ampJitter = 1 + (Math.random() * 2 - 1) * AMP_JITTER;
-  let sy = (1.0 * ampJitter) / spanY;
+  // ---- SCALE AMPLITUDE INTO mV-LIKE UNITS ----
+  // Typical intrinsic R wave ≈ 5 mV
+  const targetPeakMv =
+    beatType === "Ventricular pacing" ? 5.0 :
+    beatType === "Mobitz type II - no conduction" ? 0.4 :
+    4.0;
 
-  if (beatType === "Mobitz type II - no conduction") sy *= 0.08;
+  const ampJitter = 1 + (Math.random() * 2 - 1) * AMP_JITTER;
+  const sy = (targetPeakMv * ampJitter) / spanY;
 
   xb = xb.map((v) => v * sx);
   yb = yb.map((v) => v * sy);
 
   return { x: xb, y: yb, beatDur };
 };
+
 
 
 
@@ -865,11 +871,11 @@ if (!isPaced && regularity === "Irregular") {
 // Convert RR to "gap after beat"
 let gapThisBeat = targetRR - beatDur;
 
-// Allow small overlap at high HR, but limit it
-gapThisBeat = clamp(gapThisBeat, -0.08, 3.0);
+// IMPORTANT: renderer requires monotonic time (no overlap)
+gapThisBeat = clamp(gapThisBeat, 0.0, 3.0);
 
-const beatSpan = beatDur; // use beatDur instead of recomputing span
 const startTime = beatsGenerated === 0 ? 0 : offset + gapThisBeat;
+
 
 // --- HARD STOP: don't let a beat cross the requested strip duration ---
 // This prevents "one extra beat" at the loop boundary when the strip is repeated.
@@ -901,16 +907,16 @@ if (beatEnd > maxDurationSec) break;
     offset = maxArray(xShifted);
 
     // Update escape timer
-    const elapsedThisBeat = beatsGenerated === 0 ? beatSpan : beatSpan + gapThisBeat;
+    // Update escape timer (time passes during the beat + its following gap)
+const elapsedThisBeat = beatDur + gapThisBeat;
 
-    if (sensedOrCaptured) {
-      // VS or captured VP resets escape timer, then accrues elapsed time until next decision
-      // (so the pacer can trigger before the next intrinsic beat if LRL is higher)
-      timeSinceSense = elapsedThisBeat;
-    } else {
-      // No VS and no capture -> timer continues
-      timeSinceSense += elapsedThisBeat;
-    }
+if (sensedOrCaptured) {
+  // reset timer at the sensed/captured event, then count time until next decision point
+  timeSinceSense = elapsedThisBeat;
+} else {
+  timeSinceSense += elapsedThisBeat;
+}
+
 
     // Decide next beat
     if (!pacemakerEnabled) {
