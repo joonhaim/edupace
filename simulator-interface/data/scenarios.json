@@ -4,24 +4,17 @@
       "id": "C0",
       "code": "C0",
       "category": "clinical",
-      "title": "C0 · Normal Sinus",
-      "description": "Maintain VVI standby pacing while observing intrinsic beats.",
-      "summaryLabel": "Normal sinus rhythm monitoring",
+      "title": "C0 · Normal Sinus Rhythm",
+      "description": "Stable intrinsic ventricular rhythm.",
+      "summaryLabel": "Normal sinus rhythm",
       "primaryRhythm": "Normal sinus rhythm",
       "location": "Telemetry",
       "waveformId": "normal-sinus",
       "vitals": { "hr": 78 },
-<<<<<<< Updated upstream
-      "pacing": { "mode": "VVI (standby)", "poweredOn": false },
-      "alarm": { "level": "normal", "text": "No active alarms" },
-      "objective": "Confirm the pacemaker remains inhibited while the patient maintains an intrinsic sinus rate.",
-      "feedback": "No pacing spikes should be visible. If pacing occurs, lower the rate below the intrinsic rhythm or verify sensing leads.",
-=======
       "pacing": { "mode": "VVI", "poweredOn": false },
       "alarm": { "level": "normal", "text": "No alarms" },
       "objective": "Observe pacing inhibition.",
       "feedback": "No pacing spikes expected. Verify ventricular sensing.",
->>>>>>> Stashed changes
       "rules": []
     },
     {
@@ -29,23 +22,16 @@
       "code": "C1",
       "category": "clinical",
       "title": "C1 · Third-degree AV Block",
-      "description": "Complete AV dissociation with a slow ventricular escape rhythm.",
+      "description": "Complete AV block with ventricular escape.",
       "summaryLabel": "Complete heart block",
-      "primaryRhythm": "Third-degree atrioventricular block",
+      "primaryRhythm": "Third-degree AV block",
       "location": "Telemetry",
       "waveformId": "brady-escape",
       "vitals": { "hr": 32 },
-<<<<<<< Updated upstream
-      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
-      "alarm": { "level": "warning", "text": "Complete heart block – stabilise the patient" },
-      "objective": "Stabilise a patient with complete heart block by establishing reliable ventricular pacing.",
-      "feedback": "Initiate VVI pacing with adequate rate and output. Confirm capture (spike followed by QRS) and appropriate sensing.",
-=======
       "pacing": { "mode": "VVI", "poweredOn": false },
       "alarm": { "level": "warning", "text": "Complete heart block" },
       "objective": "Establish ventricular pacing.",
       "feedback": "Set rate above escape rhythm. Confirm capture.",
->>>>>>> Stashed changes
       "rules": []
     },
     {
@@ -53,23 +39,16 @@
       "code": "C2",
       "category": "clinical",
       "title": "C2 · Second-degree AV Block (Mobitz II)",
-      "description": "Intermittent non-conducted P waves with dropped QRS complexes (placeholder rhythm using no-conduction template).",
+      "description": "Dropped ventricular beats with pauses.",
       "summaryLabel": "Mobitz II block",
-      "primaryRhythm": "Second-degree AV block, Mobitz II",
+      "primaryRhythm": "Second-degree AV block (Mobitz II)",
       "location": "Telemetry",
       "waveformId": "mobitz-ii",
       "vitals": { "hr": 46 },
-<<<<<<< Updated upstream
-      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
-      "alarm": { "level": "warning", "text": "Mobitz II – dropped beats" },
-      "objective": "Recognise dropped ventricular beats and be prepared to provide pacing support if perfusion worsens.",
-      "feedback": "Identify conducted vs non-conducted P waves. If pauses are symptomatic, increase VVI rate and ensure adequate output and sensing.",
-=======
       "pacing": { "mode": "VVI", "poweredOn": false },
       "alarm": { "level": "warning", "text": "Dropped beats" },
       "objective": "Prevent bradycardic pauses.",
       "feedback": "Enable pacing if symptomatic.",
->>>>>>> Stashed changes
       "rules": []
     },
     {
@@ -77,23 +56,16 @@
       "code": "C3",
       "category": "clinical",
       "title": "C3 · Sick Sinus Syndrome",
-      "description": "Sinus node dysfunction with inappropriate bradycardia and pauses (placeholder using brady escape rhythm).",
-      "summaryLabel": "Sinus pauses / bradycardia",
+      "description": "Sinus bradycardia with pauses.",
+      "summaryLabel": "Sinus pauses",
       "primaryRhythm": "Sick sinus syndrome",
       "location": "Telemetry",
       "waveformId": "brady-escape",
       "vitals": { "hr": 42 },
-<<<<<<< Updated upstream
-      "pacing": { "mode": "VVI (standby)", "poweredOn": false },
-      "alarm": { "level": "warning", "text": "Sinus pauses – evaluate pacing support" },
-      "objective": "Recognise sinus pauses and decide when pacing support is needed to maintain perfusion.",
-      "feedback": "If symptomatic or prolonged pauses occur, enable pacing and set rate above the escape rhythm. Confirm capture and appropriate inhibition.",
-=======
       "pacing": { "mode": "VVI", "poweredOn": false },
       "alarm": { "level": "warning", "text": "Sinus pauses" },
       "objective": "Maintain ventricular rate.",
       "feedback": "Set rate above escape rhythm.",
->>>>>>> Stashed changes
       "rules": []
     },
     {
@@ -101,18 +73,6 @@
       "code": "C4",
       "category": "clinical",
       "title": "C4 · Slow Conduction",
-<<<<<<< Updated upstream
-      "description": "Markedly delayed conduction with a slow ventricular response (uses slow-conduction waveform).",
-      "summaryLabel": "Slow ventricular response",
-      "primaryRhythm": "Marked first-degree block / slow ventricular conduction",
-      "location": "ICU",
-      "waveformId": "slow-conduction",
-      "vitals": { "hr": 50 },
-      "pacing": { "mode": "VVI (demand)", "poweredOn": false },
-      "alarm": { "level": "normal", "text": "Slow conduction – monitor perfusion" },
-      "objective": "Identify slow conduction and support ventricular rate with pacing if clinically indicated.",
-      "feedback": "If perfusion is inadequate, enable pacing and set a safe lower rate limit. Ensure sensing is appropriate and pacing is not inhibited incorrectly.",
-=======
       "description": "Delayed conduction with slow ventricular response.",
       "summaryLabel": "Slow conduction",
       "primaryRhythm": "Slow ventricular conduction",
@@ -123,7 +83,6 @@
       "alarm": { "level": "warning", "text": "Slow conduction" },
       "objective": "Assess need for pacing.",
       "feedback": "Enable pacing if perfusion is inadequate.",
->>>>>>> Stashed changes
       "rules": []
     }
   ]
