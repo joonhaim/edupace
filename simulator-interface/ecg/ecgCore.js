@@ -902,8 +902,9 @@ if (beatEnd > maxDurationSec) break;
     const elapsedThisBeat = beatsGenerated === 0 ? beatSpan : beatSpan + gapThisBeat;
 
     if (sensedOrCaptured) {
-      // VS or captured VP resets escape timer
-      timeSinceSense = 0;
+      // VS or captured VP resets escape timer, then accrues elapsed time until next decision
+      // (so the pacer can trigger before the next intrinsic beat if LRL is higher)
+      timeSinceSense = elapsedThisBeat;
     } else {
       // No VS and no capture -> timer continues
       timeSinceSense += elapsedThisBeat;
