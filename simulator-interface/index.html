@@ -753,14 +753,15 @@
                                 >
                                     <div class="card-heading settings-window-header">
                                         <div>
-                                            <p class="eyebrow">Settings</p>
-                                            <h3 id="settingsTitle">Settings</h3>
+                                            <p class="eyebrow" data-i18n-key="settings.header.label">Settings</p>
+                                            <h3 id="settingsTitle" data-i18n-key="settings.header.title">Settings</h3>
                                         </div>
                                         <div class="settings-window-actions">
                                             <button
                                                 type="button"
                                                 class="btn btn-ghost"
                                                 data-settings-reset
+                                                data-i18n-key="settings.header.reset"
                                             >
                                                 Reset to defaults
                                             </button>
@@ -774,6 +775,7 @@
                                             data-settings-tab="ecg"
                                             aria-controls="ecgSettings"
                                             aria-selected="true"
+                                            data-i18n-key="settings.tabs.ecg"
                                         >
                                             ECG
                                         </button>
@@ -783,6 +785,7 @@
                                             data-settings-tab="sound"
                                             aria-controls="soundSettings"
                                             aria-selected="false"
+                                            data-i18n-key="settings.tabs.sound"
                                         >
                                             Sound
                                         </button>
@@ -792,6 +795,7 @@
                                             data-settings-tab="simulation"
                                             aria-controls="simulationSettings"
                                             aria-selected="false"
+                                            data-i18n-key="settings.tabs.simulation"
                                         >
                                             Simulation
                                         </button>
@@ -801,6 +805,7 @@
                                             data-settings-tab="logs"
                                             aria-controls="logSettings"
                                             aria-selected="false"
+                                            data-i18n-key="settings.tabs.logs"
                                         >
                                             Session logs
                                         </button>
@@ -810,14 +815,14 @@
                                         <div class="settings-body">
                                             <div class="settings-panel" id="ecgSettings" data-settings-panel-target="ecg">
                                                 <div class="settings-section">
-                                                    <div class="section-label">Layout</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.layout">Layout</div>
                                                     <div class="settings-grid">
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Sweep speed</div>
-                                                                <p class="setting-hint">Millimeters per second.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.sweepSpeed.title">Sweep speed</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.sweepSpeed.hint">Millimeters per second.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep speed">
+                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep speed" data-i18n-key="settings.sweepSpeed.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="sweepSpeed" value="12.5">
                                                                     <span>12.5 mm/s</span>
@@ -835,10 +840,10 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Sweep window</div>
-                                                                <p class="setting-hint">Visible seconds on screen.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.sweepWindow.title">Sweep window</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.sweepWindow.hint">Visible seconds on screen.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep window">
+                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep window" data-i18n-key="settings.sweepWindow.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="sweepWindow" value="4">
                                                                     <span>4 s</span>
@@ -856,10 +861,10 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Amplitude</div>
-                                                                <p class="setting-hint">Millimeters per mV.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.amplitude.title">Amplitude</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.amplitude.hint">Millimeters per mV.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Amplitude scaling">
+                                                            <div class="pill-group" role="radiogroup" aria-label="Amplitude scaling" data-i18n-key="settings.amplitude.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="amplitudeScaling" value="5">
                                                                     <span>5 mm/mV</span>
@@ -879,48 +884,48 @@
                                                 </div>
 
                                                 <div class="settings-section">
-                                                    <div class="section-label">Appearance</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.appearance">Appearance</div>
                                                     <div class="settings-grid">
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Trace look</div>
-                                                                <p class="setting-hint">Color and stroke weight.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.traceLook.title">Trace look</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.traceLook.hint">Color and stroke weight.</p>
                                                             </div>
                                                             <div class="setting-controls setting-controls-stacked">
-                                                                <div class="color-options" role="radiogroup" aria-label="Trace color">
+                                                                <div class="color-options" role="radiogroup" aria-label="Trace color" data-i18n-key="settings.traceColor.aria" data-i18n-attr="aria-label">
                                                                     <label class="color-option">
                                                                         <input type="radio" name="traceColor" value="green" checked>
                                                                         <span class="color-swatch" style="--swatch-color: #00e000"></span>
-                                                                        <span class="sr-only">Green</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.green">Green</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="traceColor" value="blue">
                                                                         <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
-                                                                        <span class="sr-only">Blue</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.blue">Blue</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="traceColor" value="amber">
                                                                         <span class="color-swatch" style="--swatch-color: #f59e0b"></span>
-                                                                        <span class="sr-only">Amber</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.amber">Amber</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="traceColor" value="white">
                                                                         <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
-                                                                        <span class="sr-only">White</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.white">White</span>
                                                                     </label>
                                                                 </div>
-                                                                <div class="pill-group" role="radiogroup" aria-label="Trace thickness">
+                                                                <div class="pill-group" role="radiogroup" aria-label="Trace thickness" data-i18n-key="settings.traceThickness.aria" data-i18n-attr="aria-label">
                                                                     <label class="pill-option">
                                                                         <input type="radio" name="traceThickness" value="thin">
-                                                                        <span>Thin</span>
+                                                                        <span data-i18n-key="settings.traceThickness.thin">Thin</span>
                                                                     </label>
                                                                     <label class="pill-option">
                                                                         <input type="radio" name="traceThickness" value="normal" checked>
-                                                                        <span>Normal</span>
+                                                                        <span data-i18n-key="settings.traceThickness.normal">Normal</span>
                                                                     </label>
                                                                     <label class="pill-option">
                                                                         <input type="radio" name="traceThickness" value="thick">
-                                                                        <span>Thick</span>
+                                                                        <span data-i18n-key="settings.traceThickness.thick">Thick</span>
                                                                     </label>
                                                                 </div>
                                                             </div>
@@ -928,8 +933,8 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Gridlines</div>
-                                                                <p class="setting-hint">Toggle ECG grid overlay.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.gridlines.title">Gridlines</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.gridlines.hint">Toggle ECG grid overlay.</p>
                                                             </div>
                                                             <label class="switch">
                                                                 <input type="checkbox" id="gridlinesToggle">
@@ -939,10 +944,10 @@
 
                                                         <div class="setting-row" data-setting-row="gridDensity">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Grid density</div>
-                                                                <p class="setting-hint">1 mm or 2 mm boxes.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.gridDensity.title">Grid density</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.gridDensity.hint">1 mm or 2 mm boxes.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Grid density">
+                                                            <div class="pill-group" role="radiogroup" aria-label="Grid density" data-i18n-key="settings.gridDensity.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="gridDensity" value="1mm">
                                                                     <span>1 mm</span>
@@ -956,8 +961,8 @@
 
                                                         <div class="setting-row full-span" data-setting-row="gridIntensity">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Grid intensity</div>
-                                                                <p class="setting-hint">Adjust line brightness.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.gridIntensity.title">Grid intensity</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.gridIntensity.hint">Adjust line brightness.</p>
                                                             </div>
                                                             <div class="slider-row">
                                                                 <input type="range" id="gridIntensity" min="0" max="100" value="55">
@@ -968,38 +973,38 @@
                                                 </div>
 
                                                 <div class="settings-section">
-                                                    <div class="section-label">Annotations</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.annotations">Annotations</div>
                                                     <div class="settings-grid">
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">HR display</div>
-                                                                <p class="setting-hint">Show heart rate overlay.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.hrDisplay.title">HR display</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.hrDisplay.hint">Show heart rate overlay.</p>
                                                             </div>
                                                             <div class="setting-controls">
                                                                 <label class="switch">
                                                                     <input type="checkbox" id="hrDisplayToggle" checked>
                                                                     <span class="switch-track"></span>
                                                                 </label>
-                                                                <div class="color-options" role="radiogroup" aria-label="Heart rate color">
+                                                                <div class="color-options" role="radiogroup" aria-label="Heart rate color" data-i18n-key="settings.hrDisplay.aria" data-i18n-attr="aria-label">
                                                                     <label class="color-option">
                                                                         <input type="radio" name="hrColor" value="green">
                                                                         <span class="color-swatch" style="--swatch-color: #00e000"></span>
-                                                                        <span class="sr-only">Green</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.green">Green</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="hrColor" value="blue" checked>
                                                                         <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
-                                                                        <span class="sr-only">Blue</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.blue">Blue</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="hrColor" value="amber">
                                                                         <span class="color-swatch" style="--swatch-color: #f59e0b"></span>
-                                                                        <span class="sr-only">Amber</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.amber">Amber</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="hrColor" value="white">
                                                                         <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
-                                                                        <span class="sr-only">White</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.white">White</span>
                                                                     </label>
                                                                 </div>
                                                             </div>
@@ -1007,34 +1012,34 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Lead label</div>
-                                                                <p class="setting-hint">Show current lead overlay.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.leadLabel.title">Lead label</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.leadLabel.hint">Show current lead overlay.</p>
                                                             </div>
                                                             <div class="setting-controls">
                                                                 <label class="switch">
                                                                     <input type="checkbox" id="leadLabelToggle" checked>
                                                                     <span class="switch-track"></span>
                                                                 </label>
-                                                                <div class="color-options" role="radiogroup" aria-label="Lead label color">
+                                                                <div class="color-options" role="radiogroup" aria-label="Lead label color" data-i18n-key="settings.leadLabel.aria" data-i18n-attr="aria-label">
                                                                     <label class="color-option">
                                                                         <input type="radio" name="leadLabelColor" value="green">
                                                                         <span class="color-swatch" style="--swatch-color: #00e000"></span>
-                                                                        <span class="sr-only">Green</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.green">Green</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="leadLabelColor" value="blue" checked>
                                                                         <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
-                                                                        <span class="sr-only">Blue</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.blue">Blue</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="leadLabelColor" value="amber">
                                                                         <span class="color-swatch" style="--swatch-color: #f59e0b"></span>
-                                                                        <span class="sr-only">Amber</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.amber">Amber</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="leadLabelColor" value="white">
                                                                         <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
-                                                                        <span class="sr-only">White</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.white">White</span>
                                                                     </label>
                                                                 </div>
                                                             </div>
@@ -1042,22 +1047,22 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Overlay size</div>
-                                                                <p class="setting-hint">Increase or reduce ECG label text.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.overlaySize.title">Overlay size</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.overlaySize.hint">Increase or reduce ECG label text.</p>
                                                             </div>
                                                             <div class="setting-controls">
-                                                                <div class="pill-group" role="radiogroup" aria-label="Overlay size">
+                                                                <div class="pill-group" role="radiogroup" aria-label="Overlay size" data-i18n-key="settings.overlaySize.aria" data-i18n-attr="aria-label">
                                                                     <label class="pill-option">
                                                                         <input type="radio" name="labelSize" value="compact">
-                                                                        <span>Compact</span>
+                                                                        <span data-i18n-key="settings.overlaySize.compact">Compact</span>
                                                                     </label>
                                                                     <label class="pill-option">
                                                                         <input type="radio" name="labelSize" value="normal" checked>
-                                                                        <span>Normal</span>
+                                                                        <span data-i18n-key="settings.overlaySize.normal">Normal</span>
                                                                     </label>
                                                                     <label class="pill-option">
                                                                         <input type="radio" name="labelSize" value="large">
-                                                                        <span>Large</span>
+                                                                        <span data-i18n-key="settings.overlaySize.large">Large</span>
                                                                     </label>
                                                                 </div>
                                                             </div>
@@ -1065,8 +1070,8 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Sensitivity guide</div>
-                                                                <p class="setting-hint">Show current sensing threshold line.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.sensitivityGuide.title">Sensitivity guide</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.sensitivityGuide.hint">Show current sensing threshold line.</p>
                                                             </div>
                                                             <label class="switch">
                                                                 <input type="checkbox" id="sensitivityGuideToggle">
@@ -1076,34 +1081,34 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Pace markers</div>
-                                                                <p class="setting-hint">Show paced beat indicators.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.paceMarkers.title">Pace markers</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.paceMarkers.hint">Show paced beat indicators.</p>
                                                             </div>
                                                             <div class="setting-controls">
                                                                 <label class="switch">
                                                                     <input type="checkbox" id="pacingLabelToggle" checked>
                                                                     <span class="switch-track"></span>
                                                                 </label>
-                                                                <div class="color-options" role="radiogroup" aria-label="Pace marker color">
+                                                                <div class="color-options" role="radiogroup" aria-label="Pace marker color" data-i18n-key="settings.paceMarkers.aria" data-i18n-attr="aria-label">
                                                                     <label class="color-option">
                                                                         <input type="radio" name="paceColor" value="amber" checked>
                                                                         <span class="color-swatch" style="--swatch-color: #f59e0b"></span>
-                                                                        <span class="sr-only">Amber</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.amber">Amber</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="paceColor" value="green">
                                                                         <span class="color-swatch" style="--swatch-color: #00e000"></span>
-                                                                        <span class="sr-only">Green</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.green">Green</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="paceColor" value="blue">
                                                                         <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
-                                                                        <span class="sr-only">Blue</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.blue">Blue</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="paceColor" value="white">
                                                                         <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
-                                                                        <span class="sr-only">White</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.white">White</span>
                                                                     </label>
                                                                 </div>
                                                             </div>
@@ -1111,34 +1116,34 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Sense markers</div>
-                                                                <p class="setting-hint">Show intrinsic beat indicators.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.senseMarkers.title">Sense markers</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.senseMarkers.hint">Show intrinsic beat indicators.</p>
                                                             </div>
                                                             <div class="setting-controls">
                                                                 <label class="switch">
                                                                     <input type="checkbox" id="intrinsicLabelToggle" checked>
                                                                     <span class="switch-track"></span>
                                                                 </label>
-                                                                <div class="color-options" role="radiogroup" aria-label="Sense marker color">
+                                                                <div class="color-options" role="radiogroup" aria-label="Sense marker color" data-i18n-key="settings.senseMarkers.aria" data-i18n-attr="aria-label">
                                                                     <label class="color-option">
                                                                         <input type="radio" name="senseColor" value="amber" checked>
                                                                         <span class="color-swatch" style="--swatch-color: #f59e0b"></span>
-                                                                        <span class="sr-only">Amber</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.amber">Amber</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="senseColor" value="green">
                                                                         <span class="color-swatch" style="--swatch-color: #00e000"></span>
-                                                                        <span class="sr-only">Green</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.green">Green</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="senseColor" value="blue">
                                                                         <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
-                                                                        <span class="sr-only">Blue</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.blue">Blue</span>
                                                                     </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="senseColor" value="white">
                                                                         <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
-                                                                        <span class="sr-only">White</span>
+                                                                        <span class="sr-only" data-i18n-key="settings.colors.white">White</span>
                                                                     </label>
                                                                 </div>
                                                             </div>
@@ -1146,8 +1151,8 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Interval rulers</div>
-                                                                <p class="setting-hint">RR/PP calipers on drag.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.intervalRulers.title">Interval rulers</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.intervalRulers.hint">RR/PP calipers on drag.</p>
                                                             </div>
                                                             <label class="switch">
                                                                 <input type="checkbox" id="intervalRulersToggle" checked>
@@ -1160,32 +1165,32 @@
 
                                             <div class="settings-panel is-hidden" id="soundSettings" data-settings-panel-target="sound">
                                                 <div class="settings-section">
-                                                    <div class="section-label">Beats & Alarms</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.beats">Beats &amp; Alarms</div>
                                                     <div class="settings-grid">
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">ECG QRS beep</div>
-                                                                <p class="setting-hint">Classic, soft, or off.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.qrsBeep.title">ECG QRS beep</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.qrsBeep.hint">Classic, soft, or off.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="QRS beep">
+                                                            <div class="pill-group" role="radiogroup" aria-label="QRS beep" data-i18n-key="settings.qrsBeep.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="qrsBeep" value="classic" checked>
-                                                                    <span>Classic</span>
+                                                                    <span data-i18n-key="settings.qrsBeep.classic">Classic</span>
                                                                 </label>
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="qrsBeep" value="soft">
-                                                                    <span>Soft</span>
+                                                                    <span data-i18n-key="settings.qrsBeep.soft">Soft</span>
                                                                 </label>
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="qrsBeep" value="off">
-                                                                    <span>Off</span>
+                                                                    <span data-i18n-key="settings.shared.off">Off</span>
                                                                 </label>
                                                             </div>
                                                         </div>
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Alarm sounds</div>
-                                                                <p class="setting-hint">Enable audible alarms.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.alarmSounds.title">Alarm sounds</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.alarmSounds.hint">Enable audible alarms.</p>
                                                             </div>
                                                             <label class="switch">
                                                                 <input type="checkbox" id="alarmSoundToggle" checked>
@@ -1195,8 +1200,8 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Button beeps</div>
-                                                                <p class="setting-hint">Feedback tones when controls are used.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.buttonBeeps.title">Button beeps</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.buttonBeeps.hint">Feedback tones when controls are used.</p>
                                                             </div>
                                                             <label class="switch">
                                                                 <input type="checkbox" id="buttonBeepsToggle" checked>
@@ -1207,12 +1212,12 @@
                                                 </div>
 
                                                 <div class="settings-section">
-                                                    <div class="section-label">Volume</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.volume">Volume</div>
                                                     <div class="settings-grid">
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Notification volume</div>
-                                                                <p class="setting-hint">Overall alert volume.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.notificationVolume.title">Notification volume</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.notificationVolume.hint">Overall alert volume.</p>
                                                             </div>
                                                             <div class="slider-row">
                                                                 <input type="range" id="soundVolume" min="0" max="100" value="70">
@@ -1225,14 +1230,14 @@
 
                                             <div class="settings-panel is-hidden" id="simulationSettings" data-settings-panel-target="simulation">
                                                 <div class="settings-section">
-                                                    <div class="section-label">Device behaviour</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.device">Device behaviour</div>
                                                     <div class="settings-grid">
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Auto-lock knobs</div>
-                                                                <p class="setting-hint">Lock after inactivity.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.autoLock.title">Auto-lock knobs</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.autoLock.hint">Lock after inactivity.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Auto-lock knobs">
+                                                            <div class="pill-group" role="radiogroup" aria-label="Auto-lock knobs" data-i18n-key="settings.autoLock.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="autoLockKnobs" value="30">
                                                                     <span>30 s</span>
@@ -1247,15 +1252,15 @@
                                                                 </label>
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="autoLockKnobs" value="off">
-                                                                    <span>Off</span>
+                                                                    <span data-i18n-key="settings.shared.off">Off</span>
                                                                 </label>
                                                             </div>
                                                         </div>
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Action log</div>
-                                                                <p class="setting-hint">Record actions for debrief.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.actionLog.title">Action log</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.actionLog.hint">Record actions for debrief.</p>
                                                             </div>
                                                             <label class="switch">
                                                                 <input type="checkbox" id="actionLogToggle" checked>
@@ -1266,25 +1271,25 @@
                                                 </div>
 
                                                 <div class="settings-section">
-                                                    <div class="section-label">Physiology realism</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.realism">Physiology realism</div>
                                                     <div class="settings-grid">
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Capture threshold drift</div>
-                                                                <p class="setting-hint">Off, mild, or strong drift.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.captureDrift.title">Capture threshold drift</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.captureDrift.hint">Off, mild, or strong drift.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Capture threshold drift">
+                                                            <div class="pill-group" role="radiogroup" aria-label="Capture threshold drift" data-i18n-key="settings.captureDrift.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="captureDrift" value="off" checked>
-                                                                    <span>Off</span>
+                                                                    <span data-i18n-key="settings.shared.off">Off</span>
                                                                 </label>
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="captureDrift" value="mild">
-                                                                    <span>Mild</span>
+                                                                    <span data-i18n-key="settings.captureDrift.mild">Mild</span>
                                                                 </label>
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="captureDrift" value="strong">
-                                                                    <span>Strong</span>
+                                                                    <span data-i18n-key="settings.captureDrift.strong">Strong</span>
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -1292,25 +1297,25 @@
                                                 </div>
 
                                                 <div class="settings-section">
-                                                    <div class="section-label">Training</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.training">Training</div>
                                                     <div class="settings-grid">
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Post-scenario review</div>
-                                                                <p class="setting-hint">Auto-open, ask, or off.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.postReview.title">Post-scenario review</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.postReview.hint">Auto-open, ask, or off.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Post-scenario review">
+                                                            <div class="pill-group" role="radiogroup" aria-label="Post-scenario review" data-i18n-key="settings.postReview.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="postScenarioReview" value="auto" checked>
-                                                                    <span>Auto-open</span>
+                                                                    <span data-i18n-key="settings.postReview.auto">Auto-open</span>
                                                                 </label>
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="postScenarioReview" value="ask">
-                                                                    <span>Ask</span>
+                                                                    <span data-i18n-key="settings.postReview.ask">Ask</span>
                                                                 </label>
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="postScenarioReview" value="off">
-                                                                    <span>Off</span>
+                                                                    <span data-i18n-key="settings.shared.off">Off</span>
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -1320,15 +1325,15 @@
 
                                             <div class="settings-panel is-hidden" id="logSettings" data-settings-panel-target="logs">
                                                 <div class="settings-section">
-                                                    <div class="section-label">Session log</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.sessionLog">Session log</div>
                                                     <div class="settings-grid">
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Date format</div>
-                                                                <p class="setting-hint">Choose how dates display in session logs.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.dateFormat.title">Date format</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.dateFormat.hint">Choose how dates display in session logs.</p>
                                                             </div>
                                                             <div class="setting-field">
-                                                                <label class="setting-label" for="logDateFormat">Format</label>
+                                                                <label class="setting-label" for="logDateFormat" data-i18n-key="settings.shared.format">Format</label>
                                                                 <select id="logDateFormat" class="setting-select" data-log-date-format>
                                                                     <option value="DMY">DD/MM/YYYY</option>
                                                                     <option value="MDY">MM/DD/YYYY</option>
@@ -1339,35 +1344,35 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Time format</div>
-                                                                <p class="setting-hint">Control the clock style in logs.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.timeFormat.title">Time format</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.timeFormat.hint">Control the clock style in logs.</p>
                                                             </div>
                                                             <div class="setting-field">
-                                                                <label class="setting-label" for="logTimeFormat">Format</label>
+                                                                <label class="setting-label" for="logTimeFormat" data-i18n-key="settings.shared.format">Format</label>
                                                                 <select id="logTimeFormat" class="setting-select" data-log-time-format>
-                                                                    <option value="24h">24-hour</option>
-                                                                    <option value="12h">12-hour</option>
+                                                                    <option value="24h" data-i18n-key="settings.timeFormat.twentyFour">24-hour</option>
+                                                                    <option value="12h" data-i18n-key="settings.timeFormat.twelve">12-hour</option>
                                                                 </select>
                                                             </div>
                                                         </div>
 
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title">Log storage</div>
-                                                                <p class="setting-hint" data-log-path-hint>
+                                                                <div class="setting-title" data-i18n-key="settings.logStorage.title">Log storage</div>
+                                                                <p class="setting-hint" data-log-path-hint data-i18n-key="settings.logStorage.hint">
                                                                     Choose or open the folder where EduPace saves session logs.
                                                                 </p>
                                                             </div>
                                                             <div class="setting-field setting-field--stacked">
-                                                                <div class="path-chip" data-log-path-display>Detecting log folder…</div>
+                                                                <div class="path-chip" data-log-path-display data-i18n-key="settings.logStorage.detecting">Detecting log folder…</div>
                                                                 <div class="setting-actions-inline">
-                                                                    <button class="btn btn-ghost btn-small" type="button" data-log-change-path>
+                                                                    <button class="btn btn-ghost btn-small" type="button" data-log-change-path data-i18n-key="settings.logStorage.change">
                                                                         Change location
                                                                     </button>
-                                                                    <button class="btn btn-ghost btn-small" type="button" data-log-open-path>
+                                                                    <button class="btn btn-ghost btn-small" type="button" data-log-open-path data-i18n-key="settings.logStorage.open">
                                                                         Open folder
                                                                     </button>
-                                                                    <button class="btn btn-ghost btn-small" type="button" data-log-refresh-path>
+                                                                    <button class="btn btn-ghost btn-small" type="button" data-log-refresh-path data-i18n-key="settings.logStorage.refresh">
                                                                         Refresh from disk
                                                                     </button>
                                                                 </div>
@@ -1386,8 +1391,10 @@
                                             data-settings-toggle
                                             aria-label="Save and close settings"
                                             aria-controls="ecgSettingsPanel"
+                                            data-i18n-key="settings.actions.saveAria"
+                                            data-i18n-attr="aria-label"
                                         >
-                                            Save
+                                            <span data-i18n-key="settings.actions.save">Save</span>
                                         </button>
                                     </div>
                                 </div>
