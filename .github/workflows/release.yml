@@ -61,17 +61,17 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
-
+          
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" \
               --title "EduPace $TAG" \
               --notes "Automated build." \
               --prerelease
           fi
-
-          # Upload only files (not directories), with unique asset names
-          # to avoid collisions across OS artifacts (e.g., builder-debug.yml).
+          
           shopt -s globstar nullglob
+          
+          # Collect files you actually want on the release
           release_files=(
             artifacts/**/*.dmg
             artifacts/**/*.exe
@@ -79,16 +79,25 @@ jobs:
             artifacts/**/*.yml
             artifacts/**/*.blockmap
           )
-
+          
           if ((${#release_files[@]})); then
+            mkdir -p upload_tmp
             upload_args=()
+          
             for file in "${release_files[@]}"; do
+              # Make a unique filename based on its path under artifacts/
               relative_path="${file#artifacts/}"
-              asset_name="${relative_path//\//_}"
-              upload_args+=("${file}#${asset_name}")
+              unique_name="${relative_path//\//_}"   # e.g. macOS-artifacts_builder-debug.yml
+          
+              # Copy to a temp file whose basename is the unique asset name
+              tmp_path="upload_tmp/${unique_name}"
+              cp -f "$file" "$tmp_path"
+          
+              upload_args+=("$tmp_path")
             done
+          
             gh release upload "$TAG" "${upload_args[@]}" --clobber
           else
             echo "No release artifacts found to upload."
           fi
-      
+
