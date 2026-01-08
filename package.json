@@ -1,6 +1,6 @@
 {
   "name": "edupace-electron",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Electron wrapper for the EduPace simulator interface.",
   "main": "electron/main.js",
   "author": "EduPace Team",
