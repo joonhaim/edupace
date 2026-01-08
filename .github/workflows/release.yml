@@ -69,7 +69,8 @@ jobs:
               --prerelease
           fi
 
-          # Upload only files (not directories)
+          # Upload only files (not directories), with unique asset names
+          # to avoid collisions across OS artifacts (e.g., builder-debug.yml).
           shopt -s globstar nullglob
           release_files=(
             artifacts/**/*.dmg
@@ -80,7 +81,13 @@ jobs:
           )
 
           if ((${#release_files[@]})); then
-            gh release upload "$TAG" "${release_files[@]}" --clobber
+            upload_args=()
+            for file in "${release_files[@]}"; do
+              relative_path="${file#artifacts/}"
+              asset_name="${relative_path//\//_}"
+              upload_args+=("${asset_name}=${file}")
+            done
+            gh release upload "$TAG" "${upload_args[@]}" --clobber
           else
             echo "No release artifacts found to upload."
           fi
