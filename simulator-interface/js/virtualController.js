@@ -1,3 +1,4 @@
+import { translateKey } from './languageToggle.js';
 import { knobPresets } from './knobPresets.js';
 
 const ASYNC_SENSITIVITY_THRESHOLD = 20;
@@ -372,7 +373,9 @@ function initVirtualController() {
         parametersCard.classList.toggle('is-virtual', virtualMode);
         controlGroups.forEach((group) => group.setAttribute('aria-hidden', String(!virtualMode)));
         actionsContainer?.setAttribute('aria-hidden', String(!virtualMode));
-        title.textContent = virtualMode ? 'Virtual Pacemaker Controller' : 'Pacemaker parameters';
+        title.textContent = virtualMode
+            ? translateKey('training.pacemaker.virtualController')
+            : translateKey('training.pacemaker.parameters');
 
         if (virtualMode) {
             broadcastParameters();
@@ -386,6 +389,10 @@ function initVirtualController() {
     });
 
     applyModeState();
+
+    document.addEventListener('edupace:language-changed', () => {
+        applyModeState();
+    });
 }
 
 function getPresetIndex(parameter, value) {
