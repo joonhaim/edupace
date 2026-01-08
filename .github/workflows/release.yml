@@ -32,17 +32,14 @@ jobs:
 
       - name: Build Electron app
         run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-artifacts
-          path: |
-            dist/*.dmg
-            dist/*.exe
-            dist/*.zip
-            dist/latest*.yml
-            dist/*.blockmap
+          path: dist/**
           if-no-files-found: error
 
   release:
@@ -74,11 +71,12 @@ jobs:
           
           shopt -s globstar nullglob
           
+          # Collect files you actually want on the release
           release_files=(
             artifacts/**/*.dmg
             artifacts/**/*.exe
             artifacts/**/*.zip
-            artifacts/**/latest*.yml
+            artifacts/**/*.yml
             artifacts/**/*.blockmap
           )
           
