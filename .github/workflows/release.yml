@@ -75,9 +75,6 @@ jobs:
           release_files=(
             artifacts/**/*.dmg
             artifacts/**/*.exe
-            artifacts/**/*.zip
-            artifacts/**/*.yml
-            artifacts/**/*.blockmap
           )
           
           if ((${#release_files[@]})); then
@@ -100,4 +97,3 @@ jobs:
           else
             echo "No release artifacts found to upload."
           fi
-
