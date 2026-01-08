@@ -7,6 +7,10 @@ const SETTINGS_ICONS = {
     dark: 'assets/icons/settings-dark.svg',
     light: 'assets/icons/settings.svg'
 };
+const TU_LOGOS = {
+    dark: 'assets/logos/TU_Delft_SVG/logo_white_rgb.svg',
+    light: 'assets/logos/TU_Delft_SVG/logo_black_rgb.svg'
+};
 
 function applyTheme(theme) {
     const body = document.body;
@@ -36,6 +40,12 @@ function applyTheme(theme) {
     settingsIcons.forEach((icon) => {
         const iconPath = isDark ? SETTINGS_ICONS.dark : SETTINGS_ICONS.light;
         icon.setAttribute('src', iconPath);
+    });
+
+    const tuLogos = document.querySelectorAll('[data-tu-logo]');
+    tuLogos.forEach((logo) => {
+        const logoPath = isDark ? TU_LOGOS.dark : TU_LOGOS.light;
+        logo.setAttribute('src', logoPath);
     });
 }
 

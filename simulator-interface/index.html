@@ -128,7 +128,11 @@
 
           <div class="toolbar-actions-right">
             <div class="toolbar-logos">
-              <img src="assets/logos/TU_Delft_SVG/logo_black_rgb.svg" alt="TU Delft" />
+              <img
+                src="assets/logos/TU_Delft_SVG/logo_black_rgb.svg"
+                alt="TU Delft"
+                data-tu-logo
+              />
             </div>
 
             <div class="toolbar-controls" aria-label="Global controls">
@@ -469,8 +473,8 @@
                         <aside class="control-column" aria-label="Controls">
                             <div class="card parameters-card">
                                 <div class="card-heading compact">
-                                    <p class="eyebrow">Pacemaker</p>
-                                    <h3 class="card-title" id="pacemakerTitle">Parameters</h3>
+                                    <p class="eyebrow" data-i18n-key="training.pacemaker.eyebrow">Pacemaker</p>
+                                    <h3 class="card-title" id="pacemakerTitle" data-i18n-key="training.pacemaker.parameters">Pacemaker parameters</h3>
                                 </div>
 
                                 <div class="led-row">
@@ -573,22 +577,28 @@
                             <div class="card control-stack">
                             <div class="card-heading inline control-heading">
                                 <div>
-                                    <p class="eyebrow">Control</p>
-                                    <h3 class="card-title">Input source</h3>
+                                    <p class="eyebrow" data-i18n-key="training.controls.eyebrow">Control</p>
+                                    <h3 class="card-title" data-i18n-key="training.controls.input.title">Input source</h3>
                                 </div>
-                                <div class="mode-toggle is-compact" role="radiogroup" aria-label="Input source">
+                                <div
+                                    class="mode-toggle is-compact"
+                                    role="radiogroup"
+                                    aria-label="Input source"
+                                    data-i18n-key="training.controls.input.title"
+                                    data-i18n-attr="aria-label"
+                                >
                                     <label class="mode-pill">
                                         <input type="radio" name="inputMode" value="hardware" checked>
-                                        <span>Hardware</span>
+                                        <span data-i18n-key="training.controls.input.hardware">Hardware</span>
                                     </label>
                                     <label class="mode-pill">
                                         <input type="radio" name="inputMode" value="virtual">
-                                        <span>Virtual</span>
+                                        <span data-i18n-key="training.controls.input.virtual">Virtual</span>
                                     </label>
                                 </div>
                             </div>
 
-                            <p class="muted control-caption">
+                            <p class="muted control-caption" data-i18n-key="training.controls.input.caption">
                                 Choose whether the simulator follows the physical EduPace device or on-screen controls.
                             </p>
                         </div>

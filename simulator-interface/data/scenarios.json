@@ -84,6 +84,40 @@
       "objective": "Assess need for pacing.",
       "feedback": "Enable pacing if perfusion is inadequate.",
       "rules": []
+    },
+    {
+      "id": "M1",
+      "code": "M1",
+      "category": "module",
+      "title": "M1 · Capture & Loss of Capture ",
+      "description": "Practice setting output (mA) to achieve ventricular capture and recognize loss of capture.",
+      "summaryLabel": "Capture threshold",
+      "primaryRhythm": "Normal sinus rhythm",
+      "location": "Telemetry",
+      "waveformId": "normal-sinus",
+      "vitals": { "hr": 34 },
+      "pacing": { "mode": "VVI", "poweredOn": false },
+      "alarm": { "level": "normal", "text": "No alarms" },
+      "objective": "Increase output until consistent capture is achieved, then find the lowest output that still captures.",
+      "feedback": "If output is below threshold you will see pacing spikes without a QRS. Raise output, confirm capture, then titrate down to the minimum that captures.",
+      "rules": []
+    },
+    {
+      "id": "M2",
+      "code": "M2",
+      "category": "module",
+      "title": "M2 · Over- & Undersensing",
+      "description": "Practice sensitivity settings to avoid oversensing (inhibition) and undersensing (pacing during intrinsic beats).",
+      "summaryLabel": "Sensing calibration",
+      "primaryRhythm": "Normal sinus rhythm",
+      "location": "Telemetry",
+      "waveformId": "normal-sinus",
+      "vitals": { "hr": 48 },
+      "pacing": { "mode": "VVI", "poweredOn": false },
+      "alarm": { "level": "normal", "text": "No alarms" },
+      "objective": "Adjust sensitivity so intrinsic R-waves are sensed reliably without inappropriate inhibition from noise/T-waves.",
+      "feedback": "If sensitivity is too high: oversensing → pacing inhibited. If too low: undersensing → spikes appear in/near QRS or on T-waves.",
+      "rules": []
     }
   ]
 }

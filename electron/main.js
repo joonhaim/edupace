@@ -7,6 +7,10 @@ const LOG_FILE_NAME = 'session-logs.json';
 let mainWindow = null;
 let aboutWindow = null;
 
+function normalizeAppName() {
+  app.setName('EduPace');
+}
+
 // -----------------------------------------------------------------------------
 // Main window
 // -----------------------------------------------------------------------------
@@ -32,6 +36,24 @@ function createMainWindow() {
 
   // Open external links in browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('file://') && url.toLowerCase().endsWith('.pdf')) {
+      const pdfWindow = new BrowserWindow({
+        width: 960,
+        height: 720,
+        title: 'EduPace Manual',
+        parent: mainWindow ?? undefined,
+        show: true,
+        webPreferences: {
+          contextIsolation: true,
+          nodeIntegration: false
+        }
+      });
+
+      pdfWindow.setMenu(null);
+      pdfWindow.loadURL(url);
+      return { action: 'deny' };
+    }
+
     shell.openExternal(url);
     return { action: 'deny' };
   });
@@ -257,6 +279,7 @@ function buildMenu() {
 // App lifecycle
 // -----------------------------------------------------------------------------
 app.whenReady().then(() => {
+  normalizeAppName();
   createMainWindow();
   buildMenu();
 
