@@ -243,7 +243,7 @@ function buildMenu() {
         { type: 'separator' },
         {
           label: 'Documentation',
-          click: () => shell.openExternal('https://github.com/your-org/edupace')
+          click: () => shell.openExternal('https://github.com/joonhaim/edupace')
         }
       ]
     }
