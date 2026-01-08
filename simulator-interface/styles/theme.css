@@ -5,6 +5,17 @@
 /* Dark mode */
 
 body.simulation-dark {
+    --app-bg: #0b111c;
+    --card: #0f1624;
+    --surface-2: #101827;
+    --border: #1c2738;
+    --deep-navy: #e3e9f4;
+    --mid-navy: #c9d1dc;
+    --muted: #aab3c6;
+    --frost: #0f1624;
+    --frost-strong: #101827;
+    --grid-line: rgba(255, 255, 255, 0.05);
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
     background-color: #0b111c;
     background-image:
         linear-gradient(90deg, var(--grid-line-dark) 1px, transparent 1px),
@@ -33,6 +44,46 @@ body.simulation-dark .icon-button {
 
 body.simulation-dark .language-toggle {
     color: #e3e9f4;
+}
+
+body.simulation-dark .sidebar {
+    background: #0f1624;
+    border-right-color: #1c2738;
+}
+
+body.simulation-dark .sidebar-brand {
+    color: #e3e9f4;
+}
+
+body.simulation-dark .side-item {
+    color: #aab3c6;
+}
+
+body.simulation-dark .side-item:hover {
+    background: rgba(148, 163, 184, 0.12);
+    color: #e3e9f4;
+}
+
+body.simulation-dark .side-item.active {
+    background: rgba(109, 165, 255, 0.2);
+    color: #f2f5fb;
+}
+
+body.simulation-dark .connection-card {
+    background: #0f1624;
+    border-color: #1c2738;
+    box-shadow: none;
+}
+
+body.simulation-dark .connection-label {
+    color: #c9d1dc;
+}
+
+body.simulation-dark .chip {
+    background: rgba(15, 23, 42, 0.8);
+    border-color: #243b53;
+    color: #e3e9f4;
+    box-shadow: none;
 }
 
 body.simulation-dark .landing-panel,
@@ -297,6 +348,60 @@ body.simulation-dark .param-step:hover,
 body.simulation-dark .param-step:focus-visible {
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(47, 188, 165, 0.25);
+}
+
+body.simulation-dark .device-popover {
+    background: #0f1624;
+    border-color: #1c2738;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+body.simulation-dark .device-option {
+    background: rgba(15, 23, 42, 0.7);
+    border-color: #1c2738;
+}
+
+body.simulation-dark .device-list-empty {
+    background: rgba(15, 23, 42, 0.7);
+    border-color: #1c2738;
+}
+
+body.simulation-dark .device-icon {
+    background: rgba(109, 165, 255, 0.18);
+    color: #8fb9ef;
+}
+
+body.simulation-dark .scenario-cycle {
+    background: #0f1624;
+    border-color: #1c2738;
+    color: #e3e9f4;
+    box-shadow: none;
+}
+
+body.simulation-dark .scenario-cycle:hover:not(:disabled) {
+    background: #101b2c;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+}
+
+body.simulation-dark .scenario-menu-list {
+    background: #0f1624;
+    border-color: #1c2738;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.4);
+}
+
+body.simulation-dark .scenario-menu-section {
+    background: rgba(15, 23, 42, 0.7);
+    border-color: #1c2738;
+}
+
+body.simulation-dark .scenario-option {
+    color: #e3e9f4;
+}
+
+body.simulation-dark .scenario-option:hover,
+body.simulation-dark .scenario-option:focus-visible,
+body.simulation-dark .scenario-option[aria-selected='true'] {
+    background: rgba(109, 165, 255, 0.2);
 }
 
 body.simulation-dark .brand::before {
