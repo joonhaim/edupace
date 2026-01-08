@@ -271,7 +271,7 @@ function buildMenu() {
     }
   ];
 
-  const menu = Menu.buildFromTemplate(template); 
+  const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 }
 
