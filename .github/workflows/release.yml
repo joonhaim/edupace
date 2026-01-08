@@ -70,12 +70,18 @@ jobs:
           fi
 
           # Upload only files (not directories)
-          gh release upload "$TAG" \
-            artifacts/**/*.dmg \
-            artifacts/**/*.exe \
-            artifacts/**/*.zip \
-            artifacts/**/*.yml \
-            artifacts/**/*.blockmap \
-            --clobber
-      
+          shopt -s globstar nullglob
+          release_files=(
+            artifacts/**/*.dmg
+            artifacts/**/*.exe
+            artifacts/**/*.zip
+            artifacts/**/*.yml
+            artifacts/**/*.blockmap
+          )
 
+          if ((${#release_files[@]})); then
+            gh release upload "$TAG" "${release_files[@]}" --clobber
+          else
+            echo "No release artifacts found to upload."
+          fi
+      
