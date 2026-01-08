@@ -69,4 +69,13 @@ jobs:
               --prerelease
           fi
 
-          gh release upload "$TAG" artifacts/**/* --clobber
+          # Upload only files (not directories)
+          gh release upload "$TAG" \
+            artifacts/**/*.dmg \
+            artifacts/**/*.exe \
+            artifacts/**/*.zip \
+            artifacts/**/*.yml \
+            artifacts/**/*.blockmap \
+            --clobber
+      
+
