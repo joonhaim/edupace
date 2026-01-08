@@ -85,7 +85,7 @@ jobs:
             for file in "${release_files[@]}"; do
               relative_path="${file#artifacts/}"
               asset_name="${relative_path//\//_}"
-              upload_args+=("${asset_name}=${file}")
+              upload_args+=("${file}#${asset_name}")
             done
             gh release upload "$TAG" "${upload_args[@]}" --clobber
           else
