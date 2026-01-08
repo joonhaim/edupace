@@ -3,11 +3,11 @@ name: Build & Release EduPace
 on:
   push:
     tags:
-      - "v*.*.*"      # v0.2.2, v0.3.0, etc.
+      - "v*.*.*"
   workflow_dispatch:
 
 permissions:
-  contents: write     # required to create GitHub Releases
+  contents: write
 
 jobs:
   build:
@@ -30,70 +30,50 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Build installers only — NO auto-publish
       - name: Build Electron app
-        run: npm run dist
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run dist -- --publish never
 
-      - name: Upload build artifacts
+      # Upload only the final installers
+      - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ runner.os }}-artifacts
-          path: dist/**
+          name: ${{ runner.os }}-installers
+          path: |
+            dist/*.dmg
+            dist/*.exe
           if-no-files-found: error
 
   release:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: Download all artifacts
+    steps:
+      - name: Download installers
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Create or update GitHub Release + upload assets
+      - name: Create GitHub Release & upload installers
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
-          
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --title "EduPace $TAG" \
-              --notes "Automated build." \
-              --prerelease
-          fi
-          
+
+          gh release create "$TAG" \
+            --title "EduPace $TAG" \
+            --notes "EduPace desktop release." \
+            --draft=false \
+            --prerelease=false || true
+
           shopt -s globstar nullglob
-          
-          # Collect files you actually want on the release
-          release_files=(
-            artifacts/**/*.dmg
-            artifacts/**/*.exe
-          )
-          
-          if ((${#release_files[@]})); then
-            mkdir -p upload_tmp
-            upload_args=()
-          
-            for file in "${release_files[@]}"; do
-              # Make a unique filename based on its path under artifacts/
-              relative_path="${file#artifacts/}"
-              unique_name="${relative_path//\//_}"   # e.g. macOS-artifacts_builder-debug.yml
-          
-              # Copy to a temp file whose basename is the unique asset name
-              tmp_path="upload_tmp/${unique_name}"
-              cp -f "$file" "$tmp_path"
-          
-              upload_args+=("$tmp_path")
-            done
-          
-            gh release upload "$TAG" "${upload_args[@]}" --clobber
+          files=(artifacts/**/*.dmg artifacts/**/*.exe)
+
+          if ((${#files[@]})); then
+            gh release upload "$TAG" "${files[@]}" --clobber
           else
-            echo "No release artifacts found to upload."
+            echo "No installers found."
+            exit 1
           fi
