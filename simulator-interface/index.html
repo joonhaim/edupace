@@ -22,6 +22,7 @@
   <script src="js/layout.js" defer></script>
   <script type="module" src="js/deviceInit.js"></script>
   <script type="module" src="js/navInit.js"></script>
+  <script type="module" src="js/ecgSweep.js"></script>
   <script type="module" src="js/viewRouter.js" defer></script>
 </head>
 
@@ -352,7 +353,7 @@
                             </div>
 
                             <div class="ecg-frame">
-                                <canvas id="ecgCanvas" width="1200" height="550"></canvas>
+                                <canvas id="ecgCanvas" width="1200" height="550" data-ecg-scenario="NSR"></canvas>
                                 <div class="ecg-overlay">
                                     <div class="ecg-overlay-top">
                                         <div class="ecg-label" aria-live="polite">II</div>
