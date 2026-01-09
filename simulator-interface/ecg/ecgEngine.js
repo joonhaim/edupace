@@ -954,7 +954,7 @@ function valueToY(value, midY, scaleY) {
 }
 
 function getWaveformGeometry(height) {
-    const scaleY = (height / 2) * (displaySettings.amplitudeScaling / 10);
+    const scaleY = height / 2;
     const amplitude = scaleY;
     const midY = height / 2;
     return { amplitude, scaleY, midY };
