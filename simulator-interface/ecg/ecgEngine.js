@@ -1,4 +1,5 @@
-import { ecgWave, heartRate, stitchBeatsNew } from './ecgCore.js';
+import { stitchBeats } from './ecgStitcher.js';
+import { thirdDegHeartBlock } from './ecgThirdDegree.js';
 import { createHeartRateEngine } from '../js/heartRateEngine.js';
 import { sendLedCommand } from '../js/arduinoSerialAdapter.js';
 
@@ -20,7 +21,7 @@ const COLOR_PRESETS = {
 const TRACE_COLOR_MAP = {
     amber: '#f59e0b',
     blue: '#1d4ed8',
-    green: '#00e000',
+    green: '#33ff66',
     red: '#dc2626',
     white: '#f5f7fa'
 };
@@ -288,7 +289,7 @@ function configureTraceStyle() {
     if (!traceCtx) return;
     const thickness = displaySettings.traceThickness;
     const color = getTraceColor(displaySettings.traceColor);
-    const baseWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 4.5 : 3;
+    const baseWidth = thickness === 'thin' ? 1.5 : thickness === 'thick' ? 4.5 : 2;
     traceCtx.lineWidth = getScaledLineWidth(baseWidth);
     traceCtx.strokeStyle = color;
     traceCtx.lineJoin = 'round';
@@ -339,9 +340,9 @@ function mapWaveformId(waveformId) {
         case 'normal-sinus':
             return 'Normal';
 
-        // Special strip handled inside stitchBeatsNew (complete AV block style strip)
+        // Special strip handled by third degree generator
         case 'brady-escape':
-            return 'Normal';
+            return 'ThirdDegree';
 
         // Scenarios handled via stitchBeatsNew waveformId options
         case 'mobitz-ii':
@@ -585,65 +586,46 @@ function handleResize() {
 }
 
 function regenerateWaveform() {
-  // -----------------------------
-  // 1) Intrinsic rate always comes from the patient/scenario
-  //    (pacing logic lives inside stitchBeatsNew now)
-  // -----------------------------
-  const intrinsicRate =
-    Number.isFinite(engineState.patientRate) && engineState.patientRate > 0
-      ? engineState.patientRate
-      : 70;
+    const intrinsicRate =
+        Number.isFinite(engineState.patientRate) && engineState.patientRate > 0
+            ? engineState.patientRate
+            : 70;
 
-  const gap = heartRate(intrinsicRate);
+    const secondsVisible = getSecondsVisible() || DEFAULT_SECONDS_VISIBLE;
 
-  // Pacemaker is enabled only if powered on and has a valid rate
-  const pacingEnabled =
-    engineState.poweredOn &&
-    Number.isFinite(engineState.pacingRate) &&
-    engineState.pacingRate > 0;
+    const pacingEnabled =
+        engineState.poweredOn &&
+        Number.isFinite(engineState.pacingRate) &&
+        engineState.pacingRate > 0;
 
-  // -----------------------------
-  // 2) Decide pacer mode
-  //    UI currently resolves "async" as boolean.
-  //    We map that to VOO when true, VVI when false.
-  // -----------------------------
-  const mode = pacingEnabled
-    ? (engineState.asynchronous ? "VOO" : "VVI")
-    : "VVI"; // doesn't matter when off
+    const pacerRate = pacingEnabled ? engineState.pacingRate : intrinsicRate;
+    const pacingOutput = pacingEnabled ? engineState.output : 0;
 
-  const pacerRate = pacingEnabled ? engineState.pacingRate : intrinsicRate;
-  const pacingOutput = pacingEnabled ? engineState.output : 0;
+    const iterations = Math.max(80, Math.ceil(secondsVisible * 12));
+    const scenarioType = mapWaveformId(engineState.waveformId);
 
-  // -----------------------------
-  // 3) Morphology resolver
-  // -----------------------------
-  const ecgFunc = (type) => {
-    const resolvedType = type === "Normal" ? engineState.baseSignal : type;
-    return ecgWave(resolvedType);
-  };
-
-  const secondsVisible = getSecondsVisible() || DEFAULT_SECONDS_VISIBLE;
-
-  // -----------------------------
-  // 4) Generate strip
-  //    Key: pass pacemakerEnabled + mode into options
-  // -----------------------------
-  const { x, y, events } = stitchBeatsNew(
-    ecgFunc,
-    gap,
-    engineState.regularity,
-    engineState.sensitivity,
-    pacerRate,          // LRL in ppm (used for escape interval 60/rate)
-    pacingOutput,       // mA
-    mode === "VOO",     // legacy async boolean (kept for backward compat)
-    {
-      waveformId: engineState.waveformId,
-      durationSec: secondsVisible,
-        pacemakerEnabled: pacingEnabled,
-      mode,
-        patientHR: intrinsicRate
+    let waveformResult;
+    if (scenarioType === 'ThirdDegree') {
+        waveformResult = thirdDegHeartBlock({
+            iterations,
+            sensitivity: engineState.sensitivity,
+            output: pacingOutput,
+            rate: pacerRate,
+            patientHR: intrinsicRate,
+            asynchronous: engineState.asynchronous
+        });
+    } else {
+        waveformResult = stitchBeats({
+            patientHR: intrinsicRate,
+            sensitivity: engineState.sensitivity,
+            rate: pacerRate,
+            output: pacingOutput,
+            asynchronous: engineState.asynchronous,
+            iterations
+        });
     }
-  );
+
+    const { x, y } = waveformResult ?? {};
 
   if (!Array.isArray(x) || !Array.isArray(y) || x.length === 0 || y.length === 0) {
     waveformPoints = [];
@@ -657,7 +639,7 @@ function regenerateWaveform() {
 
   waveformDuration = Math.max(...x, 0);
   waveformPoints = x.map((time, index) => ({ time, value: y[index] }));
-  waveformEvents = Array.isArray(events) ? events : [];
+  waveformEvents = [];
   maxWaveAmplitude = Math.max(...y.map((value) => Math.abs(value)), 1);
 
   heartRateEngine?.setMaxWaveAmplitude(maxWaveAmplitude);
@@ -718,6 +700,7 @@ function draw() {
 
     drawGrid(width, height, pixelsPerMm);
     drawWaveform(width, height);
+    drawSweepBar(width, height);
     drawSensitivityGuide(width, height);
     drawBeatLabels(width, height);
     drawCaliper(width, height);
@@ -772,6 +755,27 @@ function drawGrid(width, height, pixelsPerMm) {
 function drawWaveform(width, height) {
     if (!traceCanvas || !ctx) return;
     ctx.drawImage(traceCanvas, 0, 0, width, height);
+}
+
+function drawSweepBar(width, height) {
+    if (!ctx || !Number.isFinite(sweepX)) return;
+
+    const color = getTraceColor(displaySettings.traceColor);
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = getScaledLineWidth(2);
+    ctx.beginPath();
+    ctx.moveTo(sweepX, 0);
+    ctx.lineTo(sweepX, height);
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.2;
+    ctx.lineWidth = getScaledLineWidth(10);
+    ctx.beginPath();
+    ctx.moveTo(sweepX, 0);
+    ctx.lineTo(sweepX, height);
+    ctx.stroke();
+    ctx.restore();
 }
 
 function drawSensitivityGuide(width, height) {
@@ -950,9 +954,9 @@ function valueToY(value, midY, scaleY) {
 }
 
 function getWaveformGeometry(height) {
-    const amplitude = height * 0.18 * (displaySettings.amplitudeScaling / 10);
-    const scaleY = amplitude / maxWaveAmplitude;
-    const midY = height * 0.55;
+    const scaleY = (height / 2) * (displaySettings.amplitudeScaling / 10);
+    const amplitude = scaleY;
+    const midY = height / 2;
     return { amplitude, scaleY, midY };
 }
 
