@@ -344,7 +344,6 @@ export function thirdDegHeartBlock(cfg) {
     // overlap check
     if (arrayMin(xTemp) < arrayMax(x)) {
       // python: if np.max(y_temp) >= np.max(storage[2,idx-1]) then treat as R wave and replace overlap
-      // We'll emulate that comparison using stored maxY for idx-1 (if exists).
       const prevIdx = idx - 1;
       const prevMaxY = storage[prevIdx] ? storage[prevIdx].maxY : -Infinity;
 
@@ -357,7 +356,7 @@ export function thirdDegHeartBlock(cfg) {
         x = concat(x, xTemp);
         y = concat(y, yTemp);
       } else {
-        // P wave: do nothing (matches your comment)
+        // P wave: do nothing
       }
     } else {
       x = concat(x, xTemp);
