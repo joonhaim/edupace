@@ -1,19 +1,5 @@
-// egStitcher.js
-import { getECGWave } from "./ecgMorphology.js";
 
-/**
- * Optional: deterministic RNG (so sims are repeatable).
- * If you don't care, just use Math.random() directly.
- */
-export function makeMulberry32(seed = 1) {
-  let t = seed >>> 0;
-  return function rng() {
-    t += 0x6D2B79F5;
-    let x = Math.imul(t ^ (t >>> 15), 1 | t);
-    x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
-    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { getECGWave } from "./ecgMorphology.js";
 
 function arrayMax(arr) {
   let m = -Infinity;
@@ -37,7 +23,6 @@ function firstIndexAbsGE(arr, thr) {
   for (let i = 0; i < arr.length; i++) if (Math.abs(arr[i]) >= thr) return i;
   return -1;
 }
-
 function scaleInPlace(arr, s) {
   for (let i = 0; i < arr.length; i++) arr[i] *= s;
 }
@@ -45,111 +30,191 @@ function shiftInPlace(arr, dx) {
   for (let i = 0; i < arr.length; i++) arr[i] += dx;
 }
 function concat(a, b) {
-  // Faster than repeated .concat in tight loops:
   const out = new Array(a.length + b.length);
   for (let i = 0; i < a.length; i++) out[i] = a[i];
   for (let j = 0; j < b.length; j++) out[a.length + j] = b[j];
   return out;
 }
 
+function firstIndexGE(arr, val) {
+  for (let i = 0; i < arr.length; i++) if (arr[i] >= val) return i;
+  return -1;
+}
+
 /**
- * JS port of Python stitch_beats.
+ * Matches Python overlap logic:
+ * if np.min(x_temp) < np.max(x):
+ *   overlap_start_idx = np.where(x >= np.min(x_temp))[0][0]
+ *   x = x[:overlap_start_idx]; y = y[:overlap_start_idx]
+ * then concatenate
+ */
+function concatWithOverlapCut(x, y, xTemp, yTemp) {
+  if (x.length > 0 && arrayMin(xTemp) < arrayMax(x)) {
+    const cutIdx = firstIndexGE(x, arrayMin(xTemp));
+    if (cutIdx !== -1) {
+      x = x.slice(0, cutIdx);
+      y = y.slice(0, cutIdx);
+    }
+  }
+  return { x: concat(x, xTemp), y: concat(y, yTemp) };
+}
+
+
+// Python-like random: use Math.random() exactly (non-deterministic) to match np.random.random()
+function rand() {
+  return Math.random();
+}
+
+/**
+ * Exact JS port of the provided Python stitch_beats (signature adapted).
  *
  * @param {Object} cfg
- * @param {number} cfg.patientHR bpm
- * @param {"Regular"|"Irregular"} cfg.regularity
- * @param {number} cfg.sensitivity mV threshold for sensing
- * @param {number} cfg.rate bpm pacer programmed rate
- * @param {number} cfg.output mA output
- * @param {boolean} cfg.asynchronous async pacing mode (ignore sensing)
+ * @param {number} cfg.patientHR
+ * @param {number} cfg.sensitivity
+ * @param {number} cfg.rate
+ * @param {number} cfg.output
+ * @param {boolean} cfg.asynchronous
  * @param {number} [cfg.iterations=20]
- * @param {number} [cfg.seed] optional for reproducibility
- *
  * @returns {{x:number[], y:number[], beatList:string[]}}
  */
 export function stitchBeats(cfg) {
   const {
     patientHR,
-    regularity: regularityIn,
     sensitivity,
     rate,
     output,
     asynchronous,
     iterations = 20,
-    seed = null,
   } = cfg;
 
-  const rng = seed == null ? Math.random : makeMulberry32(seed);
-
-  // Python variables
   let beatList = ["Normal"];
   let offset = 0;
   let timeSinceSensed = 0;
   let timePrevSensed = 0;
   let timeSensed = 0;
 
-  const maxTimeSinceSensed = 60 / rate;      // escape interval
-  const gap = 60 / patientHR;                // intrinsic cycle length
+  const maxTimeSinceSensed = 60 / rate;
+  const captureThreshold = 1.5 + 0.2 * rand() - 0.1;
+  const gap = 60 / patientHR;
 
-  // capture threshold between 1.4 and 1.6
-  const captureThreshold = 1.5 + 0.2 * rng() - 0.1;
-
-  // async overrides regularity in python
-  const regularity = asynchronous ? "Regular" : regularityIn;
-
-  // This magic constant appears in your python. Keep it to match behavior.
-  // It's a calibration for "time of sensed point within the waveform".
   const SENSE_ALIGNMENT = 0.183315;
 
   let x = [];
   let y = [];
 
   for (let i = 0; i < iterations; i++) {
-    // 1) choose beat type
-    const beatType = beatList[i] ?? "Normal";
-    let { x: xTemp0, y: yTemp0 } = getECGWave(beatType);
+    // x_temp, y_temp = ecg_func(beat_list[i])
+    let { x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]);
 
-    // Make copies so we can mutate in-place without affecting morphology cache
+    // copies so we can mutate like numpy arrays
     let xTemp = xTemp0.slice();
     let yTemp = yTemp0.slice();
 
-    // 2) scaling (match python)
+    // scaling factors (exact Python)
     const yRange = arrayMax(yTemp) - arrayMin(yTemp);
-    let scalingFactorY = (1.0 + (rng() * 0.6 - 0.3)) / (yRange === 0 ? 1 : yRange);
-
-    let scalingFactorX;
-    if (regularity === "Irregular") {
-      scalingFactorX = (0.8 + (rng() * 0.6 - 0.3)) / 24;
-    } else {
-      scalingFactorX = 0.03333;
-    }
-
-    // Apply scaling
-    scaleInPlace(xTemp, scalingFactorX);
-    scaleInPlace(yTemp, scalingFactorY);
+    const scalingFactorY = (1.0 + (rand() * 0.6 - 0.3)) / yRange;
+    const scalingFactorX = 0.03333;
 
     if (i === 0) {
-      // FIRST beat initializes (x,y)
+      // Apply scaling: x_temp *= scaling_factor_x ; y_temp *= scaling_factor_y
+      scaleInPlace(xTemp, scalingFactorX);
+      scaleInPlace(yTemp, scalingFactorY);
+
       if (asynchronous) {
         if (output >= captureThreshold) {
-          // overwrite morphology to paced beat
           beatList[i] = "Ventricular pacing";
-          ({ x: xTemp, y: yTemp } = getECGWave("Ventricular pacing"));
-          xTemp = xTemp.slice();
-          yTemp = yTemp.slice();
+          ({ x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]));
+          xTemp = xTemp0.slice();
+          yTemp = yTemp0.slice();
 
-          // rescale Y for the new morphology, keep X scale same as python
           const yr = arrayMax(yTemp) - arrayMin(yTemp);
-          scalingFactorY = (1.0 + (rng() * 0.6 - 0.3)) / (yr === 0 ? 1 : yr);
+          const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
 
           scaleInPlace(xTemp, scalingFactorX);
-          scaleInPlace(yTemp, scalingFactorY);
+          scaleInPlace(yTemp, scalingFactorY2);
 
           x = xTemp;
           y = yTemp;
 
           beatList.push("Ventricular pacing");
           offset = maxTimeSinceSensed + arrayMin(xTemp);
+        } else {
+          x = xTemp;
+          y = yTemp;
+          beatList.push("Normal");
+          offset = gap + arrayMin(xTemp);
+        }
+      } else if (maxAbs(yTemp) >= sensitivity) {
+        const idx = firstIndexAbsGE(yTemp, sensitivity);
+        timeSensed = xTemp[idx];
+
+        if (timeSensed > maxTimeSinceSensed) {
+          if (output >= captureThreshold) {
+            beatList[i] = "Ventricular pacing";
+            ({ x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]));
+            xTemp = xTemp0.slice();
+            yTemp = yTemp0.slice();
+
+            const yr = arrayMax(yTemp) - arrayMin(yTemp);
+            const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
+
+            scaleInPlace(xTemp, scalingFactorX);
+            scaleInPlace(yTemp, scalingFactorY2);
+
+            x = xTemp;
+            y = yTemp;
+
+            beatList.push("Normal");
+            offset = gap + arrayMin(xTemp);
+            timePrevSensed = arrayMin(xTemp) + SENSE_ALIGNMENT;
+            timeSinceSensed = 0;
+          } else {
+            x = xTemp;
+            y = yTemp;
+
+            beatList.push("Normal");
+            offset = gap + arrayMin(xTemp);
+            timePrevSensed = timeSensed;
+            timeSinceSensed = 0;
+          }
+        } else {
+          x = xTemp;
+          y = yTemp;
+
+          beatList.push("Normal");
+          offset = gap + arrayMin(xTemp);
+          timePrevSensed = timeSensed;
+          timeSinceSensed = 0;
+        }
+      } else {
+        timeSinceSensed += arrayMax(xTemp); // matches python (note: uses x_temp BEFORE scaling in python, but here xTemp already scaled like python does in i==0)
+        if (timeSinceSensed > maxTimeSinceSensed) {
+          if (output >= captureThreshold) {
+            beatList[i] = "Ventricular pacing";
+            ({ x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]));
+            xTemp = xTemp0.slice();
+            yTemp = yTemp0.slice();
+
+            const yr = arrayMax(yTemp) - arrayMin(yTemp);
+            const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
+
+            scaleInPlace(xTemp, scalingFactorX);
+            scaleInPlace(yTemp, scalingFactorY2);
+
+            x = xTemp;
+            y = yTemp;
+
+            beatList.push("Normal");
+            offset = gap + arrayMin(xTemp);
+            timePrevSensed = arrayMin(xTemp) + SENSE_ALIGNMENT;
+            timeSinceSensed = 0;
+          } else {
+            x = xTemp;
+            y = yTemp;
+
+            beatList.push("Normal");
+            offset = gap + arrayMin(xTemp);
+          }
         } else {
           x = xTemp;
           y = yTemp;
@@ -157,110 +222,22 @@ export function stitchBeats(cfg) {
           beatList.push("Normal");
           offset = gap + arrayMin(xTemp);
         }
-      } else {
-        // demand mode (sensing active)
-        if (maxAbs(yTemp) >= sensitivity) {
-          const idx = firstIndexAbsGE(yTemp, sensitivity);
-          timeSensed = xTemp[idx];
-
-          if (timeSensed > maxTimeSinceSensed) {
-            // should pace
-            if (output >= captureThreshold) {
-              beatList[i] = "Ventricular pacing";
-              ({ x: xTemp, y: yTemp } = getECGWave("Ventricular pacing"));
-              xTemp = xTemp.slice();
-              yTemp = yTemp.slice();
-
-              const yr = arrayMax(yTemp) - arrayMin(yTemp);
-              scalingFactorY = (1.0 + (rng() * 0.6 - 0.3)) / (yr === 0 ? 1 : yr);
-
-              scaleInPlace(xTemp, scalingFactorX);
-              scaleInPlace(yTemp, scalingFactorY);
-
-              x = xTemp;
-              y = yTemp;
-
-              beatList.push("Normal");
-              offset = gap + arrayMin(xTemp);
-
-              timePrevSensed = arrayMin(xTemp) + SENSE_ALIGNMENT;
-              timeSinceSensed = 0;
-            } else {
-              x = xTemp;
-              y = yTemp;
-
-              beatList.push("Normal");
-              offset = gap + arrayMin(xTemp);
-
-              timePrevSensed = timeSensed;
-              timeSinceSensed = 0;
-            }
-          } else {
-            // sensed in time -> inhibit
-            x = xTemp;
-            y = yTemp;
-
-            beatList.push("Normal");
-            offset = gap + arrayMin(xTemp);
-
-            timePrevSensed = timeSensed;
-            timeSinceSensed = 0;
-          }
-        } else {
-          // not sensed
-          timeSinceSensed += arrayMax(xTemp);
-          if (timeSinceSensed > maxTimeSinceSensed) {
-            // should pace
-            if (output >= captureThreshold) {
-              beatList[i] = "Ventricular pacing";
-              ({ x: xTemp, y: yTemp } = getECGWave("Ventricular pacing"));
-              xTemp = xTemp.slice();
-              yTemp = yTemp.slice();
-
-              const yr = arrayMax(yTemp) - arrayMin(yTemp);
-              scalingFactorY = (1.0 + (rng() * 0.6 - 0.3)) / (yr === 0 ? 1 : yr);
-
-              scaleInPlace(xTemp, scalingFactorX);
-              scaleInPlace(yTemp, scalingFactorY);
-
-              x = xTemp;
-              y = yTemp;
-
-              beatList.push("Normal");
-              offset = gap + arrayMin(xTemp);
-
-              timePrevSensed = arrayMin(xTemp) + SENSE_ALIGNMENT;
-              timeSinceSensed = 0;
-            } else {
-              x = xTemp;
-              y = yTemp;
-
-              beatList.push("Normal");
-              offset = gap + arrayMin(xTemp);
-            }
-          } else {
-            // still waiting
-            x = xTemp;
-            y = yTemp;
-
-            beatList.push("Normal");
-            offset = gap + arrayMin(xTemp);
-          }
-        }
       }
     } else {
-      // SECOND beat onwards: shift by offset first (like python does)
+      // Second beat onwards:
+      // x_temp = x_temp*scaling_factor_x; y_temp = y_temp*scaling_factor_y; x_temp += offset
+      scaleInPlace(xTemp, scalingFactorX);
+      scaleInPlace(yTemp, scalingFactorY);
       shiftInPlace(xTemp, offset);
 
       if (asynchronous) {
-        // async ignores sensing; paces at rate if capture possible
-        x = concat(x, xTemp);
-        y = concat(y, yTemp);
-
         if (output >= captureThreshold) {
+          ({ x, y } = concatWithOverlapCut(x, y, xTemp, yTemp));
           beatList.push("Ventricular pacing");
           offset = maxTimeSinceSensed + arrayMin(xTemp);
         } else {
+          x = concat(x, xTemp);
+          y = concat(y, yTemp);
           beatList.push("Normal");
           offset = gap + arrayMin(xTemp);
         }
@@ -270,22 +247,20 @@ export function stitchBeats(cfg) {
         timeSinceSensed = timeSensed - timePrevSensed;
 
         if (timeSinceSensed > maxTimeSinceSensed) {
-          // should pace
           if (output >= captureThreshold) {
             beatList[i] = "Ventricular pacing";
 
-            // regenerate paced beat (like python does)
-            ({ x: xTemp, y: yTemp } = getECGWave("Ventricular pacing"));
-            xTemp = xTemp.slice();
-            yTemp = yTemp.slice();
+            // regenerate paced beat
+            ({ x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]));
+            xTemp = xTemp0.slice();
+            yTemp = yTemp0.slice();
 
             const yr = arrayMax(yTemp) - arrayMin(yTemp);
-            scalingFactorY = (1.0 + (rng() * 0.6 - 0.3)) / (yr === 0 ? 1 : yr);
+            const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
 
             scaleInPlace(xTemp, scalingFactorX);
-            scaleInPlace(yTemp, scalingFactorY);
+            scaleInPlace(yTemp, scalingFactorY2);
 
-            // compute offset adjustment like python
             if (beatList[i - 1] === "Normal") {
               offset = maxTimeSinceSensed + timePrevSensed - SENSE_ALIGNMENT;
             } else {
@@ -293,9 +268,8 @@ export function stitchBeats(cfg) {
             }
 
             shiftInPlace(xTemp, offset);
+            ({ x, y } = concatWithOverlapCut(x, y, xTemp, yTemp));
 
-            x = concat(x, xTemp);
-            y = concat(y, yTemp);
 
             beatList.push("Normal");
             offset = gap + arrayMin(xTemp);
@@ -311,7 +285,6 @@ export function stitchBeats(cfg) {
             timeSinceSensed = 0;
           }
         } else {
-          // sensed in time
           x = concat(x, xTemp);
           y = concat(y, yTemp);
 
@@ -321,22 +294,21 @@ export function stitchBeats(cfg) {
           timeSinceSensed = 0;
         }
       } else {
-        // not sensed
         timeSinceSensed += arrayMax(xTemp) - timePrevSensed;
 
         if (timeSinceSensed > maxTimeSinceSensed) {
           if (output >= captureThreshold) {
             beatList[i] = "Ventricular pacing";
 
-            ({ x: xTemp, y: yTemp } = getECGWave("Ventricular pacing"));
-            xTemp = xTemp.slice();
-            yTemp = yTemp.slice();
+            ({ x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]));
+            xTemp = xTemp0.slice();
+            yTemp = yTemp0.slice();
 
             const yr = arrayMax(yTemp) - arrayMin(yTemp);
-            scalingFactorY = (1.0 + (rng() * 0.6 - 0.3)) / (yr === 0 ? 1 : yr);
+            const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
 
             scaleInPlace(xTemp, scalingFactorX);
-            scaleInPlace(yTemp, scalingFactorY);
+            scaleInPlace(yTemp, scalingFactorY2);
 
             if (beatList[i - 1] === "Normal") {
               offset = maxTimeSinceSensed + timePrevSensed - SENSE_ALIGNMENT;
@@ -345,9 +317,8 @@ export function stitchBeats(cfg) {
             }
 
             shiftInPlace(xTemp, offset);
+            ({ x, y } = concatWithOverlapCut(x, y, xTemp, yTemp));
 
-            x = concat(x, xTemp);
-            y = concat(y, yTemp);
 
             beatList.push("Normal");
             offset = gap + arrayMin(xTemp);
