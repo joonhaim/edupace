@@ -10,7 +10,7 @@ const globalSearch = document.querySelector('[data-global-search]');
 const globalSettingsToggle = document.querySelector('[data-global-settings-toggle]');
 
 let activeView = null;
-const pageClasses = ['page-home', 'page-training', 'page-logs', 'page-instructions'];
+const pageClasses = ['page-home', 'page-training', 'page-training-draft', 'page-logs', 'page-instructions'];
 
 function setActiveNav(targetView) {
     const navLinks = document.querySelectorAll('[data-view-target]');

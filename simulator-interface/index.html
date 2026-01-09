@@ -38,6 +38,7 @@
       <nav class="sidebar-nav" aria-label="Sections">
         <a class="side-item active" href="#" data-view-target="home" aria-current="page" data-i18n-key="nav.home">Dashboard</a>
         <a class="side-item" href="#" data-view-target="training" data-i18n-key="nav.training">Training</a>
+        <a class="side-item" href="#" data-view-target="training-draft" data-i18n-key="nav.trainingDraft">Training (draft)</a>
         <a class="side-item" href="#" data-view-target="logs" data-i18n-key="nav.logs">Session Log</a>
         <a class="side-item" href="#" data-view-target="instructions" data-i18n-key="nav.instructions">Instructions</a>
       </nav>
@@ -450,6 +451,354 @@
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div class="card performance-card calibration-performance">
+                                <div class="card-heading compact">
+<!--                                    <p class="eyebrow">Learning</p>-->
+                                </div>
+                                <div class="learning-details">
+                                    <div class="learning-item">
+                                        <p class="learning-label" data-i18n-key="training.learning.objective">Current Objective</p>
+                                        <p id="objectiveTextSecondary" class="learning-body">–</p>
+                                    </div>
+                                    <div class="learning-item">
+                                        <p class="learning-label" data-i18n-key="training.learning.feedback">Feedback</p>
+                                        <p id="feedbackTextSecondary" class="learning-body">–</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Right: controls -->
+                        <aside class="control-column" aria-label="Controls">
+                            <div class="card parameters-card">
+                                <div class="card-heading compact">
+                                    <p class="eyebrow" data-i18n-key="training.pacemaker.eyebrow">Pacemaker</p>
+                                    <h3 class="card-title" id="pacemakerTitle" data-i18n-key="training.pacemaker.parameters">Pacemaker parameters</h3>
+                                </div>
+
+                                <div class="led-row">
+                                    <div class="led-group">
+                                        <div class="led led-pace" id="paceLed"></div>
+                                        <span>PACE</span>
+                                    </div>
+                                    <div class="led-group">
+                                        <div class="led led-sense" id="senseLed"></div>
+                                        <span>SENSE</span>
+                                    </div>
+
+                                </div>
+
+                                <div class="param-grid">
+                                    <div class="param-tile">
+                                        <div class="param-meta">
+                                            <div class="param-label">Rate</div>
+                                            <div class="param-value">
+                                                <span id="rateValue">--</span>
+                                                <span class="param-unit">ppm</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="rate"
+                                            data-min="30"
+                                            data-max="120"
+                                            data-step="1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease rate">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase rate">→</button>
+                                        </div>
+                                    </div>
+                                    <div class="param-tile">
+                                        <div class="param-meta">
+                                            <div class="param-label">Output</div>
+                                            <div class="param-value">
+                                                <span id="outputValue">--</span>
+                                                <span class="param-unit">mA</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="output"
+                                            data-min="0"
+                                            data-max="10"
+                                            data-step="0.1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease output">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase output">→</button>
+                                        </div>
+                                    </div>
+                                    <div class="param-tile">
+                                        <div class="param-meta">
+                                            <div class="param-label">Sensitivity</div>
+                                            <div class="param-value">
+                                                <span id="sensValue">--</span>
+                                                <span class="param-unit">mV</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="sensitivity"
+                                            data-min="0"
+                                            data-max="10"
+                                            data-step="0.1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease sensitivity">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase sensitivity">→</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="virtual-actions" aria-label="Power and lock controls" aria-hidden="true">
+                                    <button
+                                        type="button"
+                                        class="virtual-action-btn"
+                                        data-virtual-action="power"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="action-label">Power</span>
+                                        <span class="action-state" data-action-state>Off</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="virtual-action-btn"
+                                        data-virtual-action="lock"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="action-label">Lock</span>
+                                        <span class="action-state" data-action-state>Unlocked</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="card control-stack">
+                            <div class="card-heading inline control-heading">
+                                <div>
+                                    <p class="eyebrow" data-i18n-key="training.controls.eyebrow">Control</p>
+                                    <h3 class="card-title" data-i18n-key="training.controls.input.title">Input source</h3>
+                                </div>
+                                <div
+                                    class="mode-toggle is-compact"
+                                    role="radiogroup"
+                                    aria-label="Input source"
+                                    data-i18n-key="training.controls.input.title"
+                                    data-i18n-attr="aria-label"
+                                >
+                                    <label class="mode-pill">
+                                        <input type="radio" name="inputMode" value="hardware" checked>
+                                        <span data-i18n-key="training.controls.input.hardware">Hardware</span>
+                                    </label>
+                                    <label class="mode-pill">
+                                        <input type="radio" name="inputMode" value="virtual">
+                                        <span data-i18n-key="training.controls.input.virtual">Virtual</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <p class="muted control-caption" data-i18n-key="training.controls.input.caption">
+                                Choose whether the simulator follows the physical EduPace device or on-screen controls.
+                            </p>
+                        </div>
+
+
+                            <div class="settings-launch">
+                                <button
+                                    type="button"
+                                    class="btn btn-ghost settings-toggle"
+                                    data-settings-toggle
+                                    aria-expanded="false"
+                                    aria-controls="ecgSettingsPanel"
+                                >
+                                    <span class="settings-toggle-icon" aria-hidden="true">⚙️</span>
+                                    <span>Settings</span>
+                                </button>
+                            </div>
+
+                            </aside>
+                    </div>
+
+                    <footer class="sim-footer">
+                        <span>Ventricular single-chamber training only · EduPace</span>
+                    </footer>
+                </div>
+            </section>
+        </main>
+
+      </div>
+      <div
+        class="app-main app-main--stacked view view-training-draft"
+        data-view="training-draft"
+        data-title-key="nav.trainingDraft"
+        data-subtitle-key="training.header.title"
+        data-show-search="false"
+        data-show-settings="true"
+        hidden
+      >
+        <main class="screen-stack">
+            <section aria-label="Training">
+                <div class="sim-shell">
+                    <div class="scenario-banner" id="scenario-section" role="region" aria-label="Scenario selection">
+                        <div class="scenario-banner-text" data-scenario-picker-area>
+                            <span class="scenario-pill" data-i18n-key="training.scenario.pill">Scenario</span>
+                            <div class="scenario-title-row">
+                                <button id="scenarioPicker" class="scenario-name scenario-picker" type="button" aria-haspopup="listbox" aria-expanded="false">
+                                    <span id="scenarioPickerLabel" data-i18n-key="training.scenario.empty">No scenario active</span>
+                                    <span class="chevron" aria-hidden="true">▾</span>
+                                </button>
+                                <button id="scenarioNextBtn" class="scenario-cycle" type="button" aria-label="Load next scenario" title="Next scenario">
+                                    <span class="scenario-cycle-icon" aria-hidden="true">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+     stroke-linejoin="round">
+  <path d="M5 12h14" />
+  <path d="M13 6l6 6-6 6" />
+</svg>
+</span>
+                                </button>
+                            </div>
+                            <div id="scenarioMenu" class="scenario-menu" role="listbox" aria-label="Available scenarios"></div>
+                            <p id="scenarioText" class="scenario-text" data-i18n-key="training.scenario.hint">
+                                Pick a module or clinical case to begin training.
+                            </p>
+                        </div>
+                        <div class="session-actions" aria-label="Session controls">
+                            <div class="session-cta-row">
+                                <button id="startSessionBtn" class="btn btn-primary session-chip" type="button" disabled>
+                                    <span class="btn-icon" aria-hidden="true">▶</span>
+                                    <span class="btn-label" data-i18n-key="training.scenario.start">Start</span>
+                                </button>
+                                <button id="endSessionBtn" class="btn btn-ghost session-chip session-end" type="button" disabled>
+                                    <span class="btn-icon" aria-hidden="true">■</span>
+                                    <span class="btn-label" data-i18n-key="training.scenario.end">End</span>
+                                </button>
+                            </div>
+                            <div class="session-meta">
+                                <p id="sessionStatusText" class="session-status" aria-live="polite">
+                                    <span id="sessionStatusLabel" data-i18n-key="training.scenario.status">Select a module or clinical case to begin.</span>
+                                    <span id="sessionTimerDisplay" class="session-timer-inline"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div class="sim-main">
+                        <!-- Left: ECG + vitals -->
+                        <section class="graph-column" aria-label="Telemetry">
+                            <div id="alarmBanner" class="alarm-banner alarm-normal">
+                                <span id="alarmText" data-i18n-key="training.telemetry.noAlarms">No active alarms</span>
+                            </div>
+
+                            <div class="ecg-frame">
+                                <canvas id="ecgCanvas" width="1200" height="550"></canvas>
+                                <div class="ecg-overlay">
+                                    <div class="ecg-overlay-top">
+                                        <div class="ecg-label" aria-live="polite">II</div>
+                                        <div class="ecg-vitals">
+                                            <div class="vital-block">
+                                                <span class="vital-label">HR</span>
+                                                <span id="hrValue" class="vital-value hr-value">--</span>
+                                                <span class="vital-unit">bpm</span>
+                                            </div>
+                                            <div class="vital-block pace-block" aria-hidden="true">
+                                                <span class="vital-label">PACE</span>
+                                                <span id="paceMode" class="vital-value pace-value small">--</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="calibration-inline" aria-live="polite" hidden>
+                                        <span class="calibration-label" data-i18n-key="training.telemetry.calibration">Calibration</span>
+                                        <span class="calibration-value">10 mm/mV · 25 mm/s · 6 s window</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="caliper-unit-toggle"
+                                        aria-label="Show calipers in milliseconds"
+                                        title="Show calipers in milliseconds"
+                                    >
+                                        <span data-i18n-key="training.telemetry.ms">ms</span>
+                                    </button>
+                                    <div class="ecg-overlay-actions">
+                                        <button
+                                            type="button"
+                                            class="overlay-action calibration-toggle"
+                                            aria-label="Show calibration details"
+                                            title="Show calibration details"
+                                        >
+                                            ⓘ
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="overlay-action ecg-audio-toggle"
+                                            aria-label="Mute QRS beep"
+                                            aria-pressed="false"
+                                            title="Mute QRS beep"
+                                        >
+                                            <span class="sound-icon sound-icon-on" aria-hidden="true" data-sound-icon="on">
+                                                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                                                    <path
+                                                        d="M4 9v6h3.4L13 19.5V4.5L7.4 9z"
+                                                        fill="currentColor"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.2"
+                                                        stroke-linejoin="round"
+                                                    />
+                                                    <path
+                                                        d="M15.5 9.5c1 1 1 4 0 5"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.5"
+                                                        stroke-linecap="round"
+                                                    />
+                                                    <path
+                                                        d="M18 7.5c1.6 1.6 1.6 7.4 0 9"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.5"
+                                                        stroke-linecap="round"
+                                                    />
+                                                </svg>
+                                            </span>
+                                            <span class="sound-icon sound-icon-off" aria-hidden="true" data-sound-icon="off">
+                                                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                                                    <path
+                                                        d="M4 9v6h3.4L13 19.5V4.5L7.4 9z"
+                                                        fill="currentColor"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.2"
+                                                        stroke-linejoin="round"
+                                                    />
+                                                    <path
+                                                        d="M16 8l4 8M20 8l-4 8"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="1.6"
+                                                        stroke-linecap="round"
+                                                    />
+                                                </svg>
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="overlay-action fullscreen-toggle"
+                                            aria-label="Enter full screen"
+                                            title="Enter full screen"
+                                        >
+                                            ⛶
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ecg-paper-panel" aria-label="ECG paper strip and monitor">
+                                <div class="ecg-paper-title">ECG Paper Strip (static 0–6 s)</div>
+                                <canvas id="ecgPaperDraft"></canvas>
+                                <div class="ecg-paper-title">ECG Monitor (write-sweep)</div>
+                                <canvas id="ecgMonitorDraft"></canvas>
                             </div>
 
                             <div class="card performance-card calibration-performance">
@@ -1417,6 +1766,7 @@
   <script type="module" src="js/homeScenarios.js"></script>
   <script type="module" src="js/homeDashboard.js" defer></script>
   <script type="module" src="js/main.js" defer></script>
+  <script type="module" src="js/trainingDraftEcg.js" defer></script>
   <script type="module" src="js/logsPage.js" defer></script>
 </body>
 </html>
