@@ -1,0 +1,30 @@
+<canvas id="ecg" width="1200" height="220"></canvas>
+
+<script type="module">
+  import { LiveECGEngine } from "./ecgEngine.js";
+
+  const canvas = document.getElementById("ecg");
+  const engine = new LiveECGEngine({
+    canvas,
+    secondsOnScreen: 6,
+    fs: 500,
+    yMin: -1.2,
+    yMax: 1.2,
+    params: {
+      patientHR: 90,
+      regularity: "Regular",
+      sensitivity: 0.5,
+      rate: 70,
+      output: 1.8,
+      asynchronous: false
+    }
+  });
+
+  engine.start();
+
+  // quick knobs in console:
+  window.setRate = (r) => engine.updateParams({ rate: r });
+  window.setOutput = (o) => engine.updateParams({ output: o });
+  window.setSensitivity = (s) => engine.updateParams({ sensitivity: s });
+  window.setAsync = (a) => engine.updateParams({ asynchronous: a });
+</script>
