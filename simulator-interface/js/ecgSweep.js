@@ -25,13 +25,9 @@ const SCENARIOS = {
   },
 };
 
-const canvas = document.getElementById("ecgCanvas");
-if (!canvas) {
-  throw new Error("ECG canvas not found");
-}
-
-const ctx = canvas.getContext("2d");
-const hrValue = document.getElementById("hrValue");
+let canvas = null;
+let ctx = null;
+let hrValue = null;
 
 function normalizeScenario(raw) {
   if (!raw) return "NSR";
@@ -150,6 +146,8 @@ let monitorY = [];
 let monitorWritten = [];
 let sweepX = 0;
 let lastTs = null;
+let animationFrameId = null;
+let resizeObserver = null;
 
 function resetMonitorBuffer(keepExisting = false) {
   const w = canvas.clientWidth;
@@ -307,20 +305,76 @@ function animate(ts) {
 
   writeSamplesUnderSweep(dt);
   renderMonitor();
-
-  requestAnimationFrame(animate);
 }
 
-const observer = new ResizeObserver(() => {
+function stopAnimation() {
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+}
+
+function startAnimation() {
+  if (animationFrameId !== null) return;
+  lastTs = null;
+  animationFrameId = requestAnimationFrame(function tick(ts) {
+    animate(ts);
+    animationFrameId = requestAnimationFrame(tick);
+  });
+}
+
+function ensureCanvasReady() {
   const size = setCanvasSize();
-  if (!size.w || !size.h) return;
+  if (!size.w || !size.h) return false;
   resetMonitorBuffer(true);
   renderMonitor();
-});
+  return true;
+}
 
-observer.observe(canvas);
+function handleViewChange(event) {
+  if (event?.detail?.view !== "training") {
+    stopAnimation();
+    return;
+  }
+  const ready = ensureCanvasReady();
+  if (!ready) {
+    requestAnimationFrame(() => {
+      if (ensureCanvasReady()) {
+        refresh();
+        startAnimation();
+      }
+    });
+    return;
+  }
+  refresh();
+  startAnimation();
+}
 
-setCanvasSize();
-resetMonitorBuffer(false);
-refresh();
-requestAnimationFrame(animate);
+function init() {
+  canvas = document.getElementById("ecgCanvas");
+  if (!canvas) {
+    return;
+  }
+  ctx = canvas.getContext("2d");
+  hrValue = document.getElementById("hrValue");
+
+  resizeObserver = new ResizeObserver(() => {
+    if (!ensureCanvasReady()) return;
+  });
+  resizeObserver.observe(canvas);
+
+  ensureCanvasReady();
+  refresh();
+
+  if (document.body.classList.contains("page-training")) {
+    startAnimation();
+  }
+
+  document.addEventListener("edupace:view-change", handleViewChange);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
