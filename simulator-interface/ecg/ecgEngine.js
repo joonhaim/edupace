@@ -1429,8 +1429,6 @@ function syncAudioSuspension() {
 }
 
 
-
-
 function getSecondsVisible() {
     return displaySettings.sweepWindow;
 }
