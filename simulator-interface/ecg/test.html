@@ -1,30 +1,586 @@
-<canvas id="ecg" width="1200" height="220"></canvas>
-
-<script type="module">
-  import { LiveECGEngine } from "./ecgEngine.js";
-
-  const canvas = document.getElementById("ecg");
-  const engine = new LiveECGEngine({
-    canvas,
-    secondsOnScreen: 6,
-    fs: 500,
-    yMin: -1.2,
-    yMax: 1.2,
-    params: {
-      patientHR: 90,
-      regularity: "Regular",
-      sensitivity: 0.5,
-      rate: 70,
-      output: 1.8,
-      asynchronous: false
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ECG Paper + Monitor Write-Sweep</title>
+  <style>
+    :root{
+      --bg:#0b0b0b; --panel:#141414; --text:#eaeaea; --muted:#a7a7a7; --border:#2a2a2a;
+      --btn:#1e1e1e; --btnHover:#2a2a2a;
     }
-  });
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+    .wrap{max-width:1400px;margin:0 auto;padding:16px;display:grid;gap:12px;}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;}
+    .row{display:flex;flex-wrap:wrap;gap:12px;align-items:end;}
+    .field{display:grid;gap:6px;min-width:140px;}
+    label{font-size:12px;color:var(--muted);}
+    input,select{background:#0f0f0f;color:var(--text);border:1px solid var(--border);
+      border-radius:8px;padding:8px 10px;font-size:14px;outline:none;}
+    input:focus,select:focus{border-color:#3a3a3a;}
+    .btn{background:var(--btn);color:var(--text);border:1px solid var(--border);
+      border-radius:8px;padding:9px 12px;font-size:14px;cursor:pointer;user-select:none;}
+    .btn:hover{background:var(--btnHover);}
+    .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.35;}
+    .canvasWrap{overflow:auto;border-radius:10px;border:1px solid var(--border);background:#070707;padding:8px;}
+    .canvasTitle{font-size:12px;color:var(--muted);margin:6px 0 8px;}
+    canvas{display:block;}
+    #ecgPaper{background:#ffffff;border-radius:8px;}
+    #ecgMonitor{background:#000000;border-radius:8px;border:1px solid #1f1f1f;}
+    .status{font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:8px;}
+    .pill{padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:#0f0f0f;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="row">
+        <div class="field">
+          <label for="hr">Patient HR (bpm)</label>
+          <input id="hr" type="number" value="90" min="20" max="220" step="1">
+        </div>
 
-  engine.start();
+        <div class="field">
+          <label for="pacerRate">Pacemaker Rate (bpm)</label>
+          <input id="pacerRate" type="number" value="70" min="20" max="220" step="1">
+        </div>
 
-  // quick knobs in console:
-  window.setRate = (r) => engine.updateParams({ rate: r });
-  window.setOutput = (o) => engine.updateParams({ output: o });
-  window.setSensitivity = (s) => engine.updateParams({ sensitivity: s });
-  window.setAsync = (a) => engine.updateParams({ asynchronous: a });
-</script>
+        <div class="field">
+          <label for="sens">Sensitivity (mV)</label>
+          <input id="sens" type="number" value="0.5" min="0" max="20" step="0.1">
+        </div>
+
+        <div class="field">
+          <label for="out">Output (mA)</label>
+          <input id="out" type="number" value="1.8" min="0" max="25" step="0.1">
+        </div>
+
+        <div class="field">
+          <label for="regularity">Regularity</label>
+          <select id="regularity">
+            <option value="Regular" selected>Regular</option>
+            <option value="Irregular">Irregular</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="async">Asynchronous</label>
+          <select id="async">
+            <option value="false" selected>false</option>
+            <option value="true">true</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="seed">Seed (optional)</label>
+          <input id="seed" type="number" placeholder="e.g. 42">
+        </div>
+
+        <button id="gen" class="btn">Generate</button>
+        <button id="play" class="btn">Monitor sweep (play/pause)</button>
+      </div>
+
+      <div class="hint">
+        Top: ECG paper view (0–6 s, −1 to +1 mV) with red grid and blue sensitivity line.<br/>
+        Bottom: monitor view (black) uses a <b>write-sweep</b>: a vertical bar moves left→right and <b>writes</b> new points.
+        When it reaches the right edge, it jumps back to the left and overwrites from there.
+        Changing parameters does <b>not</b> clear the monitor; the new waveform only overwrites where the sweep passes.
+        No “cracks” because we do not connect lines across different parameter generations.
+      </div>
+
+      <div class="status">
+        <span class="pill" id="statusLen">samples: —</span>
+        <span class="pill" id="statusRange">t: —, y: —</span>
+        <span class="pill" id="statusBeat">beats: —</span>
+      </div>
+    </div>
+
+    <div class="canvasWrap">
+      <div class="canvasTitle">ECG Paper Strip (static 0–6 s)</div>
+      <canvas id="ecgPaper"></canvas>
+
+      <div class="canvasTitle" style="margin-top:14px;">ECG Monitor (write-sweep)</div>
+      <canvas id="ecgMonitor"></canvas>
+    </div>
+  </div>
+
+  <script type="module">
+    import { stitchBeats } from "./ecgStitcher.js";
+
+    // -------------------------
+    // Paper (matplotlib-matching) constants
+    // -------------------------
+    const SMALL_T = 0.04;  // s
+    const BIG_T   = 0.2;   // s
+    const SMALL_A = 0.1;   // mV
+    const BIG_A   = 1.0;   // mV
+
+    const VIEW_SEC = 6;
+    const Y_MIN = -1;
+    const Y_MAX =  1;
+
+    // Paper visual size
+    const PX_PER_SMALL_BOX = 8;
+
+    // Monitor size
+    const MONITOR_W = 1200;
+    // IMPORTANT: make monitor amplitude scale match paper -> same -1..+1 mapping.
+    // So give it a similar pixel-per-mV scale (paper uses 0.1mV per small box).
+    // We'll set monitor height to exactly match the paper height by default.
+    // If you want a shorter monitor, keep height but the mapping stays -1..+1 so amplitude won't "inflate".
+    const MONITOR_H_FRACTION_OF_PAPER = 1.0;
+
+    // Sweep speed: 1 screen (6s) per 6 real seconds = real-time
+    const SWEEP_TIME_SCALE = 1.0;
+
+    // Canvases
+    const paperCanvas = document.getElementById("ecgPaper");
+    const paperCtx = paperCanvas.getContext("2d");
+    const monitorCanvas = document.getElementById("ecgMonitor");
+    const monitorCtx = monitorCanvas.getContext("2d");
+
+    // UI
+    const elHr = document.getElementById("hr");
+    const elRate = document.getElementById("pacerRate");
+    const elSens = document.getElementById("sens");
+    const elOut = document.getElementById("out");
+    const elReg = document.getElementById("regularity");
+    const elAsync = document.getElementById("async");
+    const elSeed = document.getElementById("seed");
+
+    const statusLen = document.getElementById("statusLen");
+    const statusRange = document.getElementById("statusRange");
+    const statusBeat = document.getElementById("statusBeat");
+
+    // -------------------------
+    // Canvas sizing
+    // -------------------------
+    function setCanvasSize(canvas, cssW, cssH) {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.style.width = cssW + "px";
+      canvas.style.height = cssH + "px";
+      canvas.width = Math.floor(cssW * dpr);
+      canvas.height = Math.floor(cssH * dpr);
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { w: cssW, h: cssH };
+    }
+
+    function paperCssSize() {
+      const widthCss  = (VIEW_SEC / SMALL_T) * PX_PER_SMALL_BOX;         // 6s window
+      const heightCss = ((Y_MAX - Y_MIN) / SMALL_A) * PX_PER_SMALL_BOX;  // -1..1 mV
+      return { widthCss, heightCss };
+    }
+
+    function sizePaperCanvas() {
+      const { widthCss, heightCss } = paperCssSize();
+      setCanvasSize(paperCanvas, widthCss, heightCss);
+    }
+
+    function sizeMonitorCanvas() {
+      const { widthCss, heightCss } = paperCssSize();
+      const containerW = Math.min(MONITOR_W, document.querySelector(".canvasWrap").clientWidth - 18);
+      const w = Math.max(600, containerW);
+      const h = Math.round(heightCss * MONITOR_H_FRACTION_OF_PAPER);
+      setCanvasSize(monitorCanvas, w, h);
+    }
+
+    // -------------------------
+    // Paper drawing
+    // -------------------------
+    function drawPaperGrid(sensitivity) {
+      const w = paperCanvas.clientWidth;
+      const h = paperCanvas.clientHeight;
+
+      paperCtx.clearRect(0, 0, w, h);
+      paperCtx.fillStyle = "#ffffff";
+      paperCtx.fillRect(0, 0, w, h);
+
+      const X = (t) => (t / VIEW_SEC) * w;
+      const Y = (v) => h - ((v - Y_MIN) / (Y_MAX - Y_MIN)) * h;
+
+      for (let t = 0; t <= VIEW_SEC + 1e-9; t += SMALL_T) {
+        const isBig = Math.abs((t / BIG_T) - Math.round(t / BIG_T)) < 1e-6;
+        paperCtx.beginPath();
+        paperCtx.strokeStyle = isBig ? "rgba(255,0,0,0.70)" : "rgba(255,0,0,0.30)";
+        paperCtx.lineWidth = isBig ? 1.5 : 1.0;
+        paperCtx.moveTo(X(t), 0);
+        paperCtx.lineTo(X(t), h);
+        paperCtx.stroke();
+      }
+
+      for (let v = -1.5; v <= 1.5 + 1e-9; v += SMALL_A) {
+        const isBig = Math.abs((v / BIG_A) - Math.round(v / BIG_A)) < 1e-6;
+        paperCtx.beginPath();
+        paperCtx.strokeStyle = isBig ? "rgba(255,0,0,0.70)" : "rgba(255,0,0,0.30)";
+        paperCtx.lineWidth = isBig ? 1.5 : 1.0;
+        paperCtx.moveTo(0, Y(v));
+        paperCtx.lineTo(w, Y(v));
+        paperCtx.stroke();
+      }
+
+      // Sensitivity line
+      paperCtx.beginPath();
+      paperCtx.strokeStyle = "rgba(0,0,255,1)";
+      paperCtx.lineWidth = 1.5;
+      paperCtx.moveTo(0, Y(sensitivity));
+      paperCtx.lineTo(w, Y(sensitivity));
+      paperCtx.stroke();
+    }
+
+    // -------------------------
+    // Sampling helpers
+    // -------------------------
+    // Binary search: first index with x[i] >= val
+    function lowerBound(arr, val) {
+      let lo = 0, hi = arr.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (arr[mid] < val) lo = mid + 1;
+        else hi = mid;
+      }
+      return lo;
+    }
+
+    function sampleStripLinear(strip, t) {
+      const x = strip.x, y = strip.y;
+      const n = x.length;
+      if (n === 0) return 0;
+      if (t <= x[0]) return y[0];
+      if (t >= x[n - 1]) return y[n - 1];
+
+      const i = lowerBound(x, t);
+      if (i <= 0) return y[0];
+      const x0 = x[i - 1], x1 = x[i];
+      const y0 = y[i - 1], y1 = y[i];
+      const a = (t - x0) / (x1 - x0 || 1e-9);
+      return y0 + a * (y1 - y0);
+    }
+
+    function drawWaveWindow(ctx, canvas, strip, tLeft, tRight, strokeStyle, lineWidth) {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+
+      const X = (t) => ((t - tLeft) / (tRight - tLeft)) * w;
+      const Y = (v) => h - ((v - Y_MIN) / (Y_MAX - Y_MIN)) * h;
+
+      const i0 = lowerBound(strip.x, tLeft);
+      const i1 = lowerBound(strip.x, tRight);
+      if (i1 - i0 < 2) return;
+
+      ctx.beginPath();
+      ctx.strokeStyle = strokeStyle;
+      ctx.lineWidth = lineWidth;
+
+      ctx.moveTo(X(strip.x[i0]), Y(strip.y[i0]));
+      for (let i = i0 + 1; i < i1; i++) ctx.lineTo(X(strip.x[i]), Y(strip.y[i]));
+      ctx.stroke();
+    }
+
+    // -------------------------
+    // Simulation state
+    // -------------------------
+    let stripPaper = null; // static paper plot
+    let stripLive = null;  // used for monitor writing; refreshed on parameter change
+
+    function generateStripFromUI(iterations) {
+      const patientHR = Number(elHr.value);
+      const rate = Number(elRate.value);
+      const sensitivity = Number(elSens.value);
+      const output = Number(elOut.value);
+      const regularity = elReg.value;
+      const asynchronous = (elAsync.value === "true");
+      const seedRaw = elSeed.value.trim();
+      const seed = seedRaw === "" ? null : Number(seedRaw);
+
+      return stitchBeats({
+        patientHR,
+        regularity,
+        sensitivity,
+        rate,
+        output,
+        asynchronous,
+        iterations,
+        seed
+      });
+    }
+
+    function updateStatus(stripObj) {
+      if (!stripObj) return;
+
+      statusLen.textContent = `samples: ${stripObj.x.length}`;
+      const t0 = stripObj.x[0];
+      const t1 = stripObj.x[stripObj.x.length - 1];
+
+      let yMin = Infinity, yMax = -Infinity;
+      for (let i = 0; i < stripObj.y.length; i++) {
+        if (stripObj.y[i] < yMin) yMin = stripObj.y[i];
+        if (stripObj.y[i] > yMax) yMax = stripObj.y[i];
+      }
+      statusRange.textContent = `t: ${t0.toFixed(2)}–${t1.toFixed(2)} s, y: ${yMin.toFixed(2)}–${yMax.toFixed(2)} mV`;
+
+      const paced = stripObj.beatList.filter(b => b === "Ventricular pacing").length;
+      statusBeat.textContent = `beats: ${stripObj.beatList.length} (paced: ${paced})`;
+    }
+
+    // -------------------------
+    // Monitor write-sweep buffer with crack-free generations
+    // -------------------------
+    let monitorY = [];
+    let monitorWritten = [];
+    let monitorGen = [];
+    let currentGen = 1;
+
+    let playing = true;
+    let sweepX = 0;
+    let lastTs = null;
+
+    function resetMonitorBuffer(keepExisting = false) {
+      const w = monitorCanvas.clientWidth;
+
+      if (!keepExisting || monitorY.length !== w) {
+        monitorY = new Array(w).fill(NaN);
+        monitorWritten = new Array(w).fill(false);
+        monitorGen = new Array(w).fill(0);
+      }
+
+      sweepX = Math.min(sweepX, w - 1);
+    }
+
+    function drawMonitorBackground() {
+      const w = monitorCanvas.clientWidth;
+      const h = monitorCanvas.clientHeight;
+
+      monitorCtx.clearRect(0, 0, w, h);
+      monitorCtx.fillStyle = "#000000";
+      monitorCtx.fillRect(0, 0, w, h);
+
+      // faint baseline
+      monitorCtx.globalAlpha = 0.12;
+      monitorCtx.strokeStyle = "#ffffff";
+      monitorCtx.lineWidth = 1;
+      monitorCtx.beginPath();
+      monitorCtx.moveTo(0, h / 2);
+      monitorCtx.lineTo(w, h / 2);
+      monitorCtx.stroke();
+      monitorCtx.globalAlpha = 1;
+    }
+
+    function yToMonitorPx(yVal) {
+      // EXACT SAME amplitude mapping as paper: -1..+1 spans full height.
+      const h = monitorCanvas.clientHeight;
+      return h - ((yVal - Y_MIN) / (Y_MAX - Y_MIN)) * h;
+    }
+
+    function ensureLiveStripLongEnough() {
+      if (!stripLive) return;
+      const tEnd = stripLive.x[stripLive.x.length - 1];
+      if (tEnd >= VIEW_SEC * 8) return;
+      stripLive = generateStripFromUI(90);
+      updateStatus(stripLive);
+    }
+
+    function writeSamplesUnderSweep(dtSec) {
+      if (!stripLive) return;
+      ensureLiveStripLongEnough();
+
+      const w = monitorCanvas.clientWidth;
+      const pxPerSec = (w / VIEW_SEC) * SWEEP_TIME_SCALE;
+      const advance = pxPerSec * dtSec;
+
+      const oldX = sweepX;
+      let newX = sweepX + advance;
+
+      const wrapped = newX >= w;
+      if (wrapped) newX = newX % w;
+
+      const segments = [];
+      if (!wrapped) segments.push([oldX, newX]);
+      else {
+        segments.push([oldX, w]);
+        segments.push([0, newX]);
+      }
+
+      for (const [a, b] of segments) {
+        const startCol = Math.max(0, Math.floor(a));
+        const endCol = Math.min(w, Math.ceil(b));
+
+        for (let col = startCol; col < endCol; col++) {
+          // screen time is 0..6 seconds across the monitor width
+          const tScreen = (col / Math.max(1, (w - 1))) * VIEW_SEC;
+
+          // sample stripLive at time modulo its length so it repeats smoothly
+          const tEnd = stripLive.x[stripLive.x.length - 1];
+          const tSample = (tEnd > 0) ? (tScreen % tEnd) : tScreen;
+
+          const yVal = sampleStripLinear(stripLive, tSample);
+
+          monitorY[col] = yVal;
+          monitorWritten[col] = true;
+          monitorGen[col] = currentGen;
+        }
+      }
+
+      sweepX = newX;
+    }
+
+    function renderMonitor() {
+      const w = monitorCanvas.clientWidth;
+      const h = monitorCanvas.clientHeight;
+
+      drawMonitorBackground();
+
+      // waveform, crack-free: only connect adjacent points of SAME generation
+      monitorCtx.strokeStyle = "#33ff66";
+      monitorCtx.lineWidth = 2;
+      monitorCtx.beginPath();
+
+      for (let col = 0; col < w; col++) {
+        if (!monitorWritten[col] || !Number.isFinite(monitorY[col])) continue;
+
+        const prevOk =
+          col > 0 &&
+          monitorWritten[col - 1] &&
+          Number.isFinite(monitorY[col - 1]) &&
+          monitorGen[col - 1] === monitorGen[col];
+
+        const xPx = col + 0.5;
+        const yPx = yToMonitorPx(monitorY[col]);
+
+        if (!prevOk) monitorCtx.moveTo(xPx, yPx);
+        else monitorCtx.lineTo(xPx, yPx);
+      }
+      monitorCtx.stroke();
+
+      // sweep bar (vertical)
+      monitorCtx.strokeStyle = "rgba(51,255,102,0.95)";
+      monitorCtx.lineWidth = 2;
+      monitorCtx.beginPath();
+      monitorCtx.moveTo(sweepX, 0);
+      monitorCtx.lineTo(sweepX, h);
+      monitorCtx.stroke();
+
+      // glow
+      monitorCtx.strokeStyle = "rgba(51,255,102,0.18)";
+      monitorCtx.lineWidth = 10;
+      monitorCtx.beginPath();
+      monitorCtx.moveTo(sweepX, 0);
+      monitorCtx.lineTo(sweepX, h);
+      monitorCtx.stroke();
+    }
+
+    // -------------------------
+    // Paper render
+    // -------------------------
+    function renderPaper() {
+      if (!stripPaper) return;
+      const sensitivity = Number(elSens.value);
+      drawPaperGrid(sensitivity);
+      drawWaveWindow(paperCtx, paperCanvas, stripPaper, 0, VIEW_SEC, "#000000", 2);
+    }
+
+    // -------------------------
+    // Parameter change behavior (no clearing monitor)
+    // -------------------------
+    function refreshLiveStripOnly() {
+      currentGen++;                   // prevents connecting old -> new
+      stripLive = generateStripFromUI(70);
+      updateStatus(stripLive);
+
+      // Keep paper in sync (optional)
+      stripPaper = generateStripFromUI(50);
+      renderPaper();
+    }
+
+    // -------------------------
+    // Animation loop
+    // -------------------------
+    function animate(ts) {
+      if (!playing) return;
+
+      if (lastTs == null) lastTs = ts;
+      const dt = (ts - lastTs) / 1000;
+      lastTs = ts;
+
+      writeSamplesUnderSweep(dt);
+      renderMonitor();
+
+      requestAnimationFrame(animate);
+    }
+
+    // -------------------------
+    // Controls
+    // -------------------------
+    document.getElementById("gen").addEventListener("click", () => {
+      // Regenerate both, but DO NOT clear monitor buffer
+      stripPaper = generateStripFromUI(50);
+      stripLive  = generateStripFromUI(70);
+      updateStatus(stripLive);
+      renderPaper();
+      currentGen++; // treat as a new generation to avoid bridging if the sweep is mid-screen
+    });
+
+    document.getElementById("play").addEventListener("click", () => {
+      playing = !playing;
+      if (playing) {
+        lastTs = null;
+        requestAnimationFrame(animate);
+      }
+    });
+
+    [elHr, elRate, elSens, elOut, elReg, elAsync, elSeed].forEach(el => {
+      el.addEventListener("change", refreshLiveStripOnly);
+    });
+
+    function onResize() {
+      sizePaperCanvas();
+      sizeMonitorCanvas();
+
+      // Resize monitor buffers, resampling existing points so we don't wipe history
+      const newW = monitorCanvas.clientWidth;
+      if (monitorY.length && monitorY.length !== newW) {
+        const oldY = monitorY, oldW = oldY.length;
+        const oldWritten = monitorWritten;
+        const oldGen = monitorGen;
+
+        monitorY = new Array(newW).fill(NaN);
+        monitorWritten = new Array(newW).fill(false);
+        monitorGen = new Array(newW).fill(0);
+
+        for (let col = 0; col < newW; col++) {
+          const u = col / Math.max(1, newW - 1);
+          const oldCol = Math.round(u * (oldW - 1));
+          monitorY[col] = oldY[oldCol];
+          monitorWritten[col] = oldWritten[oldCol];
+          monitorGen[col] = oldGen[oldCol];
+        }
+        sweepX = Math.min(sweepX, newW - 1);
+      } else if (!monitorY.length) {
+        resetMonitorBuffer(false);
+      }
+
+      renderPaper();
+      renderMonitor();
+    }
+    window.addEventListener("resize", onResize);
+
+    // -------------------------
+    // Init
+    // -------------------------
+    sizePaperCanvas();
+    sizeMonitorCanvas();
+
+    stripPaper = generateStripFromUI(50);
+    stripLive  = generateStripFromUI(70);
+    updateStatus(stripLive);
+
+    renderPaper();
+
+    resetMonitorBuffer(false);
+    renderMonitor();
+
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

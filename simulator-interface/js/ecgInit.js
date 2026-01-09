@@ -1,4 +1,4 @@
-import { LiveECGEngine } from "./ecgEngine.js";
+import { LiveECGEngine } from "../ecg/ecgEngine.js";
 
 let engine = null;
 
