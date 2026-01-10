@@ -1,5 +1,7 @@
 import { stitchBeats } from './ecgStitcher.js';
 import { thirdDegHeartBlock } from './ecgThirdDegree.js';
+import { mobitzTypeII } from './ecgMobitz2.js';
+import { slowConduction } from './ecgSlowConduction.js';
 import { createHeartRateEngine } from '../js/heartRateEngine.js';
 import { defaultSettings } from '../js/settingsPanel.js';
 
@@ -7,7 +9,8 @@ const ASYNC_SENSITIVITY_THRESHOLD = 20;
 const DEFAULT_PARAMS = {
     rate: 70,
     output: 1.5,
-    sensitivity: 2.0
+    sensitivity: 2.0,
+    power: true
 };
 
 const SMALL_T = 0.04;
@@ -17,8 +20,11 @@ const BIG_A = 1.0;
 const VIEW_SEC = 6;
 const Y_MIN = -1;
 const Y_MAX = 1;
-const PX_PER_SMALL_BOX = 8;
+const VERTICAL_SCALE = 1.6;
+const PX_PER_SMALL_BOX = 6;
 const SWEEP_TIME_SCALE = 1.0;
+const R_Y_MIN = Y_MIN * VERTICAL_SCALE;
+const R_Y_MAX = Y_MAX * VERTICAL_SCALE;
 
 const TRACE_COLORS = {
     black: '#0b0b0b',
@@ -36,6 +42,8 @@ function initEcgEngine() {
     const overlay = frame?.querySelector('.ecg-overlay');
     const hrValue = document.getElementById('hrValue');
     const paceMode = document.getElementById('paceMode');
+    const paceLed = document.getElementById('paceLed');
+    const senseLed = document.getElementById('senseLed');
     const shell = frame?.closest('.ecg-shell');
     const calibrationInline = frame?.querySelector('.calibration-inline');
     const calibrationValue = calibrationInline?.querySelector('.calibration-value');
@@ -60,6 +68,7 @@ function initEcgEngine() {
         monitorWritten: [],
         lastTimestamp: null,
         playbackTime: 0,
+        eventSchedule: [],
         lastCanvasSize: { width: 0, height: 0 },
         muted: false,
         paused: false,
@@ -142,7 +151,7 @@ function initEcgEngine() {
 
     const paperCssSize = () => {
         const widthCss = (VIEW_SEC / SMALL_T) * PX_PER_SMALL_BOX;
-        const heightCss = ((Y_MAX - Y_MIN) / SMALL_A) * PX_PER_SMALL_BOX;
+        const heightCss = ((Y_MAX - Y_MIN) / SMALL_A) * PX_PER_SMALL_BOX * VERTICAL_SCALE;
         return { widthCss, heightCss };
     };
 
@@ -263,6 +272,28 @@ function initEcgEngine() {
             });
         }
 
+        if (state.scenarioId === 'Mobitz2') {
+            return mobitzTypeII({
+                iterations,
+                sensitivity: state.params.sensitivity,
+                output: state.params.output,
+                rate: state.params.rate,
+                patientHR,
+                asynchronous
+            });
+        }
+
+        if (state.scenarioId === 'SlowConduction') {
+            return slowConduction({
+                iterations,
+                sensitivity: state.params.sensitivity,
+                output: state.params.output,
+                rate: state.params.rate,
+                patientHR,
+                asynchronous
+            });
+        }
+
         return stitchBeats({
             patientHR,
             sensitivity: state.params.sensitivity,
@@ -276,6 +307,7 @@ function initEcgEngine() {
     const refreshStrips = () => {
         state.stripPaper = generateStripFromParams(60);
         state.stripLive = generateStripFromParams(80);
+        state.eventSchedule = buildEventSchedule(state.stripLive);
         state.needsRegenerate = false;
     };
 
@@ -288,7 +320,7 @@ function initEcgEngine() {
         ctx.fillRect(0, 0, width, height);
 
         const X = (t) => (t / VIEW_SEC) * width;
-        const Y = (v) => height - ((v - Y_MIN) / (Y_MAX - Y_MIN)) * height;
+        const Y = (v) => height - ((v - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * height;
 
         for (let t = 0; t <= VIEW_SEC + 1e-9; t += SMALL_T) {
             const isBig = Math.abs((t / BIG_T) - Math.round(t / BIG_T)) < 1e-6;
@@ -300,7 +332,7 @@ function initEcgEngine() {
             ctx.stroke();
         }
 
-        for (let v = -1.5; v <= 1.5 + 1e-9; v += SMALL_A) {
+        for (let v = R_Y_MIN; v <= R_Y_MAX + 1e-9; v += SMALL_A) {
             const isBig = Math.abs((v / BIG_A) - Math.round(v / BIG_A)) < 1e-6;
             ctx.beginPath();
             ctx.strokeStyle = isBig ? 'rgba(255, 0, 0, 0.70)' : 'rgba(255, 0, 0, 0.30)';
@@ -335,7 +367,7 @@ function initEcgEngine() {
         if (!state.settings.gridlines) return;
 
         const X = (t) => (t / VIEW_SEC) * width;
-        const Y = (v) => height - ((v - Y_MIN) / (Y_MAX - Y_MIN)) * height;
+        const Y = (v) => height - ((v - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * height;
         const smallAlpha = 0.12 * intensity;
         const bigAlpha = 0.32 * intensity;
 
@@ -349,7 +381,7 @@ function initEcgEngine() {
             ctx.stroke();
         }
 
-        for (let v = -1.5; v <= 1.5 + 1e-9; v += smallA) {
+        for (let v = R_Y_MIN; v <= R_Y_MAX + 1e-9; v += smallA) {
             const isBig = Math.abs((v / bigA) - Math.round(v / bigA)) < 1e-6;
             ctx.beginPath();
             ctx.strokeStyle = isBig ? `rgba(56, 189, 248, ${bigAlpha})` : `rgba(56, 189, 248, ${smallAlpha})`;
@@ -371,7 +403,65 @@ function initEcgEngine() {
 
     const yToCanvasPx = (value) => {
         const height = canvas.clientHeight || state.lastCanvasSize.height || 1;
-        return height - ((value - Y_MIN) / (Y_MAX - Y_MIN)) * height;
+        return height - ((value - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * height;
+    };
+
+    const buildEventSchedule = (strip) => {
+        const schedule = [];
+        const events = strip?.events;
+        if (!events) return schedule;
+
+        (events.pace ?? []).forEach((time) => {
+            if (Number.isFinite(time)) schedule.push({ time, kind: 'pace' });
+        });
+        (events.sense ?? []).forEach((time) => {
+            if (Number.isFinite(time)) schedule.push({ time, kind: 'sense' });
+        });
+
+        schedule.sort((a, b) => a.time - b.time);
+        return schedule;
+    };
+
+    const flashLed = (kind) => {
+        if (state.params.power === false) return;
+        const led = kind === 'pace' ? paceLed : senseLed;
+        if (!led) return;
+        led.classList.add('led-on');
+        setTimeout(() => {
+            led.classList.remove('led-on');
+        }, 180);
+
+        window.dispatchEvent(
+            new CustomEvent('edupace-led-flash', {
+                detail: {
+                    kind,
+                    source: 'simulation',
+                    at: new Date().toISOString()
+                }
+            })
+        );
+    };
+
+    const dispatchLedEvents = (startTime, endTime) => {
+        if (!state.eventSchedule.length || !state.stripLive?.x?.length) return;
+        const tEnd = state.stripLive.x[state.stripLive.x.length - 1];
+        if (!Number.isFinite(tEnd) || tEnd <= 0) return;
+        if (startTime === endTime) return;
+
+        const mod = (value) => ((value % tEnd) + tEnd) % tEnd;
+        const start = mod(startTime);
+        const end = mod(endTime);
+        const wrapped = end < start;
+
+        state.eventSchedule.forEach((event) => {
+            if (!Number.isFinite(event.time)) return;
+            const inRange = wrapped
+                ? event.time > start || event.time <= end
+                : event.time > start && event.time <= end;
+            if (inRange) {
+                flashLed(event.kind);
+            }
+        });
     };
 
     const ensureLiveStripLongEnough = () => {
@@ -379,9 +469,10 @@ function initEcgEngine() {
         const tEnd = state.stripLive.x[state.stripLive.x.length - 1];
         if (tEnd >= VIEW_SEC * 8) return;
         state.stripLive = generateStripFromParams(120);
+        state.eventSchedule = buildEventSchedule(state.stripLive);
     };
 
-    const writeSamplesUnderSweep = (dtSec) => {
+    const writeSamplesUnderSweep = (dtSec, previousPlaybackTime) => {
         if (!state.stripLive || !state.stripLive.x.length) return;
         ensureLiveStripLongEnough();
 
@@ -428,6 +519,7 @@ function initEcgEngine() {
             }
         }
 
+        dispatchLedEvents(previousPlaybackTime, state.playbackTime);
         state.sweepX = newX;
     };
 
@@ -507,9 +599,10 @@ function initEcgEngine() {
 
         const dt = state.paused ? 0 : (timestamp - state.lastTimestamp) / 1000;
         state.lastTimestamp = timestamp;
+        const previousPlaybackTime = state.playbackTime;
         state.playbackTime += dt;
         if (!state.paused) {
-            writeSamplesUnderSweep(dt);
+            writeSamplesUnderSweep(dt, previousPlaybackTime);
         }
         renderMonitor();
         requestAnimationFrame(render);
@@ -609,6 +702,7 @@ function initEcgEngine() {
         if (Number.isFinite(detail.rate)) state.params.rate = detail.rate;
         if (Number.isFinite(detail.output)) state.params.output = detail.output;
         if (Number.isFinite(detail.sensitivity)) state.params.sensitivity = detail.sensitivity;
+        if (typeof detail.power === 'boolean') state.params.power = detail.power;
         if (paceMode) {
             paceMode.textContent = getAsyncMode() ? 'ASYNC' : 'VVI';
         }

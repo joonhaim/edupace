@@ -19,6 +19,23 @@ function maxAbs(arr) {
   }
   return m;
 }
+function indexOfMaxAbs(arr) {
+  let m = -Infinity;
+  let idx = -1;
+  for (let i = 0; i < arr.length; i++) {
+    const a = Math.abs(arr[i]);
+    if (a > m) {
+      m = a;
+      idx = i;
+    }
+  }
+  return idx;
+}
+function peakTime(xArr, yArr) {
+  const idx = indexOfMaxAbs(yArr);
+  if (idx < 0) return null;
+  return xArr[idx];
+}
 function firstIndexAbsGE(arr, thr) {
   for (let i = 0; i < arr.length; i++) if (Math.abs(arr[i]) >= thr) return i;
   return -1;
@@ -81,6 +98,17 @@ export function thirdDegHeartBlock(cfg) {
 
   // beat_list in python stores ONLY the ventricular decisions (R or paced) per cycle
   const beatList = [];
+  const paceEvents = [];
+  const senseEvents = [];
+
+  const recordPace = (xArr, yArr) => {
+    const time = peakTime(xArr, yArr);
+    if (time !== null) paceEvents.push(time);
+  };
+
+  const recordSense = (time) => {
+    if (Number.isFinite(time)) senseEvents.push(time);
+  };
 
   // output arrays
   let x = [];
@@ -150,6 +178,7 @@ export function thirdDegHeartBlock(cfg) {
       if (asynchronous) {
         if (output >= capture_threshold) {
           shiftInPlace(paced_x, max_time_since_sensed - ALIGN);
+          recordPace(paced_x, paced_y);
           storeWave(wave_num, paced_x, paced_y);
           wave_num += 1;
 
@@ -169,6 +198,7 @@ export function thirdDegHeartBlock(cfg) {
         if (time_sensed > max_time_since_sensed) {
           if (output >= capture_threshold) {
             shiftInPlace(paced_x, max_time_since_sensed - ALIGN);
+            recordPace(paced_x, paced_y);
             storeWave(wave_num, paced_x, paced_y);
             wave_num += 1;
 
@@ -178,6 +208,7 @@ export function thirdDegHeartBlock(cfg) {
           } else {
             storeWave(wave_num, Rx, Ry);
             wave_num += 1;
+            recordSense(time_sensed);
 
             offset_R = arrayMin(Rx) + RR_interval;
             time_prev_sensed = time_sensed;
@@ -186,6 +217,7 @@ export function thirdDegHeartBlock(cfg) {
         } else {
           storeWave(wave_num, Rx, Ry);
           wave_num += 1;
+          recordSense(time_sensed);
 
           offset_R = arrayMin(Rx) + RR_interval;
           time_prev_sensed = time_sensed;
@@ -197,6 +229,7 @@ export function thirdDegHeartBlock(cfg) {
         if (time_since_sensed > max_time_since_sensed) {
           if (output >= capture_threshold) {
             shiftInPlace(paced_x, max_time_since_sensed - ALIGN);
+            recordPace(paced_x, paced_y);
             storeWave(wave_num, paced_x, paced_y);
             wave_num += 1;
 
@@ -233,6 +266,7 @@ export function thirdDegHeartBlock(cfg) {
       if (asynchronous) {
         if (output >= capture_threshold) {
           shiftInPlace(paced_x, offset_async_capture);
+          recordPace(paced_x, paced_y);
           storeWave(wave_num, paced_x, paced_y);
           wave_num += 1;
 
@@ -260,6 +294,7 @@ export function thirdDegHeartBlock(cfg) {
             }
 
             shiftInPlace(paced_x, offset_paced);
+            recordPace(paced_x, paced_y);
             storeWave(wave_num, paced_x, paced_y);
             wave_num += 1;
 
@@ -270,6 +305,7 @@ export function thirdDegHeartBlock(cfg) {
           } else {
             storeWave(wave_num, Rx, Ry);
             wave_num += 1;
+            recordSense(time_sensed);
 
             offset_R = arrayMin(Rx) + RR_interval;
             time_prev_sensed = time_sensed;
@@ -279,6 +315,7 @@ export function thirdDegHeartBlock(cfg) {
         } else {
           storeWave(wave_num, Rx, Ry);
           wave_num += 1;
+          recordSense(time_sensed);
 
           offset_R = arrayMin(Rx) + RR_interval;
           time_prev_sensed = time_sensed;
@@ -299,6 +336,7 @@ export function thirdDegHeartBlock(cfg) {
             }
 
             shiftInPlace(paced_x, offset_paced);
+            recordPace(paced_x, paced_y);
             storeWave(wave_num, paced_x, paced_y);
             wave_num += 1;
 
@@ -364,5 +402,5 @@ export function thirdDegHeartBlock(cfg) {
     }
   }
 
-  return { x, y, beatList };
+  return { x, y, beatList, events: { pace: paceEvents, sense: senseEvents } };
 }

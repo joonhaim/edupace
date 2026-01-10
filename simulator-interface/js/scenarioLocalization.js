@@ -10,6 +10,16 @@ const SCENARIO_TRANSLATIONS = {
         title: 'Derdegraads AV-blok',
         description: 'Compleet AV-blok met ventriculair escape-ritme.',
         summaryLabel: 'Compleet hartblok'
+    },
+    Mobitz2: {
+        title: 'Mobitz II',
+        description: 'Intermitterend uitvallende ventriculaire slagen met vaste PR-interval.',
+        summaryLabel: 'Mobitz II-blok'
+    },
+    SlowConduction: {
+        title: 'Vertraagde geleiding',
+        description: 'Vertraagde ventriculaire geleiding met verlengde intervallen.',
+        summaryLabel: 'Vertraagde geleiding'
     }
 };
 

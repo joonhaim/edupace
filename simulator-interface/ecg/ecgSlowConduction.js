@@ -22,6 +22,23 @@ function maxAbs(arr) {
   }
   return m;
 }
+function indexOfMaxAbs(arr) {
+  let m = -Infinity;
+  let idx = -1;
+  for (let i = 0; i < arr.length; i++) {
+    const a = Math.abs(arr[i]);
+    if (a > m) {
+      m = a;
+      idx = i;
+    }
+  }
+  return idx;
+}
+function peakTime(xArr, yArr) {
+  const idx = indexOfMaxAbs(yArr);
+  if (idx < 0) return null;
+  return xArr[idx];
+}
 function firstIndexAbsGE(arr, thr) {
   for (let i = 0; i < arr.length; i++) if (Math.abs(arr[i]) >= thr) return i;
   return -1;
@@ -81,6 +98,17 @@ export function slowConduction(cfg) {
 
   let x = [];
   let y = [];
+  const paceEvents = [];
+  const senseEvents = [];
+
+  const recordPace = (xArr, yArr) => {
+    const time = peakTime(xArr, yArr);
+    if (time !== null) paceEvents.push(time);
+  };
+
+  const recordSense = (time) => {
+    if (Number.isFinite(time)) senseEvents.push(time);
+  };
 
   for (let i = 0; i < iterations; i++) {
     let { x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]);
@@ -112,6 +140,7 @@ export function slowConduction(cfg) {
 
           x = xTemp;
           y = yTemp;
+          recordPace(xTemp, yTemp);
 
           beatList.push("Ventricular pacing");
           offset = maxTimeSinceSensed + arrayMin(xTemp);
@@ -141,6 +170,7 @@ export function slowConduction(cfg) {
 
             x = xTemp;
             y = yTemp;
+            recordPace(xTemp, yTemp);
 
             beatList.push("Slow conduction");
             offset = gap + arrayMin(xTemp);
@@ -154,6 +184,7 @@ export function slowConduction(cfg) {
             offset = gap + arrayMin(xTemp);
             timePrevSensed = timeSensed;
             timeSinceSensed = 0;
+            recordSense(timeSensed);
           }
         } else {
           x = xTemp;
@@ -163,6 +194,7 @@ export function slowConduction(cfg) {
           offset = gap + arrayMin(xTemp);
           timePrevSensed = timeSensed;
           timeSinceSensed = 0;
+          recordSense(timeSensed);
         }
       } else {
         timeSinceSensed += arrayMax(xTemp);
@@ -182,6 +214,7 @@ export function slowConduction(cfg) {
 
             x = xTemp;
             y = yTemp;
+            recordPace(xTemp, yTemp);
 
             beatList.push("Slow conduction");
             offset = gap + arrayMin(xTemp);
@@ -210,6 +243,7 @@ export function slowConduction(cfg) {
 
       if (asynchronous) {
         if (output >= captureThreshold) {
+          recordPace(xTemp, yTemp);
           x = concat(x, xTemp);
           y = concat(y, yTemp);
 
@@ -248,6 +282,7 @@ export function slowConduction(cfg) {
             }
 
             shiftInPlace(xTemp, offset);
+            recordPace(xTemp, yTemp);
             x = concat(x, xTemp);
             y = concat(y, yTemp);
 
@@ -263,6 +298,7 @@ export function slowConduction(cfg) {
             offset = gap + arrayMin(xTemp);
             timePrevSensed = timeSensed;
             timeSinceSensed = 0;
+            recordSense(timeSensed);
           }
         } else {
           x = concat(x, xTemp);
@@ -272,6 +308,7 @@ export function slowConduction(cfg) {
           offset = gap + arrayMin(xTemp);
           timePrevSensed = timeSensed;
           timeSinceSensed = 0;
+          recordSense(timeSensed);
         }
       } else {
         timeSinceSensed += arrayMax(xTemp) - timePrevSensed;
@@ -297,6 +334,7 @@ export function slowConduction(cfg) {
             }
 
             shiftInPlace(xTemp, offset);
+            recordPace(xTemp, yTemp);
             x = concat(x, xTemp);
             y = concat(y, yTemp);
 
@@ -322,5 +360,5 @@ export function slowConduction(cfg) {
     }
   }
 
-  return { x, y, beatList };
+  return { x, y, beatList, events: { pace: paceEvents, sense: senseEvents } };
 }

@@ -12,5 +12,19 @@
         "description": "Complete AV block with a ventricular escape rhythm.",
         "summaryLabel": "Complete heart block",
         "category": "clinical"
+    },
+    {
+        "id": "Mobitz2",
+        "title": "Mobitz II",
+        "description": "Intermittent dropped ventricular beats with fixed PR intervals.",
+        "summaryLabel": "Mobitz II block",
+        "category": "clinical"
+    },
+    {
+        "id": "SlowConduction",
+        "title": "Slow Conduction",
+        "description": "Delayed ventricular conduction with prolonged intervals.",
+        "summaryLabel": "Slow conduction",
+        "category": "clinical"
     }
 ]

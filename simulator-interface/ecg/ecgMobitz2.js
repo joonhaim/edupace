@@ -35,6 +35,23 @@ function maxAbs(arr) {
   }
   return m;
 }
+function indexOfMaxAbs(arr) {
+  let m = -Infinity;
+  let idx = -1;
+  for (let i = 0; i < arr.length; i++) {
+    const a = Math.abs(arr[i]);
+    if (a > m) {
+      m = a;
+      idx = i;
+    }
+  }
+  return idx;
+}
+function peakTime(xArr, yArr) {
+  const idx = indexOfMaxAbs(yArr);
+  if (idx < 0) return null;
+  return xArr[idx];
+}
 function firstIndexAbsGE(arr, thr) {
   for (let i = 0; i < arr.length; i++) if (Math.abs(arr[i]) >= thr) return i;
   return -1;
@@ -100,6 +117,17 @@ export function mobitzTypeII(cfg) {
 
   let x = [];
   let y = [];
+  const paceEvents = [];
+  const senseEvents = [];
+
+  const recordPace = (xArr, yArr) => {
+    const time = peakTime(xArr, yArr);
+    if (time !== null) paceEvents.push(time);
+  };
+
+  const recordSense = (time) => {
+    if (Number.isFinite(time)) senseEvents.push(time);
+  };
 
   for (let i = 0; i < iterations; i++) {
     // Per-beat morphology
@@ -158,6 +186,7 @@ export function mobitzTypeII(cfg) {
 
           x = xTemp;
           y = yTemp;
+          recordPace(xTemp, yTemp);
 
           beatList.push("Ventricular pacing");
           offset = maxTimeSinceSensed + arrayMin(xTemp);
@@ -182,15 +211,16 @@ export function mobitzTypeII(cfg) {
             const yr = arrayMax(yTemp) - arrayMin(yTemp);
             const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
 
-            scaleInPlace(xTemp, scalingFactorX);
-            scaleInPlace(xTemp, 18.02 / 18.3);
-            scaleInPlace(yTemp, scalingFactorY2);
+          scaleInPlace(xTemp, scalingFactorX);
+          scaleInPlace(xTemp, 18.02 / 18.3);
+          scaleInPlace(yTemp, scalingFactorY2);
 
-            x = xTemp;
-            y = yTemp;
+          x = xTemp;
+          y = yTemp;
+          recordPace(xTemp, yTemp);
 
-            beatList.push(pickNextBeatType());
-            timePrevSensed = arrayMin(xTemp) + SENSE_ALIGN;
+          beatList.push(pickNextBeatType());
+          timePrevSensed = arrayMin(xTemp) + SENSE_ALIGN;
             offset = gap + timePrevSensed - OFFSET_CORR;
             timeSinceSensed = 0;
           } else {
@@ -201,6 +231,7 @@ export function mobitzTypeII(cfg) {
             offset = gap + arrayMin(xTemp);
             timePrevSensed = timeSensed;
             timeSinceSensed = 0;
+            recordSense(timeSensed);
           }
         } else {
           x = xTemp;
@@ -210,6 +241,7 @@ export function mobitzTypeII(cfg) {
           offset = gap + arrayMin(xTemp);
           timePrevSensed = timeSensed;
           timeSinceSensed = 0;
+          recordSense(timeSensed);
         }
       } else {
         // not sensed
@@ -230,6 +262,7 @@ export function mobitzTypeII(cfg) {
 
             x = xTemp;
             y = yTemp;
+            recordPace(xTemp, yTemp);
 
             beatList.push(pickNextBeatType());
             timePrevSensed = arrayMin(xTemp) + SENSE_ALIGN;
@@ -278,6 +311,7 @@ export function mobitzTypeII(cfg) {
           scaleInPlace(xTemp, 18.02 / 18.3);
           scaleInPlace(yTemp, scalingFactorY2);
           shiftInPlace(xTemp, offset);
+          recordPace(xTemp, yTemp);
 
           x = concat(x, xTemp);
           y = concat(y, yTemp);
@@ -320,6 +354,7 @@ export function mobitzTypeII(cfg) {
             }
 
             shiftInPlace(xTemp, offset);
+            recordPace(xTemp, yTemp);
             x = concat(x, xTemp);
             y = concat(y, yTemp);
 
@@ -335,6 +370,7 @@ export function mobitzTypeII(cfg) {
             offset = gap + arrayMin(xTemp);
             timePrevSensed = timeSensed;
             timeSinceSensed = 0;
+            recordSense(timeSensed);
           }
         } else {
           x = concat(x, xTemp);
@@ -344,6 +380,7 @@ export function mobitzTypeII(cfg) {
           offset = gap + arrayMin(xTemp);
           timePrevSensed = timeSensed;
           timeSinceSensed = 0;
+          recordSense(timeSensed);
         }
       } else {
         // not sensed
@@ -373,6 +410,7 @@ export function mobitzTypeII(cfg) {
             }
 
             shiftInPlace(xTemp, offset);
+            recordPace(xTemp, yTemp);
             x = concat(x, xTemp);
             y = concat(y, yTemp);
 
@@ -398,5 +436,5 @@ export function mobitzTypeII(cfg) {
     }
   }
 
-  return { x, y, beatList };
+  return { x, y, beatList, events: { pace: paceEvents, sense: senseEvents } };
 }
