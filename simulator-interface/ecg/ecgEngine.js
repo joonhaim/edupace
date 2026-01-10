@@ -9,11 +9,22 @@ const DEFAULT_PARAMS = {
     output: 1.5,
     sensitivity: 2.0
 };
+
+const SMALL_T = 0.04;
+const BIG_T = 0.2;
+const SMALL_A = 0.1;
+const BIG_A = 1.0;
+const VIEW_SEC = 6;
+const Y_MIN = -1;
+const Y_MAX = 1;
+const PX_PER_SMALL_BOX = 8;
+const SWEEP_TIME_SCALE = 1.0;
+
 const TRACE_COLORS = {
-    green: '#9ddb7f',
-    blue: '#8db8ff',
-    amber: '#ffd166',
-    white: '#f8fafc'
+    green: '#33ff66',
+    blue: '#3b82f6',
+    amber: '#f59e0b',
+    white: '#0b0b0b'
 };
 
 function initEcgEngine() {
@@ -36,11 +47,13 @@ function initEcgEngine() {
         settings: { ...defaultSettings },
         params: { ...DEFAULT_PARAMS },
         scenarioId: 'NSR',
-        waveform: { x: [], y: [] },
-        duration: 0,
-        maxAbsY: 1,
-        lastWaveTime: 0,
-        lastPlaybackTime: 0,
+        stripPaper: null,
+        stripLive: null,
+        sweepX: 0,
+        monitorY: [],
+        monitorWritten: [],
+        lastTimestamp: null,
+        playbackTime: 0,
         lastCanvasSize: { width: 0, height: 0 },
         muted: false,
         needsRegenerate: true
@@ -62,13 +75,8 @@ function initEcgEngine() {
             paceMode.textContent = getAsyncMode() ? 'ASYNC' : 'VVI';
         }
 
-        const hrColor = state.settings.hrColor ?? 'white';
-        if (hrValue && TRACE_COLORS[hrColor]) {
-            hrValue.style.color = TRACE_COLORS[hrColor];
-        }
-
         if (calibrationValue) {
-            calibrationValue.textContent = `${state.settings.amplitudeScaling} mm/mV · ${state.settings.sweepSpeed} mm/s · ${state.settings.sweepWindow} s window`;
+            calibrationValue.textContent = `${VIEW_SEC} s window · 10 mm/mV · 25 mm/s`;
         }
 
         hrEngine.setBeepMode(state.settings.qrsBeep ?? 'classic');
@@ -82,6 +90,12 @@ function initEcgEngine() {
             audioToggle.setAttribute('aria-pressed', String(state.muted));
             audioToggle.setAttribute('aria-label', state.muted ? 'Unmute QRS beep' : 'Mute QRS beep');
         }
+    };
+
+    const paperCssSize = () => {
+        const widthCss = (VIEW_SEC / SMALL_T) * PX_PER_SMALL_BOX;
+        const heightCss = ((Y_MAX - Y_MIN) / SMALL_A) * PX_PER_SMALL_BOX;
+        return { widthCss, heightCss };
     };
 
     const resizeCanvas = () => {
@@ -99,40 +113,99 @@ function initEcgEngine() {
         canvas.style.width = `${width}px`;
         canvas.style.height = `${height}px`;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        resizeMonitorBuffers();
     };
 
-    const getScaling = () => {
-        const width = state.lastCanvasSize.width || canvas.clientWidth || 1;
-        const height = state.lastCanvasSize.height || canvas.clientHeight || 1;
-        const sweepWindow = state.settings.sweepWindow || 6;
-        const sweepSpeed = state.settings.sweepSpeed || 25;
-        const totalMm = sweepWindow * sweepSpeed;
-        const pxPerMm = width / totalMm;
-        const mmPerMv = state.settings.amplitudeScaling || 10;
-        const heightMm = height / pxPerMm;
-        const rangeMv = heightMm / mmPerMv;
-        return {
-            width,
-            height,
-            sweepWindow,
-            sweepSpeed,
-            pxPerMm,
-            rangeMv,
-            yMin: -rangeMv / 2,
-            yMax: rangeMv / 2
-        };
+    const resizeMonitorBuffers = () => {
+        const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
+        if (!state.monitorY.length || state.monitorY.length !== width) {
+            const oldY = state.monitorY;
+            const oldWritten = state.monitorWritten;
+            const oldWidth = oldY.length;
+            state.monitorY = new Array(width).fill(Number.NaN);
+            state.monitorWritten = new Array(width).fill(false);
+            if (oldWidth) {
+                for (let col = 0; col < width; col++) {
+                    const u = col / Math.max(1, width - 1);
+                    const oldCol = Math.round(u * (oldWidth - 1));
+                    state.monitorY[col] = oldY[oldCol];
+                    state.monitorWritten[col] = oldWritten[oldCol];
+                }
+            }
+            state.sweepX = Math.min(state.sweepX, Math.max(0, width - 1));
+        }
     };
 
-    const generateWaveform = () => {
+    const lowerBound = (arr, val) => {
+        let lo = 0;
+        let hi = arr.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >> 1;
+            if (arr[mid] < val) lo = mid + 1;
+            else hi = mid;
+        }
+        return lo;
+    };
+
+    const sampleStripLinear = (strip, t) => {
+        const x = strip.x;
+        const y = strip.y;
+        const n = x.length;
+        if (!n) return 0;
+        if (t <= x[0]) return y[0];
+        if (t >= x[n - 1]) return y[n - 1];
+
+        const i = lowerBound(x, t);
+        if (i <= 0) return y[0];
+        const x0 = x[i - 1];
+        const x1 = x[i];
+        const y0 = y[i - 1];
+        const y1 = y[i];
+        const a = (t - x0) / (x1 - x0 || 1e-9);
+        return y0 + a * (y1 - y0);
+    };
+
+    const sampleStripPeakHold = (strip, t0, t1) => {
+        const x = strip.x;
+        const y = strip.y;
+        const n = x.length;
+        if (!n) return 0;
+
+        if (t1 <= t0) return sampleStripLinear(strip, t0);
+        const tMin = Math.max(t0, x[0]);
+        const tMax = Math.min(t1, x[n - 1]);
+        if (tMax <= tMin) return sampleStripLinear(strip, t0);
+
+        const i0 = Math.max(0, lowerBound(x, tMin) - 1);
+        const i1 = Math.min(n - 1, lowerBound(x, tMax) + 1);
+        let best = sampleStripLinear(strip, tMin);
+        let bestAbs = Math.abs(best);
+
+        for (let i = i0; i <= i1; i += 1) {
+            const v = y[i];
+            const av = Math.abs(v);
+            if (av > bestAbs) {
+                bestAbs = av;
+                best = v;
+            }
+        }
+
+        const vEnd = sampleStripLinear(strip, tMax);
+        if (Math.abs(vEnd) > bestAbs) {
+            best = vEnd;
+        }
+        return best;
+    };
+
+    const generateStripFromParams = (iterations) => {
         const intrinsicRate = Number(state.settings.intrinsicRate ?? 60);
         const regularity = state.settings.intrinsicRegularity ?? 'regular';
         const jitter = regularity === 'irregular' ? (0.85 + Math.random() * 0.3) : 1;
         const patientHR = Math.max(20, intrinsicRate * jitter);
-        const iterations = Math.max(12, Math.ceil((state.settings.sweepWindow * 2) / (60 / patientHR)));
         const asynchronous = getAsyncMode();
 
         if (state.scenarioId === 'AV3') {
-            state.waveform = thirdDegHeartBlock({
+            return thirdDegHeartBlock({
                 iterations,
                 sensitivity: state.params.sensitivity,
                 output: state.params.output,
@@ -140,190 +213,202 @@ function initEcgEngine() {
                 patientHR,
                 asynchronous
             });
-        } else {
-            state.waveform = stitchBeats({
-                patientHR,
-                sensitivity: state.params.sensitivity,
-                rate: state.params.rate,
-                output: state.params.output,
-                asynchronous,
-                iterations
-            });
         }
 
-        const x = state.waveform.x ?? [];
-        const y = state.waveform.y ?? [];
-        state.duration = x.length ? x[x.length - 1] : 0;
-        state.maxAbsY = y.reduce((max, value) => Math.max(max, Math.abs(value)), 1);
-        hrEngine.setMaxWaveAmplitude(state.maxAbsY);
-        state.lastWaveTime = 0;
-        state.lastPlaybackTime = 0;
-        hrEngine.reset();
+        return stitchBeats({
+            patientHR,
+            sensitivity: state.params.sensitivity,
+            rate: state.params.rate,
+            output: state.params.output,
+            asynchronous,
+            iterations
+        });
     };
 
-    const findIndexAtTime = (arr, t) => {
-        let low = 0;
-        let high = arr.length;
-        while (low < high) {
-            const mid = (low + high) >> 1;
-            if (arr[mid] < t) {
-                low = mid + 1;
-            } else {
-                high = mid;
-            }
-        }
-        return low;
+    const refreshStrips = () => {
+        state.stripPaper = generateStripFromParams(60);
+        state.stripLive = generateStripFromParams(80);
+        state.needsRegenerate = false;
     };
 
-    const processSamples = (previousWaveTime, currentWaveTime, playbackTime) => {
-        const { x, y } = state.waveform;
-        if (!x.length || !y.length || state.duration <= 0) return;
+    const drawPaperGrid = (sensitivity) => {
+        const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
+        const height = canvas.clientHeight || state.lastCanvasSize.height || 1;
 
-        const processRange = (start, end, timeMapper) => {
-            let idx = findIndexAtTime(x, start);
-            while (idx < x.length && x[idx] <= end) {
-                const timeSeconds = timeMapper(x[idx]);
-                hrEngine.processSample(timeSeconds, y[idx]);
-                idx += 1;
-            }
-        };
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
 
-        if (currentWaveTime >= previousWaveTime) {
-            processRange(previousWaveTime, currentWaveTime, (sampleX) => playbackTime - (currentWaveTime - sampleX));
-        } else {
-            processRange(previousWaveTime, state.duration, (sampleX) => playbackTime - (currentWaveTime + (state.duration - sampleX)));
-            processRange(0, currentWaveTime, (sampleX) => playbackTime - (currentWaveTime - sampleX));
-        }
-    };
+        const X = (t) => (t / VIEW_SEC) * width;
+        const Y = (v) => height - ((v - Y_MIN) / (Y_MAX - Y_MIN)) * height;
 
-    const drawGrid = (scale) => {
-        if (!state.settings.gridlines) return;
-
-        const smallMm = state.settings.gridDensity === '2mm' ? 2 : 1;
-        const bigMm = smallMm * 5;
-        const smallX = smallMm * scale.pxPerMm;
-        const bigX = bigMm * scale.pxPerMm;
-        const smallY = smallMm * scale.pxPerMm;
-        const bigY = bigMm * scale.pxPerMm;
-
-        const intensity = Math.min(Math.max(state.settings.gridIntensity ?? 55, 0), 100) / 100;
-        const minorAlpha = 0.16 * intensity;
-        const majorAlpha = 0.32 * intensity;
-
-        for (let x = 0; x <= scale.width + 0.5; x += smallX) {
-            const isMajor = Math.abs((x / bigX) - Math.round(x / bigX)) < 0.01;
+        for (let t = 0; t <= VIEW_SEC + 1e-9; t += SMALL_T) {
+            const isBig = Math.abs((t / BIG_T) - Math.round(t / BIG_T)) < 1e-6;
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(255, 255, 255, ${isMajor ? majorAlpha : minorAlpha})`;
-            ctx.lineWidth = isMajor ? 1.2 : 0.8;
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, scale.height);
+            ctx.strokeStyle = isBig ? 'rgba(255, 0, 0, 0.70)' : 'rgba(255, 0, 0, 0.30)';
+            ctx.lineWidth = isBig ? 1.5 : 1.0;
+            ctx.moveTo(X(t), 0);
+            ctx.lineTo(X(t), height);
             ctx.stroke();
         }
 
-        for (let y = 0; y <= scale.height + 0.5; y += smallY) {
-            const isMajor = Math.abs((y / bigY) - Math.round(y / bigY)) < 0.01;
+        for (let v = -1.5; v <= 1.5 + 1e-9; v += SMALL_A) {
+            const isBig = Math.abs((v / BIG_A) - Math.round(v / BIG_A)) < 1e-6;
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(255, 255, 255, ${isMajor ? majorAlpha : minorAlpha})`;
-            ctx.lineWidth = isMajor ? 1.2 : 0.8;
-            ctx.moveTo(0, y);
-            ctx.lineTo(scale.width, y);
+            ctx.strokeStyle = isBig ? 'rgba(255, 0, 0, 0.70)' : 'rgba(255, 0, 0, 0.30)';
+            ctx.lineWidth = isBig ? 1.5 : 1.0;
+            ctx.moveTo(0, Y(v));
+            ctx.lineTo(width, Y(v));
             ctx.stroke();
         }
-    };
 
-    const drawSensitivityGuide = (scale) => {
-        if (!state.settings.sensitivityGuide || !Number.isFinite(state.params.sensitivity)) return;
-        const value = state.params.sensitivity;
-        if (value <= scale.yMin || value >= scale.yMax) return;
-
-        const y = scale.height - ((value - scale.yMin) / (scale.yMax - scale.yMin)) * scale.height;
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(141, 184, 255, 0.6)';
-        ctx.lineWidth = 1.2;
-        ctx.setLineDash([6, 6]);
-        ctx.moveTo(0, y);
-        ctx.lineTo(scale.width, y);
+        ctx.strokeStyle = 'rgba(0, 0, 255, 1)';
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(0, Y(sensitivity));
+        ctx.lineTo(width, Y(sensitivity));
         ctx.stroke();
-        ctx.setLineDash([]);
     };
 
-    const drawWaveform = (waveTime) => {
-        const { x, y } = state.waveform;
-        if (!x.length || !y.length || state.duration <= 0) return;
+    const yToCanvasPx = (value) => {
+        const height = canvas.clientHeight || state.lastCanvasSize.height || 1;
+        return height - ((value - Y_MIN) / (Y_MAX - Y_MIN)) * height;
+    };
 
-        const scale = getScaling();
-        const windowSize = scale.sweepWindow;
-        const segmentStart = (waveTime - windowSize + state.duration) % state.duration;
-        const segmentEnd = segmentStart + windowSize;
-        const toY = (value) =>
-            scale.height - ((value - scale.yMin) / (scale.yMax - scale.yMin)) * scale.height;
+    const ensureLiveStripLongEnough = () => {
+        if (!state.stripLive || !state.stripLive.x.length) return;
+        const tEnd = state.stripLive.x[state.stripLive.x.length - 1];
+        if (tEnd >= VIEW_SEC * 8) return;
+        state.stripLive = generateStripFromParams(120);
+    };
 
-        ctx.clearRect(0, 0, scale.width, scale.height);
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, scale.width, scale.height);
-        drawGrid(scale);
-        drawSensitivityGuide(scale);
+    const writeSamplesUnderSweep = (dtSec) => {
+        if (!state.stripLive || !state.stripLive.x.length) return;
+        ensureLiveStripLongEnough();
 
-        ctx.beginPath();
-        let started = false;
-        const drawRange = (start, end, offsetSeconds) => {
-            let idx = findIndexAtTime(x, start);
-            while (idx < x.length && x[idx] <= end) {
-                const t = x[idx] + offsetSeconds;
-                const px = ((t - segmentStart + state.duration) % state.duration) / windowSize * scale.width;
-                const py = toY(y[idx]);
-                if (!started) {
-                    ctx.moveTo(px, py);
-                    started = true;
-                } else {
-                    ctx.lineTo(px, py);
-                }
-                idx += 1;
-            }
-        };
+        const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
+        const pxPerSec = (width / VIEW_SEC) * SWEEP_TIME_SCALE;
+        const advance = pxPerSec * dtSec;
+        const oldX = state.sweepX;
+        let newX = state.sweepX + advance;
+        const wrapped = newX >= width;
+        if (wrapped) newX = newX % width;
 
-        if (segmentEnd <= state.duration) {
-            drawRange(segmentStart, segmentEnd, 0);
+        const segments = [];
+        if (!wrapped) {
+            segments.push([oldX, newX]);
         } else {
-            drawRange(segmentStart, state.duration, 0);
-            drawRange(0, segmentEnd - state.duration, state.duration);
+            segments.push([oldX, width]);
+            segments.push([0, newX]);
         }
+
+        for (const [start, end] of segments) {
+            const startCol = Math.max(0, Math.floor(start));
+            const endCol = Math.min(width, Math.ceil(end));
+            for (let col = startCol; col < endCol; col += 1) {
+                const tEnd = state.stripLive.x[state.stripLive.x.length - 1] || VIEW_SEC;
+                const t0 = (col / Math.max(1, width - 1)) * VIEW_SEC;
+                const t1 = ((col + 1) / Math.max(1, width - 1)) * VIEW_SEC;
+                const a = ((t0 % tEnd) + tEnd) % tEnd;
+                const b = ((t1 % tEnd) + tEnd) % tEnd;
+
+                let yVal;
+                if (b >= a) {
+                    yVal = sampleStripPeakHold(state.stripLive, a, b);
+                } else {
+                    const v1 = sampleStripPeakHold(state.stripLive, a, tEnd);
+                    const v2 = sampleStripPeakHold(state.stripLive, 0, b);
+                    yVal = Math.abs(v1) >= Math.abs(v2) ? v1 : v2;
+                }
+
+                state.monitorY[col] = yVal;
+                state.monitorWritten[col] = true;
+                const timeSeconds = state.playbackTime - ((end - col) / pxPerSec);
+                hrEngine.processSample(timeSeconds, yVal);
+            }
+        }
+
+        state.sweepX = newX;
+    };
+
+    const renderMonitor = () => {
+        const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
+        const height = canvas.clientHeight || state.lastCanvasSize.height || 1;
+
+        drawPaperGrid(state.params.sensitivity);
 
         const traceColor = TRACE_COLORS[state.settings.traceColor] ?? TRACE_COLORS.green;
-        const thickness = state.settings.traceThickness ?? 'normal';
         ctx.strokeStyle = traceColor;
-        ctx.lineWidth = thickness === 'thick' ? 2.6 : thickness === 'thin' ? 1.2 : 1.8;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        let started = false;
+        for (let col = 0; col < width; col += 1) {
+            if (!state.monitorWritten[col] || !Number.isFinite(state.monitorY[col])) {
+                started = false;
+                continue;
+            }
+            const xPx = col + 0.5;
+            const yPx = yToCanvasPx(state.monitorY[col]);
+            if (!started) {
+                ctx.moveTo(xPx, yPx);
+                started = true;
+            } else {
+                ctx.lineTo(xPx, yPx);
+            }
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(51, 255, 102, 0.95)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(state.sweepX, 0);
+        ctx.lineTo(state.sweepX, height);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(51, 255, 102, 0.18)';
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.moveTo(state.sweepX, 0);
+        ctx.lineTo(state.sweepX, height);
         ctx.stroke();
     };
 
     const render = (timestamp) => {
         resizeCanvas();
         if (state.needsRegenerate) {
-            generateWaveform();
-            state.needsRegenerate = false;
+            refreshStrips();
         }
 
-        const nowSeconds = timestamp / 1000;
-        if (state.lastPlaybackTime === 0) {
-            state.lastPlaybackTime = nowSeconds;
+        if (state.lastTimestamp === null) {
+            state.lastTimestamp = timestamp;
         }
-        const elapsed = nowSeconds;
-        const waveTime = state.duration ? elapsed % state.duration : 0;
-        processSamples(state.lastWaveTime, waveTime, elapsed);
-        drawWaveform(waveTime);
-        state.lastWaveTime = waveTime;
-        state.lastPlaybackTime = elapsed;
+
+        const dt = (timestamp - state.lastTimestamp) / 1000;
+        state.lastTimestamp = timestamp;
+        state.playbackTime += dt;
+        writeSamplesUnderSweep(dt);
+        renderMonitor();
         requestAnimationFrame(render);
+    };
+
+    const updateCanvasAspect = () => {
+        if (!frame) return;
+        const { widthCss, heightCss } = paperCssSize();
+        frame.style.aspectRatio = `${widthCss} / ${heightCss}`;
     };
 
     applyOverlaySettings();
     setAudioMuted(false);
+    updateCanvasAspect();
     resizeCanvas();
+    refreshStrips();
     requestAnimationFrame(render);
 
-    window.addEventListener('resize', () => resizeCanvas());
+    window.addEventListener('resize', () => {
+        updateCanvasAspect();
+        resizeCanvas();
+    });
 
     window.addEventListener('edupace-ecg-settings', (event) => {
         state.settings = { ...state.settings, ...(event.detail ?? {}) };
