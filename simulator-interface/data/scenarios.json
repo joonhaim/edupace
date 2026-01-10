@@ -1,0 +1,16 @@
+[
+    {
+        "id": "NSR",
+        "title": "Normal Sinus Rhythm",
+        "description": "Stable intrinsic rhythm with normal conduction.",
+        "summaryLabel": "Normal sinus rhythm",
+        "category": "clinical"
+    },
+    {
+        "id": "AV3",
+        "title": "3rd Degree AV Block",
+        "description": "Complete AV block with a ventricular escape rhythm.",
+        "summaryLabel": "Complete heart block",
+        "category": "clinical"
+    }
+]

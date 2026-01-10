@@ -285,7 +285,6 @@ function renderScenarioMenu(menu, scenarios) {
 function applyScenarioText(scenario) {
     updateText('scenarioName', scenario.title);
     updateText('scenarioText', scenario.description);
-    updateText('paceMode', scenario.pacing?.mode ?? null);
     updateAlarm(scenario.alarm);
     updateText('objectiveText', scenario.objective ?? null);
     updateText('feedbackText', scenario.feedback ?? null);

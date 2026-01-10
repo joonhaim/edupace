@@ -23,12 +23,19 @@ const defaultSettings = {
     soundVolume: 70,
     qrsBeep: 'classic',
     autoLockKnobs: '60',
+    intrinsicRate: 60,
+    intrinsicRegularity: 'regular',
     captureDrift: 'off',
     actionLog: true,
     postScenarioReview: 'auto'
 };
 
 let currentSettings = { ...defaultSettings };
+const sliderFormatters = {
+    gridIntensity: (value) => `${value}%`,
+    soundVolume: (value) => `${value}%`,
+    intrinsicRate: (value) => `${value} bpm`
+};
 
 function initSettingsPanel() {
     const settingsCard = document.querySelector('[data-settings-panel]');
@@ -169,6 +176,8 @@ function initSettingsPanel() {
     bindSlider(settingsCard, 'soundVolume', 'soundVolume');
 
     bindRadios(settingsCard, 'autoLockKnobs', 'autoLockKnobs');
+    bindSlider(settingsCard, 'intrinsicRate', 'intrinsicRate');
+    bindRadios(settingsCard, 'intrinsicRegularity', 'intrinsicRegularity');
     bindRadios(settingsCard, 'captureDrift', 'captureDrift');
     bindToggle(settingsCard, 'actionLogToggle', 'actionLog');
     bindRadios(settingsCard, 'postScenarioReview', 'postScenarioReview');
@@ -225,11 +234,12 @@ function bindSlider(root, inputId, key) {
     const input = root.querySelector(`#${inputId}`);
     const valueLabel = root.querySelector(`[data-slider-value="${inputId}"]`);
     if (!input) return;
+    const formatValue = sliderFormatters[key] ?? ((value) => `${value}%`);
 
     const updateValue = () => {
         currentSettings[key] = Number(input.value);
         if (valueLabel) {
-            valueLabel.textContent = `${currentSettings[key]}%`;
+            valueLabel.textContent = formatValue(currentSettings[key]);
         }
         emitSettings();
     };
@@ -255,7 +265,10 @@ function syncInputs(root) {
         if (slider) {
             slider.value = value;
             const label = root.querySelector(`[data-slider-value="${slider.id}"]`);
-            if (label) label.textContent = `${value}%`;
+            if (label) {
+                const formatValue = sliderFormatters[slider.id] ?? ((nextValue) => `${nextValue}%`);
+                label.textContent = formatValue(value);
+            }
         }
     });
 }
