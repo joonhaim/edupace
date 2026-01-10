@@ -476,18 +476,123 @@
                                 </aside>
                             </div>
 
-                            <div class="card performance-card calibration-performance">
-                                <div class="card-heading compact">
-<!--                                    <p class="eyebrow">Learning</p>-->
-                                </div>
-                                <div class="learning-details">
-                                    <div class="learning-item">
-                                        <p class="learning-label" data-i18n-key="training.learning.objective">Current Objective</p>
-                                        <p id="objectiveTextSecondary" class="learning-body">–</p>
+                            <div class="learning-parameters-row">
+                                <div class="card performance-card calibration-performance">
+                                    <div class="card-heading compact">
+    <!--                                    <p class="eyebrow">Learning</p>-->
                                     </div>
-                                    <div class="learning-item">
-                                        <p class="learning-label" data-i18n-key="training.learning.feedback">Feedback</p>
-                                        <p id="feedbackTextSecondary" class="learning-body">–</p>
+                                    <div class="learning-details">
+                                        <div class="learning-item">
+                                            <p class="learning-label" data-i18n-key="training.learning.objective">Current Objective</p>
+                                            <p id="objectiveTextSecondary" class="learning-body">–</p>
+                                        </div>
+                                        <div class="learning-item">
+                                            <p class="learning-label" data-i18n-key="training.learning.feedback">Feedback</p>
+                                            <p id="feedbackTextSecondary" class="learning-body">–</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card parameters-card">
+                                    <div class="card-heading compact">
+                                        <p class="eyebrow" data-i18n-key="training.pacemaker.eyebrow">Pacemaker</p>
+                                        <h3 class="card-title" id="pacemakerTitle" data-i18n-key="training.pacemaker.parameters">Pacemaker parameters</h3>
+                                    </div>
+
+                                    <div class="led-row">
+                                        <div class="led-group">
+                                            <div class="led led-pace" id="paceLed"></div>
+                                            <span>PACE</span>
+                                        </div>
+                                        <div class="led-group">
+                                            <div class="led led-sense" id="senseLed"></div>
+                                            <span>SENSE</span>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="param-grid">
+                                        <div class="param-tile">
+                                            <div class="param-meta">
+                                                <div class="param-label">Rate</div>
+                                                <div class="param-value">
+                                                    <span id="rateValue">--</span>
+                                                    <span class="param-unit">ppm</span>
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="param-controls"
+                                                data-virtual-control="rate"
+                                                data-min="30"
+                                                data-max="120"
+                                                data-step="1"
+                                                aria-hidden="true"
+                                            >
+                                                <button type="button" class="param-step" data-direction="down" aria-label="Decrease rate">←</button>
+                                                <button type="button" class="param-step" data-direction="up" aria-label="Increase rate">→</button>
+                                            </div>
+                                        </div>
+                                        <div class="param-tile">
+                                            <div class="param-meta">
+                                                <div class="param-label">Output</div>
+                                                <div class="param-value">
+                                                    <span id="outputValue">--</span>
+                                                    <span class="param-unit">mA</span>
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="param-controls"
+                                                data-virtual-control="output"
+                                                data-min="0"
+                                                data-max="10"
+                                                data-step="0.1"
+                                                aria-hidden="true"
+                                            >
+                                                <button type="button" class="param-step" data-direction="down" aria-label="Decrease output">←</button>
+                                                <button type="button" class="param-step" data-direction="up" aria-label="Increase output">→</button>
+                                            </div>
+                                        </div>
+                                        <div class="param-tile">
+                                            <div class="param-meta">
+                                                <div class="param-label">Sensitivity</div>
+                                                <div class="param-value">
+                                                    <span id="sensValue">--</span>
+                                                    <span class="param-unit">mV</span>
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="param-controls"
+                                                data-virtual-control="sensitivity"
+                                                data-min="0"
+                                                data-max="10"
+                                                data-step="0.1"
+                                                aria-hidden="true"
+                                            >
+                                                <button type="button" class="param-step" data-direction="down" aria-label="Decrease sensitivity">←</button>
+                                                <button type="button" class="param-step" data-direction="up" aria-label="Increase sensitivity">→</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="virtual-actions" aria-label="Power and lock controls" aria-hidden="true">
+                                        <button
+                                            type="button"
+                                            class="virtual-action-btn"
+                                            data-virtual-action="power"
+                                            aria-pressed="false"
+                                        >
+                                            <span class="action-label">Power</span>
+                                            <span class="action-state" data-action-state>Off</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="virtual-action-btn"
+                                            data-virtual-action="lock"
+                                            aria-pressed="false"
+                                        >
+                                            <span class="action-label">Lock</span>
+                                            <span class="action-state" data-action-state>Unlocked</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -495,106 +600,41 @@
 
                         <!-- Right: controls -->
                         <aside class="control-column" aria-label="Controls">
-                            <div class="card parameters-card">
-                                <div class="card-heading compact">
-                                    <p class="eyebrow" data-i18n-key="training.pacemaker.eyebrow">Pacemaker</p>
-                                    <h3 class="card-title" id="pacemakerTitle" data-i18n-key="training.pacemaker.parameters">Pacemaker parameters</h3>
-                                </div>
-
-                                <div class="led-row">
-                                    <div class="led-group">
-                                        <div class="led led-pace" id="paceLed"></div>
-                                        <span>PACE</span>
-                                    </div>
-                                    <div class="led-group">
-                                        <div class="led led-sense" id="senseLed"></div>
-                                        <span>SENSE</span>
-                                    </div>
-
-                                </div>
-
-                                <div class="param-grid">
-                                    <div class="param-tile">
-                                        <div class="param-meta">
-                                            <div class="param-label">Rate</div>
-                                            <div class="param-value">
-                                                <span id="rateValue">--</span>
-                                                <span class="param-unit">ppm</span>
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="param-controls"
-                                            data-virtual-control="rate"
-                                            data-min="30"
-                                            data-max="120"
-                                            data-step="1"
-                                            aria-hidden="true"
-                                        >
-                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease rate">←</button>
-                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase rate">→</button>
+                            <div class="card intrinsic-settings-card" data-intrinsic-settings>
+                                <button
+                                    type="button"
+                                    class="intrinsic-settings-toggle"
+                                    aria-expanded="false"
+                                    aria-controls="intrinsicSettingsPanel"
+                                >
+                                    <span data-i18n-key="training.intrinsic.title">Intrinsic HR Settings</span>
+                                    <span class="intrinsic-toggle-icon" aria-hidden="true">▾</span>
+                                </button>
+                                <div class="intrinsic-settings-body" id="intrinsicSettingsPanel" hidden>
+                                    <label class="intrinsic-field" for="intrinsicRateInput">
+                                        <span class="intrinsic-label" data-i18n-key="settings.intrinsicRate.title">Intrinsic heart rate</span>
+                                        <input
+                                            id="intrinsicRateInput"
+                                            type="number"
+                                            min="20"
+                                            max="220"
+                                            step="1"
+                                            value="60"
+                                        />
+                                    </label>
+                                    <div class="intrinsic-field">
+                                        <span class="intrinsic-label" data-i18n-key="settings.intrinsicRegularity.title">Intrinsic regularity</span>
+                                        <div class="intrinsic-options" role="radiogroup" aria-label="Intrinsic regularity" data-i18n-key="settings.intrinsicRegularity.aria" data-i18n-attr="aria-label">
+                                            <label class="intrinsic-option">
+                                                <input type="radio" name="intrinsicRegularityInline" value="regular" checked />
+                                                <span data-i18n-key="settings.intrinsicRegularity.regular">Regular</span>
+                                            </label>
+                                            <label class="intrinsic-option">
+                                                <input type="radio" name="intrinsicRegularityInline" value="irregular" />
+                                                <span data-i18n-key="settings.intrinsicRegularity.irregular">Irregular</span>
+                                            </label>
                                         </div>
                                     </div>
-                                    <div class="param-tile">
-                                        <div class="param-meta">
-                                            <div class="param-label">Output</div>
-                                            <div class="param-value">
-                                                <span id="outputValue">--</span>
-                                                <span class="param-unit">mA</span>
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="param-controls"
-                                            data-virtual-control="output"
-                                            data-min="0"
-                                            data-max="10"
-                                            data-step="0.1"
-                                            aria-hidden="true"
-                                        >
-                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease output">←</button>
-                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase output">→</button>
-                                        </div>
-                                    </div>
-                                    <div class="param-tile">
-                                        <div class="param-meta">
-                                            <div class="param-label">Sensitivity</div>
-                                            <div class="param-value">
-                                                <span id="sensValue">--</span>
-                                                <span class="param-unit">mV</span>
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="param-controls"
-                                            data-virtual-control="sensitivity"
-                                            data-min="0"
-                                            data-max="10"
-                                            data-step="0.1"
-                                            aria-hidden="true"
-                                        >
-                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease sensitivity">←</button>
-                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase sensitivity">→</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="virtual-actions" aria-label="Power and lock controls" aria-hidden="true">
-                                    <button
-                                        type="button"
-                                        class="virtual-action-btn"
-                                        data-virtual-action="power"
-                                        aria-pressed="false"
-                                    >
-                                        <span class="action-label">Power</span>
-                                        <span class="action-state" data-action-state>Off</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="virtual-action-btn"
-                                        data-virtual-action="lock"
-                                        aria-pressed="false"
-                                    >
-                                        <span class="action-label">Lock</span>
-                                        <span class="action-state" data-action-state>Unlocked</span>
-                                    </button>
                                 </div>
                             </div>
 
