@@ -591,6 +591,10 @@ async function readLoop() {
 }
 
 function handleHardwareMessage(line) {
+    const trimmedLine = line.trim();
+    if (trimmedLine === '') {
+        return;
+    }
     const payload = parsePayload(line);
     let parameterChanged = false;
 
@@ -617,12 +621,10 @@ function handleHardwareMessage(line) {
     };
 
     if (payload.rate !== undefined) {
-        ui.rate.textContent = payload.rate;
         updateParam('rate', payload.rate);
     }
 
     if (payload.output !== undefined) {
-        ui.output.textContent = payload.output;
         updateParam('output', payload.output);
     }
 
@@ -680,6 +682,14 @@ function handleHardwareMessage(line) {
 }
 
 function parsePayload(line) {
+    const trimmed = line.trim().toUpperCase();
+    if (trimmed === 'POWER_ON') {
+        return { power: 'ON' };
+    }
+    if (trimmed === 'POWER_OFF') {
+        return { power: 'OFF' };
+    }
+
     const payload = {};
     const segments = line.split(/[;,]/);
 
