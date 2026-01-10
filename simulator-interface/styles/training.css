@@ -1432,6 +1432,17 @@ body.ecg-fullscreen-active {
     gap: 0.75rem;
 }
 
+.learning-parameters-row {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.85fr) minmax(320px, 1.15fr);
+    gap: 1.2rem;
+    align-items: start;
+}
+
+.learning-parameters-row .card {
+    min-width: 0;
+}
+
 .learning-item {
     padding: 0.65rem 0.85rem;
     border: 1px solid var(--border);
@@ -1452,6 +1463,85 @@ body.ecg-fullscreen-active {
     margin: 0.35rem 0 0;
     font-size: 0.98rem;
     line-height: 1.6;
+}
+
+.intrinsic-settings-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.intrinsic-settings-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.4rem 0;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.intrinsic-toggle-icon {
+    transition: transform 0.2s ease;
+    font-size: 1rem;
+}
+
+.intrinsic-settings-card.is-open .intrinsic-toggle-icon {
+    transform: rotate(180deg);
+}
+
+.intrinsic-settings-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.intrinsic-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--deep-navy);
+}
+
+.intrinsic-field input[type='number'] {
+    padding: 0.45rem 0.6rem;
+    border-radius: 10px;
+    border: 1px solid #d2dae6;
+    background: #f8fafc;
+    font-size: 0.95rem;
+}
+
+.intrinsic-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.intrinsic-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.intrinsic-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+    .learning-parameters-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 .settings-card {

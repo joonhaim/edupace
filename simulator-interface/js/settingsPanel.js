@@ -28,6 +28,8 @@ const defaultSettings = {
 };
 
 let currentSettings = { ...defaultSettings };
+let settingsCardRef = null;
+let updateGridDependenciesRef = null;
 const sliderFormatters = {
     gridIntensity: (value) => `${value}%`,
     soundVolume: (value) => `${value}%`,
@@ -42,6 +44,7 @@ function initSettingsPanel() {
     const settingsTitle = document.getElementById('settingsTitle');
 
     if (!settingsCard) return;
+    settingsCardRef = settingsCard;
 
     const getToggles = () => Array.from(document.querySelectorAll('[data-settings-toggle]'));
     const syncToggleState = (isVisible = settingsLayer?.classList.contains('is-open')) => {
@@ -146,6 +149,7 @@ function initSettingsPanel() {
         if (intensityRow) intensityRow.classList.toggle('is-disabled', !isEnabled);
     };
 
+    updateGridDependenciesRef = updateGridDependencies;
     bindToggle(settingsCard, 'gridlinesToggle', 'gridlines', updateGridDependencies);
     bindRadios(settingsCard, 'gridDensity', 'gridDensity');
     bindSlider(settingsCard, 'gridIntensity', 'gridIntensity');
@@ -281,4 +285,16 @@ function emitSettings() {
     );
 }
 
-export { initSettingsPanel, defaultSettings };
+function applySettingsPatch(patch) {
+    if (!patch) return;
+    currentSettings = { ...currentSettings, ...patch };
+    if (settingsCardRef) {
+        syncInputs(settingsCardRef);
+        if (typeof updateGridDependenciesRef === 'function') {
+            updateGridDependenciesRef(currentSettings.gridlines);
+        }
+    }
+    emitSettings();
+}
+
+export { initSettingsPanel, defaultSettings, applySettingsPatch };

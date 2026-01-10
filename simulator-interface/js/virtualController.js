@@ -86,7 +86,7 @@ function initVirtualController() {
     const isVirtualMode = () => Array.from(modeRadios).some((radio) => radio.checked && radio.value === 'virtual');
 
     const updateTiles = () => {
-        const showValues = controllerState.power;
+        const showValues = controllerState.power || controllerState.locked;
         if (display.rate) {
             display.rate.textContent = showValues ? formatValue('rate', controllerState.rate) : '--';
         }
