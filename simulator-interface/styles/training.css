@@ -758,7 +758,8 @@ body.simulation-light .theme-toggle {
     background: #000;
     border-radius: 16px;
     border: 1px solid var(--border);
-    padding: 1rem;
+    padding: 0;
+    box-sizing: border-box;
     box-shadow: 0 18px 32px rgba(12, 26, 45, 0.08);
     overflow: hidden;
 
@@ -2268,4 +2269,3 @@ body.ecg-fullscreen-active .ecg-frame.is-fullscreen {
     text-align: center;
     color: var(--muted);
 }
-
