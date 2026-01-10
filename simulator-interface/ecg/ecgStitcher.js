@@ -19,6 +19,23 @@ function maxAbs(arr) {
   }
   return m;
 }
+function indexOfMaxAbs(arr) {
+  let m = -Infinity;
+  let idx = -1;
+  for (let i = 0; i < arr.length; i++) {
+    const a = Math.abs(arr[i]);
+    if (a > m) {
+      m = a;
+      idx = i;
+    }
+  }
+  return idx;
+}
+function peakTime(xArr, yArr) {
+  const idx = indexOfMaxAbs(yArr);
+  if (idx < 0) return null;
+  return xArr[idx];
+}
 function firstIndexAbsGE(arr, thr) {
   for (let i = 0; i < arr.length; i++) if (Math.abs(arr[i]) >= thr) return i;
   return -1;
@@ -101,6 +118,8 @@ export function stitchBeats(cfg) {
 
   let x = [];
   let y = [];
+  const paceEvents = [];
+  const senseEvents = [];
 
   for (let i = 0; i < iterations; i++) {
     // x_temp, y_temp = ecg_func(beat_list[i])
@@ -135,6 +154,8 @@ export function stitchBeats(cfg) {
 
           x = xTemp;
           y = yTemp;
+          const paceTime = peakTime(xTemp, yTemp);
+          if (paceTime !== null) paceEvents.push(paceTime);
 
           beatList.push("Ventricular pacing");
           offset = maxTimeSinceSensed + arrayMin(xTemp);
@@ -163,6 +184,8 @@ export function stitchBeats(cfg) {
 
             x = xTemp;
             y = yTemp;
+            const paceTime = peakTime(xTemp, yTemp);
+            if (paceTime !== null) paceEvents.push(paceTime);
 
             beatList.push("Normal");
             offset = gap + arrayMin(xTemp);
@@ -176,6 +199,7 @@ export function stitchBeats(cfg) {
             offset = gap + arrayMin(xTemp);
             timePrevSensed = timeSensed;
             timeSinceSensed = 0;
+            if (Number.isFinite(timeSensed)) senseEvents.push(timeSensed);
           }
         } else {
           x = xTemp;
@@ -185,6 +209,7 @@ export function stitchBeats(cfg) {
           offset = gap + arrayMin(xTemp);
           timePrevSensed = timeSensed;
           timeSinceSensed = 0;
+          if (Number.isFinite(timeSensed)) senseEvents.push(timeSensed);
         }
       } else {
         timeSinceSensed += arrayMax(xTemp); // matches python (note: uses x_temp BEFORE scaling in python, but here xTemp already scaled like python does in i==0)
@@ -232,6 +257,8 @@ export function stitchBeats(cfg) {
 
       if (asynchronous) {
         if (output >= captureThreshold) {
+          const paceTime = peakTime(xTemp, yTemp);
+          if (paceTime !== null) paceEvents.push(paceTime);
           ({ x, y } = concatWithOverlapCut(x, y, xTemp, yTemp));
           beatList.push("Ventricular pacing");
           offset = maxTimeSinceSensed + arrayMin(xTemp);
@@ -268,6 +295,8 @@ export function stitchBeats(cfg) {
             }
 
             shiftInPlace(xTemp, offset);
+            const paceTime = peakTime(xTemp, yTemp);
+            if (paceTime !== null) paceEvents.push(paceTime);
             ({ x, y } = concatWithOverlapCut(x, y, xTemp, yTemp));
 
 
@@ -283,6 +312,7 @@ export function stitchBeats(cfg) {
             offset = gap + arrayMin(xTemp);
             timePrevSensed = timeSensed;
             timeSinceSensed = 0;
+            if (Number.isFinite(timeSensed)) senseEvents.push(timeSensed);
           }
         } else {
           x = concat(x, xTemp);
@@ -292,6 +322,7 @@ export function stitchBeats(cfg) {
           offset = gap + arrayMin(xTemp);
           timePrevSensed = timeSensed;
           timeSinceSensed = 0;
+          if (Number.isFinite(timeSensed)) senseEvents.push(timeSensed);
         }
       } else {
         timeSinceSensed += arrayMax(xTemp) - timePrevSensed;
@@ -317,6 +348,8 @@ export function stitchBeats(cfg) {
             }
 
             shiftInPlace(xTemp, offset);
+            const paceTime = peakTime(xTemp, yTemp);
+            if (paceTime !== null) paceEvents.push(paceTime);
             ({ x, y } = concatWithOverlapCut(x, y, xTemp, yTemp));
 
 
@@ -342,5 +375,5 @@ export function stitchBeats(cfg) {
     }
   }
 
-  return { x, y, beatList };
+  return { x, y, beatList, events: { pace: paceEvents, sense: senseEvents } };
 }
