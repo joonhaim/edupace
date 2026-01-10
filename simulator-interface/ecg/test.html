@@ -42,6 +42,7 @@
             <option value="NSR" selected>NSR</option>
             <option value="3rdDegHB">3rd-degree AV block</option>
               <option value="Mobitz2">Mobitz II (dropped beats)</option>
+              <option value="SlowConduction">Slow conduction</option>
           </select>
         </div>
 
@@ -117,6 +118,8 @@
     import { stitchBeats } from "./ecgStitcher.js";
     import { thirdDegHeartBlock } from "./ecgThirdDegree.js";
     import { mobitzTypeII } from "./ecgMobitz2.js";
+    import { slowConduction } from "./ecgSlowConduction.js";
+
 
 
     // -------------------------
@@ -365,7 +368,18 @@
       output,
       asynchronous,
       iterations,
-      probConduction: 0.8, // same as your python
+      probConduction: 0.8,
+    });
+  }
+
+  if (scenario === "SlowConduction") {
+    return slowConduction({
+      patientHR,
+      sensitivity,
+      rate,
+      output,
+      asynchronous,
+      iterations
     });
   }
 
@@ -379,6 +393,7 @@
     asynchronous
   });
 }
+
 
 
     // -------------------------
