@@ -1285,6 +1285,32 @@
                                                     <div class="settings-grid">
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
+                                                                <div class="setting-title" data-i18n-key="settings.intrinsicRate.title">Intrinsic heart rate</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicRate.hint">Set baseline intrinsic bpm.</p>
+                                                            </div>
+                                                            <div class="slider-row">
+                                                                <input type="range" id="intrinsicRate" min="30" max="120" step="1" value="60">
+                                                                <span class="slider-value" data-slider-value="intrinsicRate">60 bpm</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title" data-i18n-key="settings.intrinsicRegularity.title">Intrinsic regularity</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicRegularity.hint">Regular or irregular intrinsic rhythm.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="Intrinsic regularity" data-i18n-key="settings.intrinsicRegularity.aria" data-i18n-attr="aria-label">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="intrinsicRegularity" value="regular" checked>
+                                                                    <span data-i18n-key="settings.intrinsicRegularity.regular">Regular</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="intrinsicRegularity" value="irregular">
+                                                                    <span data-i18n-key="settings.intrinsicRegularity.irregular">Irregular</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="setting-row full-span">
+                                                            <div class="setting-copy">
                                                                 <div class="setting-title" data-i18n-key="settings.captureDrift.title">Capture threshold drift</div>
                                                                 <p class="setting-hint" data-i18n-key="settings.captureDrift.hint">Off, mild, or strong drift.</p>
                                                             </div>
