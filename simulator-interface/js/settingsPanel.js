@@ -5,6 +5,7 @@ const defaultSettings = {
     sweepSpeed: 25,
     sweepWindow: 6,
     amplitudeScaling: 10,
+    ecgBackground: 'monitor',
     traceColor: 'green',
     traceThickness: 'normal',
     hrDisplay: true,
@@ -155,6 +156,13 @@ function initSettingsPanel() {
     bindRadios(settingsCard, 'sweepSpeed', 'sweepSpeed', Number);
     bindRadios(settingsCard, 'sweepWindow', 'sweepWindow', Number);
     bindRadios(settingsCard, 'amplitudeScaling', 'amplitudeScaling', Number);
+    bindRadios(settingsCard, 'ecgBackground', 'ecgBackground', (value) => value, (value) => {
+        if (value === 'paper' && currentSettings.traceColor !== 'black') {
+            currentSettings.traceColor = 'black';
+            syncInputs(settingsCard);
+            emitSettings();
+        }
+    });
     bindRadios(settingsCard, 'traceColor', 'traceColor');
     bindRadios(settingsCard, 'traceThickness', 'traceThickness');
 
