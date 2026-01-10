@@ -52,6 +52,7 @@ function initEcgEngine() {
     const pausedBadge = frame?.querySelector('.ecg-paused-badge');
     const calibrationToggle = frame?.querySelector('.calibration-toggle');
     const audioToggle = frame?.querySelector('.ecg-audio-toggle');
+    const fullscreenToggle = frame?.querySelector('.fullscreen-toggle');
     const ctx = canvas.getContext('2d');
     let suppressClick = false;
 
@@ -145,6 +146,17 @@ function initEcgEngine() {
         const ppm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
         caliperValue.textContent = `${deltaMs} ms · ${ppm} ppm`;
         caliperReadout.removeAttribute('hidden');
+    };
+
+    const setCalibrationVisible = (visible) => {
+        if (calibrationInline) {
+            calibrationInline.toggleAttribute('hidden', !visible);
+        }
+        if (calibrationToggle) {
+            calibrationToggle.classList.toggle('is-active', visible);
+            calibrationToggle.setAttribute('aria-pressed', String(visible));
+            calibrationToggle.setAttribute('aria-label', visible ? 'Hide calibration details' : 'Show calibration details');
+        }
     };
 
     const setAudioMuted = (muted) => {
@@ -618,6 +630,15 @@ function initEcgEngine() {
 
     const fixFrameSize = () => {
         if (!frame) return;
+        if (frame.classList.contains('is-fullscreen')) {
+            frame.style.width = '';
+            frame.style.height = '';
+            frame.style.minWidth = '';
+            frame.style.maxWidth = '';
+            frame.style.minHeight = '';
+            frame.style.maxHeight = '';
+            return;
+        }
         const { widthCss, heightCss } = paperCssSize();
         frame.style.width = `${widthCss}px`;
         frame.style.height = `${heightCss}px`;
@@ -633,6 +654,7 @@ function initEcgEngine() {
 
     applyOverlaySettings();
     setAudioMuted(false);
+    setCalibrationVisible(false);
     fixFrameSize();
     resizeCanvas();
     refreshStrips();
@@ -722,11 +744,37 @@ function initEcgEngine() {
     calibrationToggle?.addEventListener('click', () => {
         if (!calibrationInline) return;
         const isHidden = calibrationInline.hasAttribute('hidden');
-        calibrationInline.toggleAttribute('hidden', !isHidden);
+        setCalibrationVisible(isHidden);
     });
 
     audioToggle?.addEventListener('click', () => {
         setAudioMuted(!state.muted);
+    });
+
+    let isFullscreen = false;
+    const setFullscreen = (nextValue) => {
+        isFullscreen = Boolean(nextValue);
+        if (frame) {
+            frame.classList.toggle('is-fullscreen', isFullscreen);
+        }
+        document.body.classList.toggle('ecg-fullscreen-active', isFullscreen);
+        if (fullscreenToggle) {
+            fullscreenToggle.classList.toggle('is-active', isFullscreen);
+            fullscreenToggle.setAttribute('aria-pressed', String(isFullscreen));
+            fullscreenToggle.setAttribute('aria-label', isFullscreen ? 'Exit full screen' : 'Enter full screen');
+        }
+        fixFrameSize();
+        resizeCanvas();
+    };
+
+    fullscreenToggle?.addEventListener('click', () => {
+        setFullscreen(!isFullscreen);
+    });
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isFullscreen) {
+            setFullscreen(false);
+        }
     });
 }
 
