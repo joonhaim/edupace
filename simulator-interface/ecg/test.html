@@ -41,6 +41,7 @@
           <select id="scenario">
             <option value="NSR" selected>NSR</option>
             <option value="3rdDegHB">3rd-degree AV block</option>
+              <option value="Mobitz2">Mobitz II (dropped beats)</option>
           </select>
         </div>
 
@@ -115,6 +116,8 @@
   <script type="module">
     import { stitchBeats } from "./ecgStitcher.js";
     import { thirdDegHeartBlock } from "./ecgThirdDegree.js";
+    import { mobitzTypeII } from "./ecgMobitz2.js";
+
 
     // -------------------------
     // Paper constants
@@ -336,33 +339,47 @@
     // Scenario routing
     // -------------------------
     function generateStripFromUI(iterations) {
-      const patientHR = Number(elHr.value);
-      const rate = Number(elRate.value);
-      const sensitivity = Number(elSens.value);
-      const output = Number(elOut.value);
-      const asynchronous = (elAsync.value === "true");
-      const scenario = elScenario.value;
+  const patientHR = Number(elHr.value);
+  const rate = Number(elRate.value);
+  const sensitivity = Number(elSens.value);
+  const output = Number(elOut.value);
+  const asynchronous = (elAsync.value === "true");
+  const scenario = elScenario.value;
 
-      if (scenario === "NSR") {
-        return stitchBeats({
-          patientHR,
-          sensitivity,
-          rate,
-          output,
-          asynchronous,
-          iterations
-        });
-      }
+  if (scenario === "NSR") {
+    return stitchBeats({
+      patientHR,
+      sensitivity,
+      rate,
+      output,
+      asynchronous,
+      iterations
+    });
+  }
 
-      return thirdDegHeartBlock({
-        iterations,
-        sensitivity,
-        output,
-        rate,
-        patientHR,
-        asynchronous
-      });
-    }
+  if (scenario === "Mobitz2") {
+    return mobitzTypeII({
+      patientHR,
+      sensitivity,
+      rate,
+      output,
+      asynchronous,
+      iterations,
+      probConduction: 0.8, // same as your python
+    });
+  }
+
+  // default: 3rd-degree
+  return thirdDegHeartBlock({
+    iterations,
+    sensitivity,
+    output,
+    rate,
+    patientHR,
+    asynchronous
+  });
+}
+
 
     // -------------------------
     // Status
