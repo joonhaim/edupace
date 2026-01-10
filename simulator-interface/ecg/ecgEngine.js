@@ -392,21 +392,25 @@ function initEcgEngine() {
         requestAnimationFrame(render);
     };
 
-    const updateCanvasAspect = () => {
+    const fixFrameSize = () => {
         if (!frame) return;
         const { widthCss, heightCss } = paperCssSize();
-        frame.style.aspectRatio = `${widthCss} / ${heightCss}`;
+        frame.style.width = `${widthCss}px`;
+        frame.style.height = `${heightCss}px`;
+        frame.style.minWidth = `${widthCss}px`;
+        frame.style.maxWidth = `${widthCss}px`;
+        frame.style.minHeight = `${heightCss}px`;
+        frame.style.maxHeight = `${heightCss}px`;
     };
 
     applyOverlaySettings();
     setAudioMuted(false);
-    updateCanvasAspect();
+    fixFrameSize();
     resizeCanvas();
     refreshStrips();
     requestAnimationFrame(render);
 
     window.addEventListener('resize', () => {
-        updateCanvasAspect();
         resizeCanvas();
     });
 

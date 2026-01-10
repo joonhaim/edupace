@@ -763,7 +763,9 @@ body.simulation-light .theme-toggle {
     box-shadow: 0 18px 32px rgba(12, 26, 45, 0.08);
     overflow: hidden;
 
-    aspect-ratio: 1200 / 160;
+    width: 1200px;
+    height: 160px;
+    flex: 0 0 auto;
 }
 
 .ecg-frame.is-fullscreen {
