@@ -41,8 +41,8 @@
           <select id="scenario">
             <option value="NSR" selected>NSR</option>
             <option value="3rdDegHB">3rd-degree AV block</option>
-              <option value="Mobitz2">Mobitz II (dropped beats)</option>
-              <option value="SlowConduction">Slow conduction</option>
+            <option value="Mobitz2">Mobitz II (dropped beats)</option>
+            <option value="SlowConduction">Slow conduction</option>
           </select>
         </div>
 
@@ -53,7 +53,7 @@
 
         <div class="field">
           <label for="pacerRate">Pacemaker Rate (bpm)</label>
-          <input id="pacerRate" type="number" value="70" min="20" max="220" step="1">
+          <input id="pacerRate" type="number" value="70" min="0" max="220" step="1">
         </div>
 
         <div class="field">
@@ -87,15 +87,14 @@
           <input id="seed" type="number" placeholder="e.g. 42">
         </div>
 
+        <button id="pacerToggle" class="btn" title="When OFF, pacer rate is forced to 0">Pacemaker: ON</button>
         <button id="gen" class="btn">Generate</button>
         <button id="play" class="btn">Monitor sweep (play/pause)</button>
       </div>
 
       <div class="hint">
-        Top: ECG paper view (0–6 s, −1 to +1 mV) with red grid and blue sensitivity line.<br/>
-        Bottom: monitor view (black) uses a <b>write-sweep</b>: a vertical bar moves left→right and <b>writes</b> new points.
-        When it reaches the right edge, it jumps back to the left and overwrites from there.
-        Changing parameters does <b>not</b> clear the monitor; the new waveform only overwrites where the sweep passes.
+        Top: ECG paper view (0–6 s) with red grid and blue sensitivity line.<br/>
+        Bottom: monitor view (black) uses a write-sweep
       </div>
 
       <div class="status">
@@ -119,8 +118,6 @@
     import { thirdDegHeartBlock } from "./ecgThirdDegree.js";
     import { mobitzTypeII } from "./ecgMobitz2.js";
     import { slowConduction } from "./ecgSlowConduction.js";
-
-
 
     // -------------------------
     // Paper constants
@@ -170,9 +167,57 @@
     const elAsync = document.getElementById("async");
     const elSeed = document.getElementById("seed");
 
+    const btnPacerToggle = document.getElementById("pacerToggle");
+    const btnGen = document.getElementById("gen");
+    const btnPlay = document.getElementById("play");
+
     const statusLen = document.getElementById("statusLen");
     const statusRange = document.getElementById("statusRange");
     const statusBeat = document.getElementById("statusBeat");
+
+    // -------------------------
+    // Pacemaker ON/OFF
+    // Applies to ALL scenarios because generateStripFromUI() always uses getEffectivePacerRate()
+    // -------------------------
+    let pacerOn = true;
+    let lastNonZeroPacerRate = Number(elRate.value) || 70;
+
+    function getEffectivePacerRate() {
+      return pacerOn ? Number(elRate.value) : 0;
+    }
+
+    function setPacerUi() {
+      if (pacerOn) {
+        // restore previous non-zero if UI currently shows 0 from OFF state
+        const current = Number(elRate.value);
+        const restore = (current > 0) ? current : (lastNonZeroPacerRate > 0 ? lastNonZeroPacerRate : 70);
+        elRate.value = String(restore);
+
+        btnPacerToggle.textContent = "Pacemaker: ON";
+        btnPacerToggle.style.opacity = "1";
+        elRate.disabled = false;
+      } else {
+        const current = Number(elRate.value);
+        if (current > 0) lastNonZeroPacerRate = current;
+
+        elRate.value = "0";
+        btnPacerToggle.textContent = "Pacemaker: OFF";
+        btnPacerToggle.style.opacity = "0.75";
+        elRate.disabled = true;
+      }
+    }
+
+    function setPacerState(on) {
+      pacerOn = !!on;
+      setPacerUi();
+      refreshStrips(); // do not clear monitor history; sweep overwrites as it passes
+    }
+
+    // Keep "lastNonZeroPacerRate" updated when user types a non-zero rate (only possible when ON)
+    elRate.addEventListener("input", () => {
+      const v = Number(elRate.value);
+      if (v > 0) lastNonZeroPacerRate = v;
+    });
 
     // -------------------------
     // Canvas sizing
@@ -342,59 +387,57 @@
     // Scenario routing
     // -------------------------
     function generateStripFromUI(iterations) {
-  const patientHR = Number(elHr.value);
-  const rate = Number(elRate.value);
-  const sensitivity = Number(elSens.value);
-  const output = Number(elOut.value);
-  const asynchronous = (elAsync.value === "true");
-  const scenario = elScenario.value;
+      const patientHR = Number(elHr.value);
+      const rate = getEffectivePacerRate(); // <-- OFF forces 0 for ALL scenarios
+      const sensitivity = Number(elSens.value);
+      const output = Number(elOut.value);
+      const asynchronous = (elAsync.value === "true");
+      const scenario = elScenario.value;
 
-  if (scenario === "NSR") {
-    return stitchBeats({
-      patientHR,
-      sensitivity,
-      rate,
-      output,
-      asynchronous,
-      iterations
-    });
-  }
+      if (scenario === "NSR") {
+        return stitchBeats({
+          patientHR,
+          sensitivity,
+          rate,
+          output,
+          asynchronous,
+          iterations
+        });
+      }
 
-  if (scenario === "Mobitz2") {
-    return mobitzTypeII({
-      patientHR,
-      sensitivity,
-      rate,
-      output,
-      asynchronous,
-      iterations,
-      probConduction: 0.8,
-    });
-  }
+      if (scenario === "Mobitz2") {
+        return mobitzTypeII({
+          patientHR,
+          sensitivity,
+          rate,
+          output,
+          asynchronous,
+          iterations,
+          probConduction: 0.8,
+        });
+      }
 
-  if (scenario === "SlowConduction") {
-    return slowConduction({
-      patientHR,
-      sensitivity,
-      rate,
-      output,
-      asynchronous,
-      iterations
-    });
-  }
+      if (scenario === "SlowConduction") {
+        return slowConduction({
+          patientHR,
+          sensitivity,
+          rate,
+          output,
+          asynchronous,
+          iterations
+        });
+      }
 
-  // default: 3rd-degree
-  return thirdDegHeartBlock({
-    iterations,
-    sensitivity,
-    output,
-    rate,
-    patientHR,
-    asynchronous
-  });
-}
-
-
+      // default: 3rd-degree
+      return thirdDegHeartBlock({
+        iterations,
+        sensitivity,
+        output,
+        rate,
+        patientHR,
+        asynchronous
+      });
+    }
 
     // -------------------------
     // Status
@@ -502,9 +545,9 @@
         segments.push([0, newX]);
       }
 
-      for (const [a, b] of segments) {
-        const startCol = Math.max(0, Math.floor(a));
-        const endCol = Math.min(w, Math.ceil(b));
+      for (const [aSeg, bSeg] of segments) {
+        const startCol = Math.max(0, Math.floor(aSeg));
+        const endCol = Math.min(w, Math.ceil(bSeg));
 
         for (let col = startCol; col < endCol; col++) {
           const tEnd = stripLive.x[stripLive.x.length - 1] || VIEW_SEC;
@@ -619,7 +662,11 @@
     // -------------------------
     // Controls
     // -------------------------
-    document.getElementById("gen").addEventListener("click", () => {
+    btnPacerToggle.addEventListener("click", () => {
+      setPacerState(!pacerOn);
+    });
+
+    btnGen.addEventListener("click", () => {
       stripPaper = generateStripFromUI(60);
       stripLive  = generateStripFromUI(80);
       updateStatus(stripLive);
@@ -627,7 +674,7 @@
       // do NOT clear monitor; sweep overwrites as it passes
     });
 
-    document.getElementById("play").addEventListener("click", () => {
+    btnPlay.addEventListener("click", () => {
       playing = !playing;
       if (playing) {
         lastTs = null;
@@ -637,9 +684,18 @@
 
     // All UI changes regenerate strips (monitor keeps history; sweep overwrites)
     [
-      elScenario, elHr, elRate, elSens, elOut,
+      elScenario, elHr, elSens, elOut,
       elReg, elAsync, elSeed
     ].forEach(el => el.addEventListener("change", refreshStrips));
+
+    // If the user changes pacerRate (only possible while ON), regenerate strips too
+    elRate.addEventListener("change", () => {
+      if (pacerOn) {
+        const v = Number(elRate.value);
+        if (v > 0) lastNonZeroPacerRate = v;
+      }
+      refreshStrips();
+    });
 
     function onResize() {
       sizePaperCanvas();
@@ -675,6 +731,9 @@
     // -------------------------
     sizePaperCanvas();
     sizeMonitorCanvas();
+
+    // init pacer UI state (ON by default)
+    setPacerUi();
 
     stripPaper = generateStripFromUI(60);
     stripLive  = generateStripFromUI(80);
