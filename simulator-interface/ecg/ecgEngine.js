@@ -10,7 +10,8 @@ const DEFAULT_PARAMS = {
     rate: 70,
     output: 1.5,
     sensitivity: 2.0,
-    power: true
+    power: true,
+    asynchronous: false
 };
 
 const SMALL_T = 0.04;
@@ -83,7 +84,12 @@ function initEcgEngine() {
         needsRegenerate: true
     };
 
-    const getAsyncMode = () => state.params.sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
+    const getAsyncMode = () => {
+        if (typeof state.params.asynchronous === 'boolean') {
+            return state.params.asynchronous;
+        }
+        return state.params.sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
+    };
 
     const applyOverlaySettings = () => {
         if (overlay) {
@@ -733,6 +739,7 @@ function initEcgEngine() {
         if (Number.isFinite(detail.output)) state.params.output = detail.output;
         if (Number.isFinite(detail.sensitivity)) state.params.sensitivity = detail.sensitivity;
         if (typeof detail.power === 'boolean') state.params.power = detail.power;
+        if (typeof detail.asynchronous === 'boolean') state.params.asynchronous = detail.asynchronous;
         state.needsRegenerate = true;
     });
 
