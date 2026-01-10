@@ -20,7 +20,7 @@ const BIG_A = 1.0;
 const VIEW_SEC = 6;
 const Y_MIN = -1;
 const Y_MAX = 1;
-const VERTICAL_SCALE = 1.6;
+const VERTICAL_SCALE = 4.583333333;
 const PX_PER_SMALL_BOX = 6;
 const SWEEP_TIME_SCALE = 1.0;
 const R_Y_MIN = Y_MIN * VERTICAL_SCALE;
@@ -40,8 +40,8 @@ function initEcgEngine() {
 
     const frame = canvas.closest('.ecg-frame');
     const overlay = frame?.querySelector('.ecg-overlay');
+    const leadLabel = frame?.querySelector('.ecg-label');
     const hrValue = document.getElementById('hrValue');
-    const paceMode = document.getElementById('paceMode');
     const paceLed = document.getElementById('paceLed');
     const senseLed = document.getElementById('senseLed');
     const shell = frame?.closest('.ecg-shell');
@@ -98,15 +98,23 @@ function initEcgEngine() {
             hrCard.hidden = !state.settings.hrDisplay;
         }
 
-        if (paceMode) {
-            paceMode.textContent = getAsyncMode() ? 'ASYNC' : 'VVI';
+        if (leadLabel) {
+            leadLabel.hidden = !state.settings.leadLabel;
         }
 
         if (calibrationValue) {
             calibrationValue.textContent = `${VIEW_SEC} s window · 10 mm/mV · 25 mm/s`;
         }
 
-        hrEngine.setBeepMode(state.settings.qrsBeep ?? 'classic');
+        const hrColor = TRACE_COLORS[state.settings.hrColor] ?? TRACE_COLORS.white;
+        const leadLabelColor = TRACE_COLORS[state.settings.leadLabelColor] ?? TRACE_COLORS.green;
+        if (shell) {
+            shell.style.setProperty('--hr-color', hrColor);
+            shell.style.setProperty('--lead-label-color', leadLabelColor);
+        }
+
+        hrEngine.setBeepMode(state.settings.qrsBeep ?? 'on');
+        hrEngine.setBeepVolume(state.settings.soundVolume ?? 70);
     };
 
     const setPaused = (paused) => {
@@ -126,7 +134,7 @@ function initEcgEngine() {
 
     const updateCaliperReadout = () => {
         if (!caliperReadout || !caliperValue) return;
-        if (!state.calipers.active || !state.settings.intervalRulers) {
+        if (!state.paused || !state.calipers.active || !state.settings.intervalRulers) {
             caliperReadout.setAttribute('hidden', '');
             return;
         }
@@ -703,9 +711,6 @@ function initEcgEngine() {
         if (Number.isFinite(detail.output)) state.params.output = detail.output;
         if (Number.isFinite(detail.sensitivity)) state.params.sensitivity = detail.sensitivity;
         if (typeof detail.power === 'boolean') state.params.power = detail.power;
-        if (paceMode) {
-            paceMode.textContent = getAsyncMode() ? 'ASYNC' : 'VVI';
-        }
         state.needsRegenerate = true;
     });
 

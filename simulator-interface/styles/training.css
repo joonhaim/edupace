@@ -757,6 +757,8 @@ body.simulation-light .theme-toggle {
     display: flex;
     align-items: stretch;
     gap: 1.2rem;
+    --lead-label-color: #33ff66;
+    --hr-color: #f5f7fa;
 }
 
 .ecg-shell[data-background="paper"] .ecg-hr-card,
@@ -773,7 +775,7 @@ body.simulation-light .theme-toggle {
 }
 
 .ecg-shell[data-background="paper"] .hr-value {
-    color: #0f172a;
+    color: var(--hr-color);
 }
 
 .ecg-frame {
@@ -921,16 +923,18 @@ body.ecg-fullscreen-active {
 }
 
 .ecg-label {
-    color: #9dbcf2;
+    color: var(--lead-label-color);
     font-weight: 700;
     font-size: 1rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    padding-left: 0.35rem;
+    padding-left: 0;
+    margin-top: -0.35rem;
+    margin-left: -0.35rem;
 }
 
 .ecg-shell[data-background="paper"] .ecg-label {
-    color: #1f2937;
+    color: var(--lead-label-color);
 }
 
 .ecg-vitals {
@@ -962,7 +966,7 @@ body.ecg-fullscreen-active {
 }
 
 .hr-value {
-    color: #9dbcf2;
+    color: var(--hr-color);
     font-size: 2.2rem;
 }
 
@@ -1714,6 +1718,10 @@ body.ecg-fullscreen-active {
     padding: 0.2rem 0.25rem;
 }
 
+.setting-row--stacked {
+    align-items: flex-start;
+}
+
 .setting-controls {
     width: 100%;
     display: flex;
@@ -1775,6 +1783,13 @@ body.ecg-fullscreen-active {
     gap: 0.6rem;
     align-items: center;
     flex-wrap: wrap;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.setting-actions-inline .btn {
+    min-width: 140px;
+    justify-content: center;
 }
 
 .path-chip {

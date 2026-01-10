@@ -19,16 +19,12 @@ const defaultSettings = {
     intrinsicBeatLabels: false,
     senseColor: 'amber',
     intervalRulers: true,
-    alarmSound: true,
-    buttonBeeps: true,
     soundVolume: 70,
-    qrsBeep: 'classic',
+    qrsBeep: 'on',
     autoLockKnobs: '60',
     intrinsicRate: 60,
     intrinsicRegularity: 'regular',
-    captureDrift: 'off',
-    actionLog: true,
-    postScenarioReview: 'auto'
+    actionLog: true
 };
 
 let currentSettings = { ...defaultSettings };
@@ -178,17 +174,13 @@ function initSettingsPanel() {
     bindRadios(settingsCard, 'senseColor', 'senseColor');
     bindToggle(settingsCard, 'intervalRulersToggle', 'intervalRulers');
 
-    bindToggle(settingsCard, 'alarmSoundToggle', 'alarmSound');
-    bindToggle(settingsCard, 'buttonBeepsToggle', 'buttonBeeps');
     bindRadios(settingsCard, 'qrsBeep', 'qrsBeep');
     bindSlider(settingsCard, 'soundVolume', 'soundVolume');
 
     bindRadios(settingsCard, 'autoLockKnobs', 'autoLockKnobs');
     bindSlider(settingsCard, 'intrinsicRate', 'intrinsicRate');
     bindRadios(settingsCard, 'intrinsicRegularity', 'intrinsicRegularity');
-    bindRadios(settingsCard, 'captureDrift', 'captureDrift');
     bindToggle(settingsCard, 'actionLogToggle', 'actionLog');
-    bindRadios(settingsCard, 'postScenarioReview', 'postScenarioReview');
 
     const resetBtn = settingsCard.querySelector('[data-settings-reset]');
     if (resetBtn) {
