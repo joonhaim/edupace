@@ -713,7 +713,7 @@ body.simulation-light .theme-toggle {
 
 .sim-main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.45fr);
+    grid-template-columns: 1fr;
     gap: 1.4rem;
 }
 
