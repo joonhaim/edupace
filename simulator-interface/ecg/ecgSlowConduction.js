@@ -1,77 +1,38 @@
-// ecgSlowConduction.js
 import { getECGWave } from "./ecgMorphology.js";
 
-// -------------------------
-// helpers (match your style)
-// -------------------------
-function arrayMax(arr) {
-  let m = -Infinity;
-  for (let i = 0; i < arr.length; i++) if (arr[i] > m) m = arr[i];
-  return m;
-}
-function arrayMin(arr) {
-  let m = Infinity;
-  for (let i = 0; i < arr.length; i++) if (arr[i] < m) m = arr[i];
-  return m;
-}
-function maxAbs(arr) {
-  let m = 0;
-  for (let i = 0; i < arr.length; i++) {
-    const a = Math.abs(arr[i]);
-    if (a > m) m = a;
-  }
-  return m;
-}
-function indexOfMaxAbs(arr) {
-  let m = -Infinity;
-  let idx = -1;
-  for (let i = 0; i < arr.length; i++) {
-    const a = Math.abs(arr[i]);
-    if (a > m) {
-      m = a;
-      idx = i;
+// ---------- helpers ----------
+function arrayMax(arr) { let m = -Infinity; for (let i=0;i<arr.length;i++) if (arr[i] > m) m = arr[i]; return m; }
+function arrayMin(arr) { let m =  Infinity; for (let i=0;i<arr.length;i++) if (arr[i] < m) m = arr[i]; return m; }
+function maxAbs(arr)   { let m = 0; for (let i=0;i<arr.length;i++){ const a=Math.abs(arr[i]); if (a>m) m=a; } return m; }
+function firstIndexAbsGE(arr, thr){ for (let i=0;i<arr.length;i++) if (Math.abs(arr[i]) >= thr) return i; return -1; }
+function scaleInPlace(arr, s){ for (let i=0;i<arr.length;i++) arr[i] *= s; }
+function shiftInPlace(arr, dx){ for (let i=0;i<arr.length;i++) arr[i] += dx; }
+function concat(a, b){ const out=new Array(a.length+b.length); for(let i=0;i<a.length;i++) out[i]=a[i]; for(let j=0;j<b.length;j++) out[a.length+j]=b[j]; return out; }
+
+function rand(){ return Math.random(); }
+
+// Python overlap snippet used when inserting regenerated paced beats:
+// if min(x_temp) < max(x): cut previous at first x>=min(x_temp), then concat
+function concatWithOverlapCut(x, y, xTemp, yTemp) {
+  if (x.length > 0 && arrayMin(xTemp) < arrayMax(x)) {
+    const start = arrayMin(xTemp);
+    let cutIdx = -1;
+    for (let i = 0; i < x.length; i++) {
+      if (x[i] >= start) { cutIdx = i; break; }
+    }
+    if (cutIdx !== -1) {
+      x = x.slice(0, cutIdx);
+      y = y.slice(0, cutIdx);
     }
   }
-  return idx;
-}
-function peakTime(xArr, yArr) {
-  const idx = indexOfMaxAbs(yArr);
-  if (idx < 0) return null;
-  return xArr[idx];
-}
-function firstIndexAbsGE(arr, thr) {
-  for (let i = 0; i < arr.length; i++) if (Math.abs(arr[i]) >= thr) return i;
-  return -1;
-}
-function scaleInPlace(arr, s) {
-  for (let i = 0; i < arr.length; i++) arr[i] *= s;
-}
-function shiftInPlace(arr, dx) {
-  for (let i = 0; i < arr.length; i++) arr[i] += dx;
-}
-function concat(a, b) {
-  const out = new Array(a.length + b.length);
-  for (let i = 0; i < a.length; i++) out[i] = a[i];
-  for (let j = 0; j < b.length; j++) out[a.length + j] = b[j];
-  return out;
-}
-
-// Python-like random
-function rand() {
-  return Math.random();
+  return { x: concat(x, xTemp), y: concat(y, yTemp) };
 }
 
 /**
- * JS port of your Python slow_conduction()
+ * Port of:
+ * def slow_conduction(ecg_func, patient_HR, sensitivity, rate, output, asynchronous, iterations=20)
  *
- * @param {Object} cfg
- * @param {number} cfg.patientHR
- * @param {number} cfg.sensitivity
- * @param {number} cfg.rate
- * @param {number} cfg.output
- * @param {boolean} cfg.asynchronous
- * @param {number} [cfg.iterations=20]
- * @returns {{x:number[], y:number[], beatList:string[]}}
+ * Returns {x, y, beatList, events:{pace,sense}}
  */
 export function slowConduction(cfg) {
   const {
@@ -83,278 +44,311 @@ export function slowConduction(cfg) {
     iterations = 20,
   } = cfg;
 
-  // Python variables
-  let beatList = ["Slow conduction"];
-  let offset = 0;
-  let timeSinceSensed = 0;
-  let timePrevSensed = 0;
-  let timeSensed = 0;
+  // ---- SAFETY for rate<=0 (Pacemaker OFF) ----
+  const pacingEnabled = Number.isFinite(rate) && rate > 0;
+  const max_time_since_sensed = pacingEnabled ? (60 / rate) : Infinity;
+  const asyncMode = pacingEnabled ? !!asynchronous : false;
 
-  const maxTimeSinceSensed = 60 / rate;
-  const captureThreshold = 1.5 + 0.2 * rand() - 0.1; // 1.4..1.6
+  // Python variables
+  const beatList = ["Slow conduction"];
+  let offset = 0;
+  let time_since_sensed = 0;
+  let time_prev_sensed = 0;
+  let time_sensed = 0;
+
+  const capture_threshold = 1.5 + 0.2 * rand() - 0.1; // 1.4..1.6
   const gap = 60 / patientHR;
 
   const SENSE_ALIGNMENT = 0.183315;
 
   let x = [];
   let y = [];
+
+  // Kept for compatibility (your UI expects events sometimes)
   const paceEvents = [];
   const senseEvents = [];
 
-  const recordPace = (xArr, yArr) => {
-    const time = peakTime(xArr, yArr);
-    if (time !== null) paceEvents.push(time);
+  const recordPace = (xArr) => {
+    // Python uses time_prev_sensed = min(x_temp)+0.183315 for paced beats,
+    // so we treat that as the pacing marker time.
+    paceEvents.push(arrayMin(xArr) + SENSE_ALIGNMENT);
   };
-
-  const recordSense = (time) => {
-    if (Number.isFinite(time)) senseEvents.push(time);
-  };
+  const recordSense = (t) => { if (Number.isFinite(t)) senseEvents.push(t); };
 
   for (let i = 0; i < iterations; i++) {
+    // x_temp, y_temp = ecg_func(beat_list[i])
     let { x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]);
+    let x_temp = xTemp0.slice();
+    let y_temp = yTemp0.slice();
 
-    let xTemp = xTemp0.slice();
-    let yTemp = yTemp0.slice();
+    // scaling_factor_y = (1+(rand*0.6-0.3))/(max(y_temp)-min(y_temp))
+    const scaling_factor_y =
+      (1.0 + (rand() * 0.6 - 0.3)) / (arrayMax(y_temp) - arrayMin(y_temp));
 
-    // scaling factors (exact python)
-    const yRange = arrayMax(yTemp) - arrayMin(yTemp);
-    const scalingFactorY = (1.0 + (rand() * 0.6 - 0.3)) / yRange;
-    const scalingFactorX = 0.03333;
+    const scaling_factor_x = 0.03333;
 
     if (i === 0) {
-      scaleInPlace(xTemp, scalingFactorX);
-      scaleInPlace(yTemp, scalingFactorY);
+      // Apply scaling factors
+      scaleInPlace(x_temp, scaling_factor_x);
+      scaleInPlace(y_temp, scaling_factor_y);
 
-      if (asynchronous) {
-        if (output >= captureThreshold) {
+      if (asyncMode) {
+        if (output >= capture_threshold) {
+          // overwrite morphology with pacing
           beatList[i] = "Ventricular pacing";
+
           ({ x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]));
-          xTemp = xTemp0.slice();
-          yTemp = yTemp0.slice();
+          x_temp = xTemp0.slice();
+          y_temp = yTemp0.slice();
 
-          const yr = arrayMax(yTemp) - arrayMin(yTemp);
-          const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
+          const scaling_factor_y2 =
+            (1.0 + (rand() * 0.6 - 0.3)) / (arrayMax(y_temp) - arrayMin(y_temp));
 
-          scaleInPlace(xTemp, scalingFactorX);
-          scaleInPlace(yTemp, scalingFactorY2);
+          scaleInPlace(x_temp, scaling_factor_x);
+          scaleInPlace(y_temp, scaling_factor_y2);
 
-          x = xTemp;
-          y = yTemp;
-          recordPace(xTemp, yTemp);
+          x = x_temp;
+          y = y_temp;
 
           beatList.push("Ventricular pacing");
-          offset = maxTimeSinceSensed + arrayMin(xTemp);
+          offset = max_time_since_sensed + arrayMin(x_temp);
+
+          recordPace(x_temp);
         } else {
-          x = xTemp;
-          y = yTemp;
+          x = x_temp;
+          y = y_temp;
 
           beatList.push("Slow conduction");
-          offset = gap + arrayMin(xTemp);
+          offset = gap + arrayMin(x_temp);
         }
-      } else if (maxAbs(yTemp) >= sensitivity) {
-        const idx = firstIndexAbsGE(yTemp, sensitivity);
-        timeSensed = xTemp[idx];
+      } else if (maxAbs(y_temp) >= sensitivity) {
+        const idx = firstIndexAbsGE(y_temp, sensitivity);
+        time_sensed = x_temp[idx];
 
-        if (timeSensed > maxTimeSinceSensed) {
-          if (output >= captureThreshold) {
+        if (time_sensed > max_time_since_sensed) {
+          if (pacingEnabled && output >= capture_threshold) {
             beatList[i] = "Ventricular pacing";
+
             ({ x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]));
-            xTemp = xTemp0.slice();
-            yTemp = yTemp0.slice();
+            x_temp = xTemp0.slice();
+            y_temp = yTemp0.slice();
 
-            const yr = arrayMax(yTemp) - arrayMin(yTemp);
-            const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
+            const scaling_factor_y2 =
+              (1.0 + (rand() * 0.6 - 0.3)) / (arrayMax(y_temp) - arrayMin(y_temp));
 
-            scaleInPlace(xTemp, scalingFactorX);
-            scaleInPlace(yTemp, scalingFactorY2);
+            scaleInPlace(x_temp, scaling_factor_x);
+            scaleInPlace(y_temp, scaling_factor_y2);
 
-            x = xTemp;
-            y = yTemp;
-            recordPace(xTemp, yTemp);
+            x = x_temp;
+            y = y_temp;
 
             beatList.push("Slow conduction");
-            offset = gap + arrayMin(xTemp);
-            timePrevSensed = arrayMin(xTemp) + SENSE_ALIGNMENT;
-            timeSinceSensed = 0;
+            offset = gap + arrayMin(x_temp);
+
+            time_prev_sensed = arrayMin(x_temp) + SENSE_ALIGNMENT;
+            time_since_sensed = 0;
+
+            recordPace(x_temp);
           } else {
-            x = xTemp;
-            y = yTemp;
+            x = x_temp;
+            y = y_temp;
 
             beatList.push("Slow conduction");
-            offset = gap + arrayMin(xTemp);
-            timePrevSensed = timeSensed;
-            timeSinceSensed = 0;
-            recordSense(timeSensed);
+            offset = gap + arrayMin(x_temp);
+
+            time_prev_sensed = time_sensed;
+            time_since_sensed = 0;
+
+            recordSense(time_sensed);
           }
         } else {
-          x = xTemp;
-          y = yTemp;
+          x = x_temp;
+          y = y_temp;
 
           beatList.push("Slow conduction");
-          offset = gap + arrayMin(xTemp);
-          timePrevSensed = timeSensed;
-          timeSinceSensed = 0;
-          recordSense(timeSensed);
+          offset = gap + arrayMin(x_temp);
+
+          time_prev_sensed = time_sensed;
+          time_since_sensed = 0;
+
+          recordSense(time_sensed);
         }
       } else {
-        timeSinceSensed += arrayMax(xTemp);
+        // not sensed
+        time_since_sensed += arrayMax(x_temp);
 
-        if (timeSinceSensed > maxTimeSinceSensed) {
-          if (output >= captureThreshold) {
+        if (time_since_sensed > max_time_since_sensed) {
+          if (pacingEnabled && output >= capture_threshold) {
             beatList[i] = "Ventricular pacing";
+
             ({ x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]));
-            xTemp = xTemp0.slice();
-            yTemp = yTemp0.slice();
+            x_temp = xTemp0.slice();
+            y_temp = yTemp0.slice();
 
-            const yr = arrayMax(yTemp) - arrayMin(yTemp);
-            const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
+            const scaling_factor_y2 =
+              (1.0 + (rand() * 0.6 - 0.3)) / (arrayMax(y_temp) - arrayMin(y_temp));
 
-            scaleInPlace(xTemp, scalingFactorX);
-            scaleInPlace(yTemp, scalingFactorY2);
+            scaleInPlace(x_temp, scaling_factor_x);
+            scaleInPlace(y_temp, scaling_factor_y2);
 
-            x = xTemp;
-            y = yTemp;
-            recordPace(xTemp, yTemp);
+            x = x_temp;
+            y = y_temp;
 
             beatList.push("Slow conduction");
-            offset = gap + arrayMin(xTemp);
-            timePrevSensed = arrayMin(xTemp) + SENSE_ALIGNMENT;
-            timeSinceSensed = 0;
+            offset = gap + arrayMin(x_temp);
+
+            time_prev_sensed = arrayMin(x_temp) + SENSE_ALIGNMENT;
+            time_since_sensed = 0;
+
+            recordPace(x_temp);
           } else {
-            x = xTemp;
-            y = yTemp;
+            x = x_temp;
+            y = y_temp;
 
             beatList.push("Slow conduction");
-            offset = gap + arrayMin(xTemp);
+            offset = gap + arrayMin(x_temp);
           }
         } else {
-          x = xTemp;
-          y = yTemp;
+          x = x_temp;
+          y = y_temp;
 
           beatList.push("Slow conduction");
-          offset = gap + arrayMin(xTemp);
+          offset = gap + arrayMin(x_temp);
         }
       }
     } else {
-      // second beat onwards
-      scaleInPlace(xTemp, scalingFactorX);
-      scaleInPlace(yTemp, scalingFactorY);
-      shiftInPlace(xTemp, offset);
+      // 2nd beat onwards: apply scaling factors and shift by offset
+      scaleInPlace(x_temp, scaling_factor_x);
+      scaleInPlace(y_temp, scaling_factor_y);
+      shiftInPlace(x_temp, offset);
 
-      if (asynchronous) {
-        if (output >= captureThreshold) {
-          recordPace(xTemp, yTemp);
-          x = concat(x, xTemp);
-          y = concat(y, yTemp);
+      if (asyncMode) {
+        if (output >= capture_threshold) {
+          // Python DOES NOT regenerate paced morphology here — it just concatenates current beat.
+          x = concat(x, x_temp);
+          y = concat(y, y_temp);
 
           beatList.push("Ventricular pacing");
-          offset = maxTimeSinceSensed + arrayMin(xTemp);
+          offset = max_time_since_sensed + arrayMin(x_temp);
+
+          // best-effort marker
+          recordPace(x_temp);
         } else {
-          x = concat(x, xTemp);
-          y = concat(y, yTemp);
+          x = concat(x, x_temp);
+          y = concat(y, y_temp);
 
           beatList.push("Slow conduction");
-          offset = gap + arrayMin(xTemp);
+          offset = gap + arrayMin(x_temp);
         }
-      } else if (maxAbs(yTemp) >= sensitivity) {
-        const idx = firstIndexAbsGE(yTemp, sensitivity);
-        timeSensed = xTemp[idx];
-        timeSinceSensed = timeSensed - timePrevSensed;
+      } else if (maxAbs(y_temp) >= sensitivity) {
+        const idx = firstIndexAbsGE(y_temp, sensitivity);
+        time_sensed = x_temp[idx];
+        time_since_sensed = time_sensed - time_prev_sensed;
 
-        if (timeSinceSensed > maxTimeSinceSensed) {
-          if (output >= captureThreshold) {
+        if (time_since_sensed > max_time_since_sensed) {
+          if (pacingEnabled && output >= capture_threshold) {
             beatList[i] = "Ventricular pacing";
 
+            // regenerate paced beat (like python)
             ({ x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]));
-            xTemp = xTemp0.slice();
-            yTemp = yTemp0.slice();
+            x_temp = xTemp0.slice();
+            y_temp = yTemp0.slice();
 
-            const yr = arrayMax(yTemp) - arrayMin(yTemp);
-            const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
+            const scaling_factor_y2 =
+              (1.0 + (rand() * 0.6 - 0.3)) / (arrayMax(y_temp) - arrayMin(y_temp));
 
-            scaleInPlace(xTemp, scalingFactorX);
-            scaleInPlace(yTemp, scalingFactorY2);
+            scaleInPlace(x_temp, scaling_factor_x);
+            scaleInPlace(y_temp, scaling_factor_y2);
 
             if (beatList[i - 1] === "Slow conduction") {
-              offset = maxTimeSinceSensed + timePrevSensed - SENSE_ALIGNMENT;
+              offset = max_time_since_sensed + time_prev_sensed - SENSE_ALIGNMENT;
             } else {
-              offset = offset - gap + maxTimeSinceSensed;
+              offset = offset - gap + max_time_since_sensed;
             }
 
-            shiftInPlace(xTemp, offset);
-            recordPace(xTemp, yTemp);
-            x = concat(x, xTemp);
-            y = concat(y, yTemp);
+            shiftInPlace(x_temp, offset);
+
+            ({ x, y } = concatWithOverlapCut(x, y, x_temp, y_temp));
 
             beatList.push("Slow conduction");
-            offset = gap + arrayMin(xTemp);
-            timePrevSensed = arrayMin(xTemp) + SENSE_ALIGNMENT;
-            timeSinceSensed = 0;
+            offset = gap + arrayMin(x_temp);
+
+            time_prev_sensed = arrayMin(x_temp) + SENSE_ALIGNMENT;
+            time_since_sensed = 0;
+
+            recordPace(x_temp);
           } else {
-            x = concat(x, xTemp);
-            y = concat(y, yTemp);
+            x = concat(x, x_temp);
+            y = concat(y, y_temp);
 
             beatList.push("Slow conduction");
-            offset = gap + arrayMin(xTemp);
-            timePrevSensed = timeSensed;
-            timeSinceSensed = 0;
-            recordSense(timeSensed);
+            offset = gap + arrayMin(x_temp);
+
+            time_prev_sensed = time_sensed;
+            time_since_sensed = 0;
+
+            recordSense(time_sensed);
           }
         } else {
-          x = concat(x, xTemp);
-          y = concat(y, yTemp);
+          x = concat(x, x_temp);
+          y = concat(y, y_temp);
 
           beatList.push("Slow conduction");
-          offset = gap + arrayMin(xTemp);
-          timePrevSensed = timeSensed;
-          timeSinceSensed = 0;
-          recordSense(timeSensed);
+          offset = gap + arrayMin(x_temp);
+
+          time_prev_sensed = time_sensed;
+          time_since_sensed = 0;
+
+          recordSense(time_sensed);
         }
       } else {
-        timeSinceSensed += arrayMax(xTemp) - timePrevSensed;
+        // not sensed
+        time_since_sensed += arrayMax(x_temp) - time_prev_sensed;
 
-        if (timeSinceSensed > maxTimeSinceSensed) {
-          if (output >= captureThreshold) {
+        if (time_since_sensed > max_time_since_sensed) {
+          if (pacingEnabled && output >= capture_threshold) {
             beatList[i] = "Ventricular pacing";
 
             ({ x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]));
-            xTemp = xTemp0.slice();
-            yTemp = yTemp0.slice();
+            x_temp = xTemp0.slice();
+            y_temp = yTemp0.slice();
 
-            const yr = arrayMax(yTemp) - arrayMin(yTemp);
-            const scalingFactorY2 = (1.0 + (rand() * 0.6 - 0.3)) / yr;
+            const scaling_factor_y2 =
+              (1.0 + (rand() * 0.6 - 0.3)) / (arrayMax(y_temp) - arrayMin(y_temp));
 
-            scaleInPlace(xTemp, scalingFactorX);
-            scaleInPlace(yTemp, scalingFactorY2);
+            scaleInPlace(x_temp, scaling_factor_x);
+            scaleInPlace(y_temp, scaling_factor_y2);
 
             if (beatList[i - 1] === "Slow conduction") {
-              offset = maxTimeSinceSensed + timePrevSensed - SENSE_ALIGNMENT;
+              offset = max_time_since_sensed + time_prev_sensed - SENSE_ALIGNMENT;
             } else {
-              offset += maxTimeSinceSensed - gap;
+              offset += max_time_since_sensed - gap;
             }
 
-            shiftInPlace(xTemp, offset);
-            recordPace(xTemp, yTemp);
-            x = concat(x, xTemp);
-            y = concat(y, yTemp);
+            shiftInPlace(x_temp, offset);
+
+            ({ x, y } = concatWithOverlapCut(x, y, x_temp, y_temp));
 
             beatList.push("Slow conduction");
-            offset = gap + arrayMin(xTemp);
-            timePrevSensed = arrayMin(xTemp) + SENSE_ALIGNMENT;
-            timeSinceSensed = 0;
+            offset = gap + arrayMin(x_temp);
+
+            time_prev_sensed = arrayMin(x_temp) + SENSE_ALIGNMENT;
+            time_since_sensed = 0;
+
+            recordPace(x_temp);
           } else {
-            x = concat(x, xTemp);
-            y = concat(y, yTemp);
+            x = concat(x, x_temp);
+            y = concat(y, y_temp);
 
             beatList.push("Slow conduction");
-            offset = gap + arrayMin(xTemp);
+            offset = gap + arrayMin(x_temp);
           }
         } else {
-          x = concat(x, xTemp);
-          y = concat(y, yTemp);
+          x = concat(x, x_temp);
+          y = concat(y, y_temp);
 
           beatList.push("Slow conduction");
-          offset = gap + arrayMin(xTemp);
+          offset = gap + arrayMin(x_temp);
         }
       }
     }
