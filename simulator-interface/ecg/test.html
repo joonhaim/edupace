@@ -41,6 +41,8 @@
           <select id="scenario">
             <option value="NSR" selected>NSR</option>
             <option value="3rdDegHB">3rd-degree AV block</option>
+            <option value="Mobitz2">Mobitz II</option>
+            <option value="SlowConduction">Slow conduction</option>
           </select>
         </div>
 
@@ -51,7 +53,7 @@
 
         <div class="field">
           <label for="pacerRate">Pacemaker Rate (bpm)</label>
-          <input id="pacerRate" type="number" value="70" min="20" max="220" step="1">
+          <input id="pacerRate" type="number" value="70" min="0" max="220" step="1">
         </div>
 
         <div class="field">
@@ -85,15 +87,14 @@
           <input id="seed" type="number" placeholder="e.g. 42">
         </div>
 
+        <button id="pacerToggle" class="btn" title="When OFF, pacer rate is forced to 0">Pacemaker: ON</button>
         <button id="gen" class="btn">Generate</button>
         <button id="play" class="btn">Monitor sweep (play/pause)</button>
       </div>
 
       <div class="hint">
-        Top: ECG paper view (0–6 s, −1 to +1 mV) with red grid and blue sensitivity line.<br/>
-        Bottom: monitor view (black) uses a <b>write-sweep</b>: a vertical bar moves left→right and <b>writes</b> new points.
-        When it reaches the right edge, it jumps back to the left and overwrites from there.
-        Changing parameters does <b>not</b> clear the monitor; the new waveform only overwrites where the sweep passes.
+        Top: ECG paper view (0–6 s) with red grid and blue sensitivity line.<br/>
+        Bottom: monitor view (black) uses a write-sweep
       </div>
 
       <div class="status">
@@ -115,6 +116,8 @@
   <script type="module">
     import { stitchBeats } from "./ecgStitcher.js";
     import { thirdDegHeartBlock } from "./ecgThirdDegree.js";
+    import { mobitzTypeII } from "./ecgMobitz2.js";
+    import { slowConduction } from "./ecgSlowConduction.js";
 
     // -------------------------
     // Paper constants
@@ -125,8 +128,19 @@
     const BIG_A   = 1.0;   // mV
 
     const VIEW_SEC = 6;
+
+    // "Clinical" amplitude window (what your wave is generated within / expected)
     const Y_MIN = -1;
     const Y_MAX =  1;
+
+    // Make both ECG windows taller WITHOUT stretching the wave:
+    // - We increase canvas height (more pixels)
+    // - AND we increase the rendered mV window by the same factor (so px/mV stays constant)
+    const VERTICAL_SCALE = 1.6;
+
+    // Render window (expanded so the waveform keeps the same pixel height)
+    const R_Y_MIN = Y_MIN * VERTICAL_SCALE;
+    const R_Y_MAX = Y_MAX * VERTICAL_SCALE;
 
     const PX_PER_SMALL_BOX = 8;
 
@@ -153,9 +167,57 @@
     const elAsync = document.getElementById("async");
     const elSeed = document.getElementById("seed");
 
+    const btnPacerToggle = document.getElementById("pacerToggle");
+    const btnGen = document.getElementById("gen");
+    const btnPlay = document.getElementById("play");
+
     const statusLen = document.getElementById("statusLen");
     const statusRange = document.getElementById("statusRange");
     const statusBeat = document.getElementById("statusBeat");
+
+    // -------------------------
+    // Pacemaker ON/OFF
+    // Applies to ALL scenarios because generateStripFromUI() always uses getEffectivePacerRate()
+    // -------------------------
+    let pacerOn = true;
+    let lastNonZeroPacerRate = Number(elRate.value) || 70;
+
+    function getEffectivePacerRate() {
+      return pacerOn ? Number(elRate.value) : 0;
+    }
+
+    function setPacerUi() {
+      if (pacerOn) {
+        // restore previous non-zero if UI currently shows 0 from OFF state
+        const current = Number(elRate.value);
+        const restore = (current > 0) ? current : (lastNonZeroPacerRate > 0 ? lastNonZeroPacerRate : 70);
+        elRate.value = String(restore);
+
+        btnPacerToggle.textContent = "Pacemaker: ON";
+        btnPacerToggle.style.opacity = "1";
+        elRate.disabled = false;
+      } else {
+        const current = Number(elRate.value);
+        if (current > 0) lastNonZeroPacerRate = current;
+
+        elRate.value = "0";
+        btnPacerToggle.textContent = "Pacemaker: OFF";
+        btnPacerToggle.style.opacity = "0.75";
+        elRate.disabled = true;
+      }
+    }
+
+    function setPacerState(on) {
+      pacerOn = !!on;
+      setPacerUi();
+      refreshStrips(); // do not clear monitor history; sweep overwrites as it passes
+    }
+
+    // Keep "lastNonZeroPacerRate" updated when user types a non-zero rate (only possible when ON)
+    elRate.addEventListener("input", () => {
+      const v = Number(elRate.value);
+      if (v > 0) lastNonZeroPacerRate = v;
+    });
 
     // -------------------------
     // Canvas sizing
@@ -173,7 +235,8 @@
 
     function paperCssSize() {
       const widthCss  = (VIEW_SEC / SMALL_T) * PX_PER_SMALL_BOX;
-      const heightCss = ((Y_MAX - Y_MIN) / SMALL_A) * PX_PER_SMALL_BOX;
+      const baseHeightCss = ((Y_MAX - Y_MIN) / SMALL_A) * PX_PER_SMALL_BOX;
+      const heightCss = Math.round(baseHeightCss * VERTICAL_SCALE);
       return { widthCss, heightCss };
     }
 
@@ -202,8 +265,11 @@
       paperCtx.fillRect(0, 0, w, h);
 
       const X = (t) => (t / VIEW_SEC) * w;
-      const Y = (v) => h - ((v - Y_MIN) / (Y_MAX - Y_MIN)) * h;
 
+      // IMPORTANT: use render window so wave is NOT stretched when canvas gets taller
+      const Y = (v) => h - ((v - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
+
+      // Vertical grid (time) unchanged
       for (let t = 0; t <= VIEW_SEC + 1e-9; t += SMALL_T) {
         const isBig = Math.abs((t / BIG_T) - Math.round(t / BIG_T)) < 1e-6;
         paperCtx.beginPath();
@@ -214,7 +280,8 @@
         paperCtx.stroke();
       }
 
-      for (let v = -1.5; v <= 1.5 + 1e-9; v += SMALL_A) {
+      // Horizontal grid spans render window
+      for (let v = R_Y_MIN; v <= R_Y_MAX + 1e-9; v += SMALL_A) {
         const isBig = Math.abs((v / BIG_A) - Math.round(v / BIG_A)) < 1e-6;
         paperCtx.beginPath();
         paperCtx.strokeStyle = isBig ? "rgba(255,0,0,0.70)" : "rgba(255,0,0,0.30)";
@@ -224,7 +291,7 @@
         paperCtx.stroke();
       }
 
-      // Sensitivity line (blue)
+      // Sensitivity line (blue) in mV, mapped into render window
       paperCtx.beginPath();
       paperCtx.strokeStyle = "rgba(0,0,255,1)";
       paperCtx.lineWidth = 1.5;
@@ -262,46 +329,46 @@
     }
 
     function sampleStripPeakHold(strip, t0, t1) {
-  // Returns the value with the largest absolute magnitude within [t0, t1]
-  // (captures thin spikes that would be missed by a single sample)
-  const x = strip.x, y = strip.y;
-  const n = x.length;
-  if (!n) return 0;
+      // Returns the value with the largest absolute magnitude within [t0, t1]
+      // (captures thin spikes that would be missed by a single sample)
+      const x = strip.x, y = strip.y;
+      const n = x.length;
+      if (!n) return 0;
 
-  // Clamp
-  if (t1 <= t0) return sampleStripLinear(strip, t0);
-  t0 = Math.max(t0, x[0]);
-  t1 = Math.min(t1, x[n - 1]);
-  if (t1 <= t0) return sampleStripLinear(strip, t0);
+      if (t1 <= t0) return sampleStripLinear(strip, t0);
+      t0 = Math.max(t0, x[0]);
+      t1 = Math.min(t1, x[n - 1]);
+      if (t1 <= t0) return sampleStripLinear(strip, t0);
 
-  const i0 = Math.max(0, lowerBound(x, t0) - 1);
-  const i1 = Math.min(n - 1, lowerBound(x, t1) + 1);
+      const i0 = Math.max(0, lowerBound(x, t0) - 1);
+      const i1 = Math.min(n - 1, lowerBound(x, t1) + 1);
 
-  let best = sampleStripLinear(strip, t0);
-  let bestAbs = Math.abs(best);
+      let best = sampleStripLinear(strip, t0);
+      let bestAbs = Math.abs(best);
 
-  for (let i = i0; i <= i1; i++) {
-    const v = y[i];
-    const av = Math.abs(v);
-    if (av > bestAbs) {
-      bestAbs = av;
-      best = v;
+      for (let i = i0; i <= i1; i++) {
+        const v = y[i];
+        const av = Math.abs(v);
+        if (av > bestAbs) {
+          bestAbs = av;
+          best = v;
+        }
+      }
+
+      const vEnd = sampleStripLinear(strip, t1);
+      if (Math.abs(vEnd) > bestAbs) best = vEnd;
+
+      return best;
     }
-  }
-
-  const vEnd = sampleStripLinear(strip, t1);
-  if (Math.abs(vEnd) > bestAbs) best = vEnd;
-
-  return best;
-}
-
 
     function drawWaveWindow(ctx, canvas, strip, tLeft, tRight, strokeStyle, lineWidth) {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
 
       const X = (t) => ((t - tLeft) / (tRight - tLeft)) * w;
-      const Y = (v) => h - ((v - Y_MIN) / (Y_MAX - Y_MIN)) * h;
+
+      // IMPORTANT: use render window so wave is NOT stretched when canvas gets taller
+      const Y = (v) => h - ((v - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
 
       const i0 = lowerBound(strip.x, tLeft);
       const i1 = lowerBound(strip.x, tRight);
@@ -321,7 +388,7 @@
     // -------------------------
     function generateStripFromUI(iterations) {
       const patientHR = Number(elHr.value);
-      const rate = Number(elRate.value);
+      const rate = getEffectivePacerRate(); // <-- OFF forces 0 for ALL scenarios
       const sensitivity = Number(elSens.value);
       const output = Number(elOut.value);
       const asynchronous = (elAsync.value === "true");
@@ -338,6 +405,30 @@
         });
       }
 
+      if (scenario === "Mobitz2") {
+        return mobitzTypeII({
+          patientHR,
+          sensitivity,
+          rate,
+          output,
+          asynchronous,
+          iterations,
+          probConduction: 0.8,
+        });
+      }
+
+      if (scenario === "SlowConduction") {
+        return slowConduction({
+          patientHR,
+          sensitivity,
+          rate,
+          output,
+          asynchronous,
+          iterations
+        });
+      }
+
+      // default: 3rd-degree
       return thirdDegHeartBlock({
         iterations,
         sensitivity,
@@ -364,7 +455,8 @@
         if (stripObj.y[i] < yMin) yMin = stripObj.y[i];
         if (stripObj.y[i] > yMax) yMax = stripObj.y[i];
       }
-      statusRange.textContent = `t: ${t0.toFixed(2)}–${t1.toFixed(2)} s, y: ${yMin.toFixed(2)}–${yMax.toFixed(2)} mV`;
+      statusRange.textContent =
+        `t: ${t0.toFixed(2)}–${t1.toFixed(2)} s, y: ${yMin.toFixed(2)}–${yMax.toFixed(2)} mV`;
 
       const beats = Array.isArray(stripObj.beatList) ? stripObj.beatList : [];
       const paced = beats.filter(b => b === "Ventricular pacing").length;
@@ -418,7 +510,8 @@
 
     function yToMonitorPx(yVal) {
       const h = monitorCanvas.clientHeight;
-      return h - ((yVal - Y_MIN) / (Y_MAX - Y_MIN)) * h;
+      // IMPORTANT: use render window so wave is NOT stretched when canvas gets taller
+      return h - ((yVal - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
     }
 
     function ensureLiveStripLongEnough() {
@@ -452,34 +545,32 @@
         segments.push([0, newX]);
       }
 
-      for (const [a, b] of segments) {
-        const startCol = Math.max(0, Math.floor(a));
-        const endCol = Math.min(w, Math.ceil(b));
+      for (const [aSeg, bSeg] of segments) {
+        const startCol = Math.max(0, Math.floor(aSeg));
+        const endCol = Math.min(w, Math.ceil(bSeg));
 
         for (let col = startCol; col < endCol; col++) {
-  const tEnd = stripLive.x[stripLive.x.length - 1] || VIEW_SEC;
+          const tEnd = stripLive.x[stripLive.x.length - 1] || VIEW_SEC;
 
-  const t0 = (col / Math.max(1, (w - 1))) * VIEW_SEC;
-  const t1 = ((col + 1) / Math.max(1, (w - 1))) * VIEW_SEC;
+          const t0 = (col / Math.max(1, (w - 1))) * VIEW_SEC;
+          const t1 = ((col + 1) / Math.max(1, (w - 1))) * VIEW_SEC;
 
-  // Wrap into strip time (same logic as before, but for a range)
-  const a = ((t0 % tEnd) + tEnd) % tEnd;
-  const b = ((t1 % tEnd) + tEnd) % tEnd;
+          // Wrap into strip time
+          const a = ((t0 % tEnd) + tEnd) % tEnd;
+          const b = ((t1 % tEnd) + tEnd) % tEnd;
 
-  let yVal;
-  if (b >= a) {
-    yVal = sampleStripPeakHold(stripLive, a, b);
-  } else {
-    // interval wraps around end of strip
-    const v1 = sampleStripPeakHold(stripLive, a, tEnd);
-    const v2 = sampleStripPeakHold(stripLive, 0, b);
-    yVal = (Math.abs(v1) >= Math.abs(v2)) ? v1 : v2;
-  }
+          let yVal;
+          if (b >= a) {
+            yVal = sampleStripPeakHold(stripLive, a, b);
+          } else {
+            const v1 = sampleStripPeakHold(stripLive, a, tEnd);
+            const v2 = sampleStripPeakHold(stripLive, 0, b);
+            yVal = (Math.abs(v1) >= Math.abs(v2)) ? v1 : v2;
+          }
 
-  monitorY[col] = yVal;
-  monitorWritten[col] = true;
-}
-
+          monitorY[col] = yVal;
+          monitorWritten[col] = true;
+        }
       }
 
       sweepX = newX;
@@ -571,7 +662,11 @@
     // -------------------------
     // Controls
     // -------------------------
-    document.getElementById("gen").addEventListener("click", () => {
+    btnPacerToggle.addEventListener("click", () => {
+      setPacerState(!pacerOn);
+    });
+
+    btnGen.addEventListener("click", () => {
       stripPaper = generateStripFromUI(60);
       stripLive  = generateStripFromUI(80);
       updateStatus(stripLive);
@@ -579,7 +674,7 @@
       // do NOT clear monitor; sweep overwrites as it passes
     });
 
-    document.getElementById("play").addEventListener("click", () => {
+    btnPlay.addEventListener("click", () => {
       playing = !playing;
       if (playing) {
         lastTs = null;
@@ -589,9 +684,18 @@
 
     // All UI changes regenerate strips (monitor keeps history; sweep overwrites)
     [
-      elScenario, elHr, elRate, elSens, elOut,
+      elScenario, elHr, elSens, elOut,
       elReg, elAsync, elSeed
     ].forEach(el => el.addEventListener("change", refreshStrips));
+
+    // If the user changes pacerRate (only possible while ON), regenerate strips too
+    elRate.addEventListener("change", () => {
+      if (pacerOn) {
+        const v = Number(elRate.value);
+        if (v > 0) lastNonZeroPacerRate = v;
+      }
+      refreshStrips();
+    });
 
     function onResize() {
       sizePaperCanvas();
@@ -627,6 +731,9 @@
     // -------------------------
     sizePaperCanvas();
     sizeMonitorCanvas();
+
+    // init pacer UI state (ON by default)
+    setPacerUi();
 
     stripPaper = generateStripFromUI(60);
     stripLive  = generateStripFromUI(80);

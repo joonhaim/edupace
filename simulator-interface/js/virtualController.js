@@ -86,10 +86,7 @@ function initVirtualController() {
     const isVirtualMode = () => Array.from(modeRadios).some((radio) => radio.checked && radio.value === 'virtual');
 
     const updateTiles = () => {
-        const showValues = controllerState.power;
-        const showAsync = showValues && isAsyncFromSensitivity(controllerState.sensitivity);
-        const showUnits = showValues && !showAsync;
-
+        const showValues = controllerState.power || controllerState.locked;
         if (display.rate) {
             display.rate.textContent = showValues ? formatValue('rate', controllerState.rate) : '--';
         }
@@ -97,14 +94,10 @@ function initVirtualController() {
             display.output.textContent = showValues ? formatValue('output', controllerState.output) : '--';
         }
         if (display.sensitivity) {
-            display.sensitivity.textContent = showValues
-                ? showAsync
-                    ? 'ASYNC'
-                    : formatValue('sensitivity', controllerState.sensitivity)
-                : '--';
+            display.sensitivity.textContent = showValues ? formatValue('sensitivity', controllerState.sensitivity) : '--';
         }
         if (display.sensitivityUnit) {
-            display.sensitivityUnit.textContent = showUnits ? 'mV' : '';
+            display.sensitivityUnit.textContent = showValues ? 'mV' : '';
         }
     };
 

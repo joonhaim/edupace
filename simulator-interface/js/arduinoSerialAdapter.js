@@ -329,20 +329,19 @@ function formatSensitivityValue(value) {
     return Number.isFinite(value) ? value.toFixed(1) : '--';
 }
 
-function applySensitivityDisplay({ sensitivity, mode, asynchronous, power }) {
+function applySensitivityDisplay({ sensitivity, power }) {
     if (!ui.sensitivity) return;
 
     const powered = typeof power === 'boolean' ? power : isPoweredOn;
-    const asyncMode = powered && isAsyncMode({ sensitivity, mode, asynchronous, power: powered });
 
     if (powered) {
-        ui.sensitivity.textContent = asyncMode ? 'ASYNC' : formatSensitivityValue(sensitivity);
+        ui.sensitivity.textContent = formatSensitivityValue(sensitivity);
     } else {
         ui.sensitivity.textContent = '--';
     }
 
     if (ui.sensitivityUnit) {
-        ui.sensitivityUnit.textContent = powered && !asyncMode ? 'mV' : '';
+        ui.sensitivityUnit.textContent = powered ? 'mV' : '';
     }
 }
 
@@ -390,7 +389,7 @@ function applyParameterDisplay({ rate, output, sensitivity, power, asynchronous,
         ui.output.textContent = powered && Number.isFinite(output) ? output.toFixed(1) : '--';
     }
 
-    applySensitivityDisplay({ sensitivity, mode, asynchronous, power: powered });
+    applySensitivityDisplay({ sensitivity, power: powered });
 
     const parametersCard = document.querySelector('.parameters-card');
     const controlGroups = parametersCard?.querySelectorAll('[data-virtual-control]') ?? [];
@@ -592,6 +591,10 @@ async function readLoop() {
 }
 
 function handleHardwareMessage(line) {
+    const trimmedLine = line.trim();
+    if (trimmedLine === '') {
+        return;
+    }
     const payload = parsePayload(line);
     let parameterChanged = false;
 
@@ -618,12 +621,10 @@ function handleHardwareMessage(line) {
     };
 
     if (payload.rate !== undefined) {
-        ui.rate.textContent = payload.rate;
         updateParam('rate', payload.rate);
     }
 
     if (payload.output !== undefined) {
-        ui.output.textContent = payload.output;
         updateParam('output', payload.output);
     }
 
@@ -681,6 +682,14 @@ function handleHardwareMessage(line) {
 }
 
 function parsePayload(line) {
+    const trimmed = line.trim().toUpperCase();
+    if (trimmed === 'POWER_ON') {
+        return { power: 'ON' };
+    }
+    if (trimmed === 'POWER_OFF') {
+        return { power: 'OFF' };
+    }
+
     const payload = {};
     const segments = line.split(/[;,]/);
 

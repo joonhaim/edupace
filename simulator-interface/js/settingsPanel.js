@@ -5,6 +5,7 @@ const defaultSettings = {
     sweepSpeed: 25,
     sweepWindow: 6,
     amplitudeScaling: 10,
+    ecgBackground: 'monitor',
     traceColor: 'green',
     traceThickness: 'normal',
     hrDisplay: true,
@@ -18,17 +19,22 @@ const defaultSettings = {
     intrinsicBeatLabels: false,
     senseColor: 'amber',
     intervalRulers: true,
-    alarmSound: true,
-    buttonBeeps: true,
     soundVolume: 70,
-    qrsBeep: 'classic',
+    qrsBeep: 'on',
     autoLockKnobs: '60',
-    captureDrift: 'off',
-    actionLog: true,
-    postScenarioReview: 'auto'
+    intrinsicRate: 60,
+    intrinsicRegularity: 'regular',
+    actionLog: true
 };
 
 let currentSettings = { ...defaultSettings };
+let settingsCardRef = null;
+let updateGridDependenciesRef = null;
+const sliderFormatters = {
+    gridIntensity: (value) => `${value}%`,
+    soundVolume: (value) => `${value}%`,
+    intrinsicRate: (value) => `${value} bpm`
+};
 
 function initSettingsPanel() {
     const settingsCard = document.querySelector('[data-settings-panel]');
@@ -38,6 +44,7 @@ function initSettingsPanel() {
     const settingsTitle = document.getElementById('settingsTitle');
 
     if (!settingsCard) return;
+    settingsCardRef = settingsCard;
 
     const getToggles = () => Array.from(document.querySelectorAll('[data-settings-toggle]'));
     const syncToggleState = (isVisible = settingsLayer?.classList.contains('is-open')) => {
@@ -142,12 +149,20 @@ function initSettingsPanel() {
         if (intensityRow) intensityRow.classList.toggle('is-disabled', !isEnabled);
     };
 
+    updateGridDependenciesRef = updateGridDependencies;
     bindToggle(settingsCard, 'gridlinesToggle', 'gridlines', updateGridDependencies);
     bindRadios(settingsCard, 'gridDensity', 'gridDensity');
     bindSlider(settingsCard, 'gridIntensity', 'gridIntensity');
     bindRadios(settingsCard, 'sweepSpeed', 'sweepSpeed', Number);
     bindRadios(settingsCard, 'sweepWindow', 'sweepWindow', Number);
     bindRadios(settingsCard, 'amplitudeScaling', 'amplitudeScaling', Number);
+    bindRadios(settingsCard, 'ecgBackground', 'ecgBackground', (value) => value, (value) => {
+        if (value === 'paper' && currentSettings.traceColor !== 'black') {
+            currentSettings.traceColor = 'black';
+            syncInputs(settingsCard);
+            emitSettings();
+        }
+    });
     bindRadios(settingsCard, 'traceColor', 'traceColor');
     bindRadios(settingsCard, 'traceThickness', 'traceThickness');
 
@@ -163,15 +178,13 @@ function initSettingsPanel() {
     bindRadios(settingsCard, 'senseColor', 'senseColor');
     bindToggle(settingsCard, 'intervalRulersToggle', 'intervalRulers');
 
-    bindToggle(settingsCard, 'alarmSoundToggle', 'alarmSound');
-    bindToggle(settingsCard, 'buttonBeepsToggle', 'buttonBeeps');
     bindRadios(settingsCard, 'qrsBeep', 'qrsBeep');
     bindSlider(settingsCard, 'soundVolume', 'soundVolume');
 
     bindRadios(settingsCard, 'autoLockKnobs', 'autoLockKnobs');
-    bindRadios(settingsCard, 'captureDrift', 'captureDrift');
+    bindSlider(settingsCard, 'intrinsicRate', 'intrinsicRate');
+    bindRadios(settingsCard, 'intrinsicRegularity', 'intrinsicRegularity');
     bindToggle(settingsCard, 'actionLogToggle', 'actionLog');
-    bindRadios(settingsCard, 'postScenarioReview', 'postScenarioReview');
 
     const resetBtn = settingsCard.querySelector('[data-settings-reset]');
     if (resetBtn) {
@@ -225,11 +238,12 @@ function bindSlider(root, inputId, key) {
     const input = root.querySelector(`#${inputId}`);
     const valueLabel = root.querySelector(`[data-slider-value="${inputId}"]`);
     if (!input) return;
+    const formatValue = sliderFormatters[key] ?? ((value) => `${value}%`);
 
     const updateValue = () => {
         currentSettings[key] = Number(input.value);
         if (valueLabel) {
-            valueLabel.textContent = `${currentSettings[key]}%`;
+            valueLabel.textContent = formatValue(currentSettings[key]);
         }
         emitSettings();
     };
@@ -255,7 +269,10 @@ function syncInputs(root) {
         if (slider) {
             slider.value = value;
             const label = root.querySelector(`[data-slider-value="${slider.id}"]`);
-            if (label) label.textContent = `${value}%`;
+            if (label) {
+                const formatValue = sliderFormatters[slider.id] ?? ((nextValue) => `${nextValue}%`);
+                label.textContent = formatValue(value);
+            }
         }
     });
 }
@@ -268,4 +285,16 @@ function emitSettings() {
     );
 }
 
-export { initSettingsPanel, defaultSettings };
+function applySettingsPatch(patch) {
+    if (!patch) return;
+    currentSettings = { ...currentSettings, ...patch };
+    if (settingsCardRef) {
+        syncInputs(settingsCardRef);
+        if (typeof updateGridDependenciesRef === 'function') {
+            updateGridDependenciesRef(currentSettings.gridlines);
+        }
+    }
+    emitSettings();
+}
+
+export { initSettingsPanel, defaultSettings, applySettingsPatch };
