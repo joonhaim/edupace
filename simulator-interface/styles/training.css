@@ -724,6 +724,20 @@ body.simulation-light .theme-toggle {
     gap: 1.2rem;
 }
 
+.graph-column {
+    width: min(100%, var(--ecg-width, 1200px));
+    justify-self: start;
+}
+
+.control-column {
+    width: min(100%, 360px);
+}
+
+.control-column > .card,
+.control-column > .settings-launch {
+    width: 100%;
+}
+
 .alarm-banner {
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -758,7 +772,7 @@ body.simulation-light .theme-toggle {
     align-items: stretch;
     gap: 1.2rem;
     --lead-label-color: #33ff66;
-    --hr-color: #f5f7fa;
+    --hr-color: #33ff66;
 }
 
 .ecg-shell[data-background="paper"] .ecg-hr-card,
@@ -825,6 +839,13 @@ body.ecg-fullscreen-active {
     justify-content: space-between;
     align-items: flex-start;
     gap: 1rem;
+    pointer-events: none;
+}
+
+.ecg-overlay-status {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
     pointer-events: none;
 }
 
@@ -1541,6 +1562,13 @@ body.ecg-fullscreen-active {
 @media (max-width: 1024px) {
     .learning-parameters-row {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (min-width: 1300px) {
+    .sim-main {
+        grid-template-columns: auto minmax(0, 360px);
+        align-items: start;
     }
 }
 
