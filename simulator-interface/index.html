@@ -43,32 +43,6 @@
       </nav>
 
       <div class="sidebar-footer" aria-label="Device connection">
-        <div class="sidebar-control" aria-label="Input source">
-          <div class="sidebar-control-heading">
-            <p class="eyebrow" data-i18n-key="training.controls.eyebrow">Control</p>
-            <p class="sidebar-control-title" data-i18n-key="training.controls.input.title">Input source</p>
-          </div>
-          <div
-            class="mode-toggle"
-            role="radiogroup"
-            aria-label="Input source"
-            data-i18n-key="training.controls.input.title"
-            data-i18n-attr="aria-label"
-          >
-            <label class="mode-pill">
-              <input type="radio" name="inputMode" value="hardware" checked>
-              <span data-i18n-key="training.controls.input.hardware">Hardware</span>
-            </label>
-            <label class="mode-pill">
-              <input type="radio" name="inputMode" value="virtual">
-              <span data-i18n-key="training.controls.input.virtual">Virtual</span>
-            </label>
-          </div>
-          <p class="muted sidebar-control-caption" data-i18n-key="training.controls.input.caption">
-            Choose whether the simulator follows the physical EduPace device or on-screen controls.
-          </p>
-        </div>
-
         <div class="connection-card connection-card--compact">
           <div class="connection-chip-row">
             <span class="connection-label" data-i18n-key="connection.status">Device</span>
@@ -369,7 +343,7 @@
                         </div>
                     </div>
 
-                    
+
                     <div class="sim-main">
                         <!-- Left: ECG + vitals -->
                         <section class="graph-column" aria-label="Telemetry">
@@ -377,33 +351,36 @@
                                 <span id="alarmText" data-i18n-key="training.telemetry.noAlarms">No active alarms</span>
                             </div>
 
-                            <div class="ecg-shell">
-                                <div class="ecg-frame">
-                                    <canvas id="ecgCanvas" width="1200" height="550"></canvas>
-                                    <div class="ecg-overlay">
-                                        <div class="ecg-overlay-top">
-                                            <div class="ecg-label" aria-live="polite">II</div>
+                            <div class="ecg-frame">
+                                <canvas id="ecgCanvas" width="1200" height="550"></canvas>
+                                <div class="ecg-overlay">
+                                    <div class="ecg-overlay-top">
+                                        <div class="ecg-label" aria-live="polite">II</div>
+                                        <div class="ecg-vitals">
+                                            <div class="vital-block">
+                                                <span class="vital-label">HR</span>
+                                                <span id="hrValue" class="vital-value hr-value">--</span>
+                                                <span class="vital-unit">bpm</span>
+                                            </div>
+                                            <div class="vital-block pace-block" aria-hidden="true">
+                                                <span class="vital-label">PACE</span>
+                                                <span id="paceMode" class="vital-value pace-value small">--</span>
+                                            </div>
                                         </div>
-                                        <div class="calibration-inline" aria-live="polite" hidden>
-                                            <span class="calibration-label" data-i18n-key="training.telemetry.calibration">Calibration</span>
-                                            <span class="calibration-value">10 mm/mV · 25 mm/s · 6 s window</span>
-                                        </div>
-                                        <div class="caliper-readout" aria-live="polite" hidden>
-                                            <span class="caliper-title">Calipers</span>
-                                            <span class="caliper-value">-- ms · -- ppm</span>
-                                        </div>
-                                        <div class="ecg-paused-badge" hidden>Paused</div>
                                     </div>
-                                </div>
-                                <aside class="ecg-side" aria-label="ECG status and controls">
-                                    <div class="ecg-hr-card">
-                                        <div class="ecg-hr-label">HR</div>
-                                    <div class="ecg-hr-value-row">
-                                        <span id="hrValue" class="vital-value hr-value">--</span>
-                                        <span class="vital-unit">bpm</span>
+                                    <div class="calibration-inline" aria-live="polite" hidden>
+                                        <span class="calibration-label" data-i18n-key="training.telemetry.calibration">Calibration</span>
+                                        <span class="calibration-value">10 mm/mV · 25 mm/s · 6 s window</span>
                                     </div>
-                                </div>
-                                    <div class="ecg-control-stack">
+                                    <button
+                                        type="button"
+                                        class="caliper-unit-toggle"
+                                        aria-label="Show calipers in milliseconds"
+                                        title="Show calipers in milliseconds"
+                                    >
+                                        <span data-i18n-key="training.telemetry.ms">ms</span>
+                                    </button>
+                                    <div class="ecg-overlay-actions">
                                         <button
                                             type="button"
                                             class="overlay-action calibration-toggle"
@@ -472,127 +449,21 @@
                                             ⛶
                                         </button>
                                     </div>
-                                    <p class="ecg-control-hint">Click the waveform to pause and measure.</p>
-                                </aside>
+                                </div>
                             </div>
 
-                            <div class="learning-parameters-row">
-                                <div class="card performance-card calibration-performance">
-                                    <div class="card-heading compact">
-    <!--                                    <p class="eyebrow">Learning</p>-->
-                                    </div>
-                                    <div class="learning-details">
-                                        <div class="learning-item">
-                                            <p class="learning-label" data-i18n-key="training.learning.objective">Current Objective</p>
-                                            <p id="objectiveTextSecondary" class="learning-body">–</p>
-                                        </div>
-                                        <div class="learning-item">
-                                            <p class="learning-label" data-i18n-key="training.learning.feedback">Feedback</p>
-                                            <p id="feedbackTextSecondary" class="learning-body">–</p>
-                                        </div>
-                                    </div>
+                            <div class="card performance-card calibration-performance">
+                                <div class="card-heading compact">
+<!--                                    <p class="eyebrow">Learning</p>-->
                                 </div>
-
-                                <div class="card parameters-card">
-                                    <div class="card-heading compact">
-                                        <p class="eyebrow" data-i18n-key="training.pacemaker.eyebrow">Pacemaker</p>
-                                        <h3 class="card-title" id="pacemakerTitle" data-i18n-key="training.pacemaker.parameters">Pacemaker parameters</h3>
+                                <div class="learning-details">
+                                    <div class="learning-item">
+                                        <p class="learning-label" data-i18n-key="training.learning.objective">Current Objective</p>
+                                        <p id="objectiveTextSecondary" class="learning-body">–</p>
                                     </div>
-
-                                    <div class="led-row">
-                                        <div class="led-group">
-                                            <div class="led led-pace" id="paceLed"></div>
-                                            <span>PACE</span>
-                                        </div>
-                                        <div class="led-group">
-                                            <div class="led led-sense" id="senseLed"></div>
-                                            <span>SENSE</span>
-                                        </div>
-
-                                    </div>
-
-                                    <div class="param-grid">
-                                        <div class="param-tile">
-                                            <div class="param-meta">
-                                                <div class="param-label">Rate</div>
-                                                <div class="param-value">
-                                                    <span id="rateValue">--</span>
-                                                    <span class="param-unit">ppm</span>
-                                                </div>
-                                            </div>
-                                            <div
-                                                class="param-controls"
-                                                data-virtual-control="rate"
-                                                data-min="30"
-                                                data-max="120"
-                                                data-step="1"
-                                                aria-hidden="true"
-                                            >
-                                                <button type="button" class="param-step" data-direction="down" aria-label="Decrease rate">←</button>
-                                                <button type="button" class="param-step" data-direction="up" aria-label="Increase rate">→</button>
-                                            </div>
-                                        </div>
-                                        <div class="param-tile">
-                                            <div class="param-meta">
-                                                <div class="param-label">Output</div>
-                                                <div class="param-value">
-                                                    <span id="outputValue">--</span>
-                                                    <span class="param-unit">mA</span>
-                                                </div>
-                                            </div>
-                                            <div
-                                                class="param-controls"
-                                                data-virtual-control="output"
-                                                data-min="0"
-                                                data-max="10"
-                                                data-step="0.1"
-                                                aria-hidden="true"
-                                            >
-                                                <button type="button" class="param-step" data-direction="down" aria-label="Decrease output">←</button>
-                                                <button type="button" class="param-step" data-direction="up" aria-label="Increase output">→</button>
-                                            </div>
-                                        </div>
-                                        <div class="param-tile">
-                                            <div class="param-meta">
-                                                <div class="param-label">Sensitivity</div>
-                                                <div class="param-value">
-                                                    <span id="sensValue">--</span>
-                                                    <span class="param-unit">mV</span>
-                                                </div>
-                                            </div>
-                                            <div
-                                                class="param-controls"
-                                                data-virtual-control="sensitivity"
-                                                data-min="0"
-                                                data-max="10"
-                                                data-step="0.1"
-                                                aria-hidden="true"
-                                            >
-                                                <button type="button" class="param-step" data-direction="down" aria-label="Decrease sensitivity">←</button>
-                                                <button type="button" class="param-step" data-direction="up" aria-label="Increase sensitivity">→</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="virtual-actions" aria-label="Power and lock controls" aria-hidden="true">
-                                        <button
-                                            type="button"
-                                            class="virtual-action-btn"
-                                            data-virtual-action="power"
-                                            aria-pressed="false"
-                                        >
-                                            <span class="action-label">Power</span>
-                                            <span class="action-state" data-action-state>Off</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="virtual-action-btn"
-                                            data-virtual-action="lock"
-                                            aria-pressed="false"
-                                        >
-                                            <span class="action-label">Lock</span>
-                                            <span class="action-state" data-action-state>Unlocked</span>
-                                        </button>
+                                    <div class="learning-item">
+                                        <p class="learning-label" data-i18n-key="training.learning.feedback">Feedback</p>
+                                        <p id="feedbackTextSecondary" class="learning-body">–</p>
                                     </div>
                                 </div>
                             </div>
@@ -600,43 +471,137 @@
 
                         <!-- Right: controls -->
                         <aside class="control-column" aria-label="Controls">
-                            <div class="card intrinsic-settings-card" data-intrinsic-settings>
-                                <button
-                                    type="button"
-                                    class="intrinsic-settings-toggle"
-                                    aria-expanded="false"
-                                    aria-controls="intrinsicSettingsPanel"
-                                >
-                                    <span data-i18n-key="training.intrinsic.title">Intrinsic HR Settings</span>
-                                    <span class="intrinsic-toggle-icon" aria-hidden="true">▾</span>
-                                </button>
-                                <div class="intrinsic-settings-body" id="intrinsicSettingsPanel" hidden>
-                                    <label class="intrinsic-field" for="intrinsicRateInput">
-                                        <span class="intrinsic-label" data-i18n-key="settings.intrinsicRate.title">Intrinsic heart rate</span>
-                                        <input
-                                            id="intrinsicRateInput"
-                                            type="number"
-                                            min="20"
-                                            max="220"
-                                            step="1"
-                                            value="60"
-                                        />
-                                    </label>
-                                    <div class="intrinsic-field">
-                                        <span class="intrinsic-label" data-i18n-key="settings.intrinsicRegularity.title">Intrinsic regularity</span>
-                                        <div class="intrinsic-options" role="radiogroup" aria-label="Intrinsic regularity" data-i18n-key="settings.intrinsicRegularity.aria" data-i18n-attr="aria-label">
-                                            <label class="intrinsic-option">
-                                                <input type="radio" name="intrinsicRegularityInline" value="regular" checked />
-                                                <span data-i18n-key="settings.intrinsicRegularity.regular">Regular</span>
-                                            </label>
-                                            <label class="intrinsic-option">
-                                                <input type="radio" name="intrinsicRegularityInline" value="irregular" />
-                                                <span data-i18n-key="settings.intrinsicRegularity.irregular">Irregular</span>
-                                            </label>
+                            <div class="card parameters-card">
+                                <div class="card-heading compact">
+                                    <p class="eyebrow" data-i18n-key="training.pacemaker.eyebrow">Pacemaker</p>
+                                    <h3 class="card-title" id="pacemakerTitle" data-i18n-key="training.pacemaker.parameters">Pacemaker parameters</h3>
+                                </div>
+
+                                <div class="led-row">
+                                    <div class="led-group">
+                                        <div class="led led-pace" id="paceLed"></div>
+                                        <span>PACE</span>
+                                    </div>
+                                    <div class="led-group">
+                                        <div class="led led-sense" id="senseLed"></div>
+                                        <span>SENSE</span>
+                                    </div>
+
+                                </div>
+
+                                <div class="param-grid">
+                                    <div class="param-tile">
+                                        <div class="param-meta">
+                                            <div class="param-label">Rate</div>
+                                            <div class="param-value">
+                                                <span id="rateValue">--</span>
+                                                <span class="param-unit">ppm</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="rate"
+                                            data-min="30"
+                                            data-max="120"
+                                            data-step="1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease rate">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase rate">→</button>
+                                        </div>
+                                    </div>
+                                    <div class="param-tile">
+                                        <div class="param-meta">
+                                            <div class="param-label">Output</div>
+                                            <div class="param-value">
+                                                <span id="outputValue">--</span>
+                                                <span class="param-unit">mA</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="output"
+                                            data-min="0"
+                                            data-max="10"
+                                            data-step="0.1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease output">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase output">→</button>
+                                        </div>
+                                    </div>
+                                    <div class="param-tile">
+                                        <div class="param-meta">
+                                            <div class="param-label">Sensitivity</div>
+                                            <div class="param-value">
+                                                <span id="sensValue">--</span>
+                                                <span class="param-unit">mV</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="param-controls"
+                                            data-virtual-control="sensitivity"
+                                            data-min="0"
+                                            data-max="10"
+                                            data-step="0.1"
+                                            aria-hidden="true"
+                                        >
+                                            <button type="button" class="param-step" data-direction="down" aria-label="Decrease sensitivity">←</button>
+                                            <button type="button" class="param-step" data-direction="up" aria-label="Increase sensitivity">→</button>
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="virtual-actions" aria-label="Power and lock controls" aria-hidden="true">
+                                    <button
+                                        type="button"
+                                        class="virtual-action-btn"
+                                        data-virtual-action="power"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="action-label">Power</span>
+                                        <span class="action-state" data-action-state>Off</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="virtual-action-btn"
+                                        data-virtual-action="lock"
+                                        aria-pressed="false"
+                                    >
+                                        <span class="action-label">Lock</span>
+                                        <span class="action-state" data-action-state>Unlocked</span>
+                                    </button>
+                                </div>
                             </div>
+
+                            <div class="card control-stack">
+                            <div class="card-heading inline control-heading">
+                                <div>
+                                    <p class="eyebrow" data-i18n-key="training.controls.eyebrow">Control</p>
+                                    <h3 class="card-title" data-i18n-key="training.controls.input.title">Input source</h3>
+                                </div>
+                                <div
+                                    class="mode-toggle is-compact"
+                                    role="radiogroup"
+                                    aria-label="Input source"
+                                    data-i18n-key="training.controls.input.title"
+                                    data-i18n-attr="aria-label"
+                                >
+                                    <label class="mode-pill">
+                                        <input type="radio" name="inputMode" value="hardware" checked>
+                                        <span data-i18n-key="training.controls.input.hardware">Hardware</span>
+                                    </label>
+                                    <label class="mode-pill">
+                                        <input type="radio" name="inputMode" value="virtual">
+                                        <span data-i18n-key="training.controls.input.virtual">Virtual</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <p class="muted control-caption" data-i18n-key="training.controls.input.caption">
+                                Choose whether the simulator follows the physical EduPace device or on-screen controls.
+                            </p>
+                        </div>
 
 
                             <div class="settings-launch">
@@ -931,22 +896,6 @@
                                                 <div class="settings-section">
                                                     <div class="section-label" data-i18n-key="settings.section.appearance">Appearance</div>
                                                     <div class="settings-grid">
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title">Background</div>
-                                                                <p class="setting-hint">Monitor black or graph paper.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="ECG background">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="ecgBackground" value="monitor" checked>
-                                                                    <span>Monitor</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="ecgBackground" value="paper">
-                                                                    <span>Graph paper</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
                                                                 <div class="setting-title" data-i18n-key="settings.traceLook.title">Trace look</div>
@@ -954,11 +903,6 @@
                                                             </div>
                                                             <div class="setting-controls setting-controls-stacked">
                                                                 <div class="color-options" role="radiogroup" aria-label="Trace color" data-i18n-key="settings.traceColor.aria" data-i18n-attr="aria-label">
-                                                                    <label class="color-option">
-                                                                        <input type="radio" name="traceColor" value="black">
-                                                                        <span class="color-swatch" style="--swatch-color: #0b0b0b"></span>
-                                                                        <span class="sr-only">Black</span>
-                                                                    </label>
                                                                     <label class="color-option">
                                                                         <input type="radio" name="traceColor" value="green" checked>
                                                                         <span class="color-swatch" style="--swatch-color: #00e000"></span>
@@ -1058,7 +1002,7 @@
                                                                         <span class="sr-only" data-i18n-key="settings.colors.green">Green</span>
                                                                     </label>
                                                                     <label class="color-option">
-                                                                        <input type="radio" name="hrColor" value="blue">
+                                                                        <input type="radio" name="hrColor" value="blue" checked>
                                                                         <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
                                                                         <span class="sr-only" data-i18n-key="settings.colors.blue">Blue</span>
                                                                     </label>
@@ -1068,7 +1012,7 @@
                                                                         <span class="sr-only" data-i18n-key="settings.colors.amber">Amber</span>
                                                                     </label>
                                                                     <label class="color-option">
-                                                                        <input type="radio" name="hrColor" value="white" checked>
+                                                                        <input type="radio" name="hrColor" value="white">
                                                                         <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
                                                                         <span class="sr-only" data-i18n-key="settings.colors.white">White</span>
                                                                     </label>
@@ -1088,12 +1032,12 @@
                                                                 </label>
                                                                 <div class="color-options" role="radiogroup" aria-label="Lead label color" data-i18n-key="settings.leadLabel.aria" data-i18n-attr="aria-label">
                                                                     <label class="color-option">
-                                                                        <input type="radio" name="leadLabelColor" value="green" checked>
+                                                                        <input type="radio" name="leadLabelColor" value="green">
                                                                         <span class="color-swatch" style="--swatch-color: #00e000"></span>
                                                                         <span class="sr-only" data-i18n-key="settings.colors.green">Green</span>
                                                                     </label>
                                                                     <label class="color-option">
-                                                                        <input type="radio" name="leadLabelColor" value="blue">
+                                                                        <input type="radio" name="leadLabelColor" value="blue" checked>
                                                                         <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
                                                                         <span class="sr-only" data-i18n-key="settings.colors.blue">Blue</span>
                                                                     </label>
@@ -1236,18 +1180,43 @@
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
                                                                 <div class="setting-title" data-i18n-key="settings.qrsBeep.title">ECG QRS beep</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.qrsBeep.hint">On or off.</p>
+                                                                <p class="setting-hint" data-i18n-key="settings.qrsBeep.hint">Classic, soft, or off.</p>
                                                             </div>
                                                             <div class="pill-group" role="radiogroup" aria-label="QRS beep" data-i18n-key="settings.qrsBeep.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
-                                                                    <input type="radio" name="qrsBeep" value="on" checked>
-                                                                    <span data-i18n-key="settings.shared.on">On</span>
+                                                                    <input type="radio" name="qrsBeep" value="classic" checked>
+                                                                    <span data-i18n-key="settings.qrsBeep.classic">Classic</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="qrsBeep" value="soft">
+                                                                    <span data-i18n-key="settings.qrsBeep.soft">Soft</span>
                                                                 </label>
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="qrsBeep" value="off">
                                                                     <span data-i18n-key="settings.shared.off">Off</span>
                                                                 </label>
                                                             </div>
+                                                        </div>
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title" data-i18n-key="settings.alarmSounds.title">Alarm sounds</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.alarmSounds.hint">Enable audible alarms.</p>
+                                                            </div>
+                                                            <label class="switch">
+                                                                <input type="checkbox" id="alarmSoundToggle" checked>
+                                                                <span class="switch-track"></span>
+                                                            </label>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title" data-i18n-key="settings.buttonBeeps.title">Button beeps</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.buttonBeeps.hint">Feedback tones when controls are used.</p>
+                                                            </div>
+                                                            <label class="switch">
+                                                                <input type="checkbox" id="buttonBeepsToggle" checked>
+                                                                <span class="switch-track"></span>
+                                                            </label>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1257,8 +1226,8 @@
                                                     <div class="settings-grid">
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.qrsBeepVolume.title">ECG beep volume</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.qrsBeepVolume.hint">Adjust the ECG beep loudness.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.notificationVolume.title">Notification volume</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.notificationVolume.hint">Overall alert volume.</p>
                                                             </div>
                                                             <div class="slider-row">
                                                                 <input type="range" id="soundVolume" min="0" max="100" value="70">
@@ -1316,27 +1285,47 @@
                                                     <div class="settings-grid">
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.intrinsicRate.title">Intrinsic heart rate</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicRate.hint">Set baseline intrinsic bpm.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.captureDrift.title">Capture threshold drift</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.captureDrift.hint">Off, mild, or strong drift.</p>
                                                             </div>
-                                                            <div class="slider-row">
-                                                                <input type="range" id="intrinsicRate" min="30" max="120" step="1" value="60">
-                                                                <span class="slider-value" data-slider-value="intrinsicRate">60 bpm</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.intrinsicRegularity.title">Intrinsic regularity</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicRegularity.hint">Regular or irregular intrinsic rhythm.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Intrinsic regularity" data-i18n-key="settings.intrinsicRegularity.aria" data-i18n-attr="aria-label">
+                                                            <div class="pill-group" role="radiogroup" aria-label="Capture threshold drift" data-i18n-key="settings.captureDrift.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
-                                                                    <input type="radio" name="intrinsicRegularity" value="regular" checked>
-                                                                    <span data-i18n-key="settings.intrinsicRegularity.regular">Regular</span>
+                                                                    <input type="radio" name="captureDrift" value="off" checked>
+                                                                    <span data-i18n-key="settings.shared.off">Off</span>
                                                                 </label>
                                                                 <label class="pill-option">
-                                                                    <input type="radio" name="intrinsicRegularity" value="irregular">
-                                                                    <span data-i18n-key="settings.intrinsicRegularity.irregular">Irregular</span>
+                                                                    <input type="radio" name="captureDrift" value="mild">
+                                                                    <span data-i18n-key="settings.captureDrift.mild">Mild</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="captureDrift" value="strong">
+                                                                    <span data-i18n-key="settings.captureDrift.strong">Strong</span>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="settings-section">
+                                                    <div class="section-label" data-i18n-key="settings.section.training">Training</div>
+                                                    <div class="settings-grid">
+                                                        <div class="setting-row full-span">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title" data-i18n-key="settings.postReview.title">Post-scenario review</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.postReview.hint">Auto-open, ask, or off.</p>
+                                                            </div>
+                                                            <div class="pill-group" role="radiogroup" aria-label="Post-scenario review" data-i18n-key="settings.postReview.aria" data-i18n-attr="aria-label">
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="postScenarioReview" value="auto" checked>
+                                                                    <span data-i18n-key="settings.postReview.auto">Auto-open</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="postScenarioReview" value="ask">
+                                                                    <span data-i18n-key="settings.postReview.ask">Ask</span>
+                                                                </label>
+                                                                <label class="pill-option">
+                                                                    <input type="radio" name="postScenarioReview" value="off">
+                                                                    <span data-i18n-key="settings.shared.off">Off</span>
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -1377,7 +1366,7 @@
                                                             </div>
                                                         </div>
 
-                                                        <div class="setting-row setting-row--stacked full-span">
+                                                        <div class="setting-row full-span">
                                                             <div class="setting-copy">
                                                                 <div class="setting-title" data-i18n-key="settings.logStorage.title">Log storage</div>
                                                                 <p class="setting-hint" data-log-path-hint data-i18n-key="settings.logStorage.hint">
@@ -1421,7 +1410,7 @@
                                 </div>
                             </div>
 
-                        
+
   </div>
 </div>
 
