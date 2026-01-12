@@ -9,7 +9,7 @@ const defaultSettings = {
     traceColor: 'green',
     traceThickness: 'normal',
     hrDisplay: true,
-    hrColor: 'white',
+    hrColor: 'green',
     leadLabel: true,
     leadLabelColor: 'green',
     labelSize: 'large',
