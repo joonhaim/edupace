@@ -15,6 +15,14 @@ function initIntrinsicControls() {
     const body = card.querySelector('.intrinsic-settings-body');
     const rateInput = card.querySelector('#intrinsicRateInput');
     const regularityInputs = Array.from(card.querySelectorAll('input[name="intrinsicRegularityInline"]'));
+    let activeScenarioId = 'NSR';
+    let latestSettings = { ...defaultSettings };
+
+    const getScenarioRate = (settings) => {
+        const rates = settings.intrinsicRates ?? defaultSettings.intrinsicRates ?? {};
+        const scenarioRate = rates[activeScenarioId];
+        return Number.isFinite(scenarioRate) ? scenarioRate : 60;
+    };
 
     const setOpen = (open) => {
         card.classList.toggle('is-open', open);
@@ -27,11 +35,16 @@ function initIntrinsicControls() {
     setOpen(false);
 
     if (rateInput) {
-        rateInput.value = defaultSettings.intrinsicRate;
+        rateInput.value = getScenarioRate(defaultSettings);
         rateInput.addEventListener('input', () => {
             const nextValue = clamp(Number(rateInput.value), INTRINSIC_RATE_MIN, INTRINSIC_RATE_MAX);
             rateInput.value = nextValue;
-            applySettingsPatch({ intrinsicRate: nextValue });
+            applySettingsPatch({
+                intrinsicRates: {
+                    ...(latestSettings.intrinsicRates ?? {}),
+                    [activeScenarioId]: nextValue
+                }
+            });
         });
     }
 
@@ -48,10 +61,18 @@ function initIntrinsicControls() {
         setOpen(!isOpen);
     });
 
+    window.addEventListener('edupace-scenario-change', (event) => {
+        activeScenarioId = event.detail?.id ?? 'NSR';
+        if (rateInput) {
+            rateInput.value = getScenarioRate(latestSettings);
+        }
+    });
+
     window.addEventListener('edupace-ecg-settings', (event) => {
-        const { intrinsicRate, intrinsicRegularity } = event.detail ?? {};
-        if (rateInput && Number.isFinite(intrinsicRate)) {
-            rateInput.value = intrinsicRate;
+        const { intrinsicRegularity } = event.detail ?? {};
+        latestSettings = { ...latestSettings, ...(event.detail ?? {}) };
+        if (rateInput) {
+            rateInput.value = getScenarioRate(latestSettings);
         }
         if (intrinsicRegularity) {
             regularityInputs.forEach((input) => {

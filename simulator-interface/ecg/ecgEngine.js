@@ -54,7 +54,6 @@ function initEcgEngine() {
     const calibrationToggle = frame?.querySelector('.calibration-toggle');
     const audioToggle = frame?.querySelector('.ecg-audio-toggle');
     const pauseToggle = frame?.querySelector('.pause-toggle');
-    const caliperUnitToggle = frame?.querySelector('.caliper-unit-toggle');
     const fullscreenToggle = frame?.querySelector('.fullscreen-toggle');
     const ctx = canvas.getContext('2d');
     let suppressClick = false;
@@ -81,8 +80,7 @@ function initEcgEngine() {
             dragging: false,
             startX: 0,
             endX: 0,
-            dragMoved: false,
-            unit: 'ms'
+            dragMoved: false
         },
         needsRegenerate: true
     };
@@ -117,7 +115,7 @@ function initEcgEngine() {
         }
 
         const hrColor = TRACE_COLORS[state.settings.hrColor] ?? TRACE_COLORS.white;
-        const leadLabelColor = TRACE_COLORS[state.settings.leadLabelColor] ?? TRACE_COLORS.green;
+        const leadLabelColor = TRACE_COLORS[state.settings.leadLabelColor] ?? TRACE_COLORS.white;
         if (shell) {
             shell.style.setProperty('--hr-color', hrColor);
             shell.style.setProperty('--lead-label-color', leadLabelColor);
@@ -163,23 +161,10 @@ function initEcgEngine() {
         const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
         const deltaPx = Math.abs(state.calipers.endX - state.calipers.startX);
         const deltaSec = (deltaPx / Math.max(1, width)) * VIEW_SEC;
-        if (state.calipers.unit === 's') {
-            const bpm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
-            caliperValue.textContent = `${deltaSec.toFixed(2)} s · ${bpm} bpm`;
-        } else {
-            const deltaMs = Math.round(deltaSec * 1000);
-            const ppm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
-            caliperValue.textContent = `${deltaMs} ms · ${ppm} ppm`;
-        }
+        const deltaMs = Math.round(deltaSec * 1000);
+        const ppm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
+        caliperValue.textContent = `${deltaMs} ms · ${ppm} ppm`;
         caliperReadout.removeAttribute('hidden');
-    };
-
-    const updateCaliperUnitToggle = () => {
-        if (!caliperUnitToggle) return;
-        const isSeconds = state.calipers.unit === 's';
-        caliperUnitToggle.textContent = isSeconds ? 's' : 'ms';
-        caliperUnitToggle.setAttribute('aria-label', isSeconds ? 'Show calipers in milliseconds' : 'Show calipers in seconds');
-        caliperUnitToggle.setAttribute('title', isSeconds ? 'Show calipers in milliseconds' : 'Show calipers in seconds');
     };
 
     const setCalibrationVisible = (visible) => {
@@ -310,60 +295,64 @@ function initEcgEngine() {
 
 
     const generateStripFromParams = (iterations) => {
-    const intrinsicRate = Number(state.settings.intrinsicRate ?? 60);
-    const regularity = state.settings.intrinsicRegularity ?? 'regular';
-    const jitter = regularity === 'irregular' ? (0.85 + Math.random() * 0.3) : 1;
-    const patientHR = Math.max(20, intrinsicRate * jitter);
+        const scenarioRates = state.settings.intrinsicRates ?? {};
+        const scenarioRate = scenarioRates[state.scenarioId];
+        const intrinsicRate = Number.isFinite(scenarioRate)
+            ? scenarioRate
+            : Number(state.settings.intrinsicRate ?? 60);
+        const regularity = state.settings.intrinsicRegularity ?? 'regular';
+        const jitter = regularity === 'irregular' ? (0.85 + Math.random() * 0.3) : 1;
+        const patientHR = Math.max(20, intrinsicRate * jitter);
 
-    // ✅ Pacemaker power OFF => no pacing (force rate=0)
-    const pacingEnabled = state.params.power !== false;
-    const effectiveRate = pacingEnabled ? state.params.rate : 0;
+        // ✅ Pacemaker power OFF => no pacing (force rate=0)
+        const pacingEnabled = state.params.power !== false;
+        const effectiveRate = pacingEnabled ? state.params.rate : 0;
 
-    // If pacing is off, async should not matter
-    const asynchronous = pacingEnabled ? getAsyncMode() : false;
+        // If pacing is off, async should not matter
+        const asynchronous = pacingEnabled ? getAsyncMode() : false;
 
-    if (state.scenarioId === 'AV3') {
-        return thirdDegHeartBlock({
-            iterations,
-            sensitivity: state.params.sensitivity,
-            output: state.params.output,
-            rate: effectiveRate,
+        if (state.scenarioId === 'AV3') {
+            return thirdDegHeartBlock({
+                iterations,
+                sensitivity: state.params.sensitivity,
+                output: state.params.output,
+                rate: effectiveRate,
+                patientHR,
+                asynchronous
+            });
+        }
+
+        if (state.scenarioId === 'Mobitz2') {
+            return mobitzTypeII({
+                iterations,
+                sensitivity: state.params.sensitivity,
+                output: state.params.output,
+                rate: effectiveRate,
+                patientHR,
+                asynchronous
+            });
+        }
+
+        if (state.scenarioId === 'SlowConduction') {
+            return slowConduction({
+                iterations,
+                sensitivity: state.params.sensitivity,
+                output: state.params.output,
+                rate: effectiveRate,
+                patientHR,
+                asynchronous
+            });
+        }
+
+        return stitchBeats({
             patientHR,
-            asynchronous
-        });
-    }
-
-    if (state.scenarioId === 'Mobitz2') {
-        return mobitzTypeII({
-            iterations,
             sensitivity: state.params.sensitivity,
-            output: state.params.output,
             rate: effectiveRate,
-            patientHR,
-            asynchronous
-        });
-    }
-
-    if (state.scenarioId === 'SlowConduction') {
-        return slowConduction({
-            iterations,
-            sensitivity: state.params.sensitivity,
             output: state.params.output,
-            rate: effectiveRate,
-            patientHR,
-            asynchronous
+            asynchronous,
+            iterations
         });
-    }
-
-    return stitchBeats({
-        patientHR,
-        sensitivity: state.params.sensitivity,
-        rate: effectiveRate,
-        output: state.params.output,
-        asynchronous,
-        iterations
-    });
-};
+    };
 
 
     const refreshStrips = () => {
@@ -404,12 +393,14 @@ function initEcgEngine() {
             ctx.stroke();
         }
 
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(0, 0, 255, 1)';
-        ctx.lineWidth = 1.5;
-        ctx.moveTo(0, Y(sensitivity));
-        ctx.lineTo(width, Y(sensitivity));
-        ctx.stroke();
+        if (state.settings.sensitivityGuide) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(30, 64, 175, 0.85)';
+            ctx.lineWidth = 1.5;
+            ctx.moveTo(0, Y(sensitivity));
+            ctx.lineTo(width, Y(sensitivity));
+            ctx.stroke();
+        }
     };
 
     const drawMonitorGrid = (sensitivity) => {
@@ -426,36 +417,36 @@ function initEcgEngine() {
         ctx.fillStyle = '#050505';
         ctx.fillRect(0, 0, width, height);
 
-        if (!state.settings.gridlines) return;
-
         const X = (t) => (t / VIEW_SEC) * width;
         const Y = (v) => height - ((v - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * height;
         const smallAlpha = 0.12 * intensity;
         const bigAlpha = 0.32 * intensity;
 
-        for (let t = 0; t <= VIEW_SEC + 1e-9; t += smallT) {
-            const isBig = Math.abs((t / bigT) - Math.round(t / bigT)) < 1e-6;
-            ctx.beginPath();
-            ctx.strokeStyle = isBig ? `rgba(56, 189, 248, ${bigAlpha})` : `rgba(56, 189, 248, ${smallAlpha})`;
-            ctx.lineWidth = isBig ? 1.2 : 1.0;
-            ctx.moveTo(X(t), 0);
-            ctx.lineTo(X(t), height);
-            ctx.stroke();
-        }
+        if (state.settings.gridlines) {
+            for (let t = 0; t <= VIEW_SEC + 1e-9; t += smallT) {
+                const isBig = Math.abs((t / bigT) - Math.round(t / bigT)) < 1e-6;
+                ctx.beginPath();
+                ctx.strokeStyle = isBig ? `rgba(255, 255, 255, ${bigAlpha})` : `rgba(255, 255, 255, ${smallAlpha})`;
+                ctx.lineWidth = isBig ? 1.2 : 1.0;
+                ctx.moveTo(X(t), 0);
+                ctx.lineTo(X(t), height);
+                ctx.stroke();
+            }
 
-        for (let v = R_Y_MIN; v <= R_Y_MAX + 1e-9; v += smallA) {
-            const isBig = Math.abs((v / bigA) - Math.round(v / bigA)) < 1e-6;
-            ctx.beginPath();
-            ctx.strokeStyle = isBig ? `rgba(56, 189, 248, ${bigAlpha})` : `rgba(56, 189, 248, ${smallAlpha})`;
-            ctx.lineWidth = isBig ? 1.2 : 1.0;
-            ctx.moveTo(0, Y(v));
-            ctx.lineTo(width, Y(v));
-            ctx.stroke();
+            for (let v = R_Y_MIN; v <= R_Y_MAX + 1e-9; v += smallA) {
+                const isBig = Math.abs((v / bigA) - Math.round(v / bigA)) < 1e-6;
+                ctx.beginPath();
+                ctx.strokeStyle = isBig ? `rgba(255, 255, 255, ${bigAlpha})` : `rgba(255, 255, 255, ${smallAlpha})`;
+                ctx.lineWidth = isBig ? 1.2 : 1.0;
+                ctx.moveTo(0, Y(v));
+                ctx.lineTo(width, Y(v));
+                ctx.stroke();
+            }
         }
 
         if (state.settings.sensitivityGuide) {
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(125, 211, 252, ${0.6 * intensity + 0.2})`;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${0.6 * intensity + 0.25})`;
             ctx.lineWidth = 1.2;
             ctx.moveTo(0, Y(sensitivity));
             ctx.lineTo(width, Y(sensitivity));
@@ -726,7 +717,6 @@ for (let col = 0; col < width; col += 1) {
     applyOverlaySettings();
     setAudioMuted(false);
     setCalibrationVisible(false);
-    updateCaliperUnitToggle();
     fixFrameSize();
     resizeCanvas();
     refreshStrips();
@@ -747,13 +737,6 @@ for (let col = 0; col < width; col += 1) {
     pauseToggle?.addEventListener('click', (event) => {
         event.stopPropagation();
         setPaused(!state.paused);
-    });
-
-    caliperUnitToggle?.addEventListener('click', (event) => {
-        event.stopPropagation();
-        state.calipers.unit = state.calipers.unit === 'ms' ? 's' : 'ms';
-        updateCaliperUnitToggle();
-        updateCaliperReadout();
     });
 
     canvas.addEventListener('pointerdown', (event) => {

@@ -379,14 +379,6 @@
                                         <span class="calibration-label" data-i18n-key="training.telemetry.calibration">Calibration</span>
                                         <span class="calibration-value">10 mm/mV · 25 mm/s · 6 s window</span>
                                     </div>
-                                    <button
-                                        type="button"
-                                        class="caliper-unit-toggle"
-                                        aria-label="Show calipers in milliseconds"
-                                        title="Show calipers in milliseconds"
-                                    >
-                                        <span data-i18n-key="training.telemetry.ms">ms</span>
-                                    </button>
                                     <div class="ecg-overlay-actions">
                                         <button
                                             type="button"
@@ -843,69 +835,6 @@
                                                 <div class="settings-section">
                                                     <div class="section-label" data-i18n-key="settings.section.layout">Layout</div>
                                                     <div class="settings-grid">
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.sweepSpeed.title">Sweep speed</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.sweepSpeed.hint">Millimeters per second.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep speed" data-i18n-key="settings.sweepSpeed.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepSpeed" value="12.5">
-                                                                    <span>12.5 mm/s</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepSpeed" value="25" checked>
-                                                                    <span>25 mm/s</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepSpeed" value="50">
-                                                                    <span>50 mm/s</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.sweepWindow.title">Sweep window</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.sweepWindow.hint">Visible seconds on screen.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep window" data-i18n-key="settings.sweepWindow.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepWindow" value="4">
-                                                                    <span>4 s</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepWindow" value="6" checked>
-                                                                    <span>6 s</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepWindow" value="10">
-                                                                    <span>10 s</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.amplitude.title">Amplitude</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.amplitude.hint">Millimeters per mV.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Amplitude scaling" data-i18n-key="settings.amplitude.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="amplitudeScaling" value="5">
-                                                                    <span>5 mm/mV</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="amplitudeScaling" value="10" checked>
-                                                                    <span>10 mm/mV</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="amplitudeScaling" value="20">
-                                                                    <span>20 mm/mV</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
                                                     </div>
                                                 </div>
 
@@ -991,8 +920,8 @@
                                                                 <p class="setting-hint" data-i18n-key="settings.gridIntensity.hint">Adjust line brightness.</p>
                                                             </div>
                                                             <div class="slider-row">
-                                                                <input type="range" id="gridIntensity" min="0" max="100" value="55">
-                                                                <span class="slider-value" data-slider-value="gridIntensity">55%</span>
+                                                                <input type="range" id="gridIntensity" min="0" max="100" value="90">
+                                                                <span class="slider-value" data-slider-value="gridIntensity">90%</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1018,7 +947,7 @@
                                                                         <span class="sr-only" data-i18n-key="settings.colors.green">Green</span>
                                                                     </label>
                                                                     <label class="color-option">
-                                                                        <input type="radio" name="hrColor" value="blue" checked>
+                                                                        <input type="radio" name="hrColor" value="blue">
                                                                         <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
                                                                         <span class="sr-only" data-i18n-key="settings.colors.blue">Blue</span>
                                                                     </label>
@@ -1028,7 +957,7 @@
                                                                         <span class="sr-only" data-i18n-key="settings.colors.amber">Amber</span>
                                                                     </label>
                                                                     <label class="color-option">
-                                                                        <input type="radio" name="hrColor" value="white">
+                                                                        <input type="radio" name="hrColor" value="white" checked>
                                                                         <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
                                                                         <span class="sr-only" data-i18n-key="settings.colors.white">White</span>
                                                                     </label>
@@ -1053,7 +982,7 @@
                                                                         <span class="sr-only" data-i18n-key="settings.colors.green">Green</span>
                                                                     </label>
                                                                     <label class="color-option">
-                                                                        <input type="radio" name="leadLabelColor" value="blue" checked>
+                                                                        <input type="radio" name="leadLabelColor" value="blue">
                                                                         <span class="color-swatch" style="--swatch-color: #1d4ed8"></span>
                                                                         <span class="sr-only" data-i18n-key="settings.colors.blue">Blue</span>
                                                                     </label>
@@ -1063,7 +992,7 @@
                                                                         <span class="sr-only" data-i18n-key="settings.colors.amber">Amber</span>
                                                                     </label>
                                                                     <label class="color-option">
-                                                                        <input type="radio" name="leadLabelColor" value="white">
+                                                                        <input type="radio" name="leadLabelColor" value="white" checked>
                                                                         <span class="color-swatch" style="--swatch-color: #f5f7fa"></span>
                                                                         <span class="sr-only" data-i18n-key="settings.colors.white">White</span>
                                                                     </label>
@@ -1195,43 +1124,17 @@
                                                     <div class="settings-grid">
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.qrsBeep.title">ECG QRS beep</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.qrsBeep.hint">Classic, soft, or off.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="QRS beep" data-i18n-key="settings.qrsBeep.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="qrsBeep" value="classic" checked>
-                                                                    <span data-i18n-key="settings.qrsBeep.classic">Classic</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="qrsBeep" value="soft">
-                                                                    <span data-i18n-key="settings.qrsBeep.soft">Soft</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="qrsBeep" value="off">
-                                                                    <span data-i18n-key="settings.shared.off">Off</span>
-                                                                </label>
-                                                            </div>
+                                                            <div class="setting-title" data-i18n-key="settings.qrsBeep.title">ECG QRS beep</div>
+                                                            <p class="setting-hint" data-i18n-key="settings.qrsBeep.hint">On or off.</p>
                                                         </div>
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.alarmSounds.title">Alarm sounds</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.alarmSounds.hint">Enable audible alarms.</p>
-                                                            </div>
-                                                            <label class="switch">
-                                                                <input type="checkbox" id="alarmSoundToggle" checked>
-                                                                <span class="switch-track"></span>
+                                                        <div class="pill-group" role="radiogroup" aria-label="QRS beep" data-i18n-key="settings.qrsBeep.aria" data-i18n-attr="aria-label">
+                                                            <label class="pill-option">
+                                                                <input type="radio" name="qrsBeep" value="on" checked>
+                                                                <span data-i18n-key="settings.shared.on">On</span>
                                                             </label>
-                                                        </div>
-
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.buttonBeeps.title">Button beeps</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.buttonBeeps.hint">Feedback tones when controls are used.</p>
-                                                            </div>
-                                                            <label class="switch">
-                                                                <input type="checkbox" id="buttonBeepsToggle" checked>
-                                                                <span class="switch-track"></span>
+                                                            <label class="pill-option">
+                                                                <input type="radio" name="qrsBeep" value="off">
+                                                                <span data-i18n-key="settings.shared.off">Off</span>
                                                             </label>
                                                         </div>
                                                     </div>
@@ -1242,12 +1145,12 @@
                                                     <div class="settings-grid">
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.notificationVolume.title">Notification volume</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.notificationVolume.hint">Overall alert volume.</p>
-                                                            </div>
-                                                            <div class="slider-row">
-                                                                <input type="range" id="soundVolume" min="0" max="100" value="70">
-                                                                <span class="slider-value" data-slider-value="soundVolume">70%</span>
+                                                            <div class="setting-title" data-i18n-key="settings.qrsBeepVolume.title">ECG beep volume</div>
+                                                            <p class="setting-hint" data-i18n-key="settings.qrsBeepVolume.hint">Adjust the ECG beep loudness.</p>
+                                                        </div>
+                                                        <div class="slider-row">
+                                                            <input type="range" id="soundVolume" min="0" max="100" value="70">
+                                                            <span class="slider-value" data-slider-value="soundVolume">70%</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1297,52 +1200,70 @@
                                                 </div>
 
                                                 <div class="settings-section">
-                                                    <div class="section-label" data-i18n-key="settings.section.realism">Physiology realism</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.intrinsicRates">Intrinsic heart rate</div>
                                                     <div class="settings-grid">
-                                                        <div class="setting-row full-span">
+                                                        <div class="setting-row full-span setting-row--stacked">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.captureDrift.title">Capture threshold drift</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.captureDrift.hint">Off, mild, or strong drift.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.intrinsicRates.title">Intrinsic heart rate by scenario</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicRates.hint">Set baseline intrinsic bpm for each scenario.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Capture threshold drift" data-i18n-key="settings.captureDrift.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="captureDrift" value="off" checked>
-                                                                    <span data-i18n-key="settings.shared.off">Off</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="captureDrift" value="mild">
-                                                                    <span data-i18n-key="settings.captureDrift.mild">Mild</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="captureDrift" value="strong">
-                                                                    <span data-i18n-key="settings.captureDrift.strong">Strong</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div class="settings-section">
-                                                    <div class="section-label" data-i18n-key="settings.section.training">Training</div>
-                                                    <div class="settings-grid">
-                                                        <div class="setting-row full-span">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.postReview.title">Post-scenario review</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.postReview.hint">Auto-open, ask, or off.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Post-scenario review" data-i18n-key="settings.postReview.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="postScenarioReview" value="auto" checked>
-                                                                    <span data-i18n-key="settings.postReview.auto">Auto-open</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="postScenarioReview" value="ask">
-                                                                    <span data-i18n-key="settings.postReview.ask">Ask</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="postScenarioReview" value="off">
-                                                                    <span data-i18n-key="settings.shared.off">Off</span>
-                                                                </label>
+                                                            <div class="setting-controls setting-controls-stacked">
+                                                                <div class="setting-field">
+                                                                    <label class="setting-label" for="intrinsicRateNSR" data-i18n-key="settings.intrinsicRates.nsr">Normal sinus rhythm</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        id="intrinsicRateNSR"
+                                                                        class="setting-select"
+                                                                        min="20"
+                                                                        max="220"
+                                                                        step="1"
+                                                                        value="70"
+                                                                        data-intrinsic-rate-input
+                                                                        data-scenario-id="NSR"
+                                                                    />
+                                                                </div>
+                                                                <div class="setting-field">
+                                                                    <label class="setting-label" for="intrinsicRateAV3" data-i18n-key="settings.intrinsicRates.av3">3rd degree AV block</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        id="intrinsicRateAV3"
+                                                                        class="setting-select"
+                                                                        min="20"
+                                                                        max="220"
+                                                                        step="1"
+                                                                        value="40"
+                                                                        data-intrinsic-rate-input
+                                                                        data-scenario-id="AV3"
+                                                                    />
+                                                                </div>
+                                                                <div class="setting-field">
+                                                                    <label class="setting-label" for="intrinsicRateMobitz2" data-i18n-key="settings.intrinsicRates.mobitz2">Mobitz II</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        id="intrinsicRateMobitz2"
+                                                                        class="setting-select"
+                                                                        min="20"
+                                                                        max="220"
+                                                                        step="1"
+                                                                        value="55"
+                                                                        data-intrinsic-rate-input
+                                                                        data-scenario-id="Mobitz2"
+                                                                    />
+                                                                </div>
+                                                                <div class="setting-field">
+                                                                    <label class="setting-label" for="intrinsicRateSlowConduction" data-i18n-key="settings.intrinsicRates.slowConduction">Slow conduction</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        id="intrinsicRateSlowConduction"
+                                                                        class="setting-select"
+                                                                        min="20"
+                                                                        max="220"
+                                                                        step="1"
+                                                                        value="50"
+                                                                        data-intrinsic-rate-input
+                                                                        data-scenario-id="SlowConduction"
+                                                                    />
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>

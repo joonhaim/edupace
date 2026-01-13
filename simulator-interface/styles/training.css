@@ -771,8 +771,8 @@ body.simulation-light .theme-toggle {
     display: flex;
     align-items: stretch;
     gap: 1.2rem;
-    --lead-label-color: #33ff66;
-    --hr-color: #33ff66;
+    --lead-label-color: #f5f7fa;
+    --hr-color: #f5f7fa;
 }
 
 .ecg-shell[data-background="paper"] .ecg-hr-card,
@@ -952,6 +952,7 @@ body.ecg-fullscreen-active {
     padding-left: 0;
     margin-top: -0.35rem;
     margin-left: -0.35rem;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.45);
 }
 
 .ecg-shell[data-background="paper"] .ecg-label {
@@ -989,6 +990,7 @@ body.ecg-fullscreen-active {
 .hr-value {
     color: var(--hr-color);
     font-size: 2.2rem;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.45);
 }
 
 .pace-value {
@@ -2430,30 +2432,6 @@ body.ecg-fullscreen-active {
     visibility: visible;
 }
 
-.caliper-unit-toggle {
-    position: absolute;
-    right: 0.9rem;
-    bottom: 3.1rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    background: rgba(0, 0, 0, 0.65);
-    color: #fff;
-    font-weight: 700;
-    font-size: 0.85rem;
-    line-height: 1.1;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    pointer-events: auto;
-    transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
-}
-
-.ecg-frame:fullscreen .caliper-unit-toggle,
-.ecg-frame.is-fullscreen .caliper-unit-toggle {
-    right: 1.4rem;
-    bottom: 3.6rem;
-}
-
 body.ecg-fullscreen-active {
     overflow: hidden;
     background: #0f2438;
@@ -2513,13 +2491,6 @@ body.ecg-fullscreen-active .graph-column {
 
 body.ecg-fullscreen-active .ecg-frame.is-fullscreen {
     flex: 1;
-}
-
-.caliper-unit-toggle:hover,
-.caliper-unit-toggle:focus-visible {
-    transform: translateY(-1px);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
-    outline: none;
 }
 
 .parameters-card {

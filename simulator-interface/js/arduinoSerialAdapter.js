@@ -445,6 +445,9 @@ async function initHardwareIntegration() {
             } else {
                 ui.connectBtn.disabled = !supported;
                 updateConnectionStatus(serialState.port ? 'CONNECTED' : 'DISCONNECTED', Boolean(serialState.port));
+                if (!serialState.port) {
+                    resetParameters();
+                }
             }
         });
     });
@@ -476,9 +479,15 @@ function resetParameters() {
     resettableParameterKeys.forEach((key) => {
         parameterState[key] = key === 'asynchronous' ? false : null;
     });
+    parameterState.power = false;
     isPoweredOn = false;
     applyParameterDisplay(parameterState);
     applyAsyncModeIndicator(parameterState);
+    window.dispatchEvent(
+        new CustomEvent('edupace-parameters', {
+            detail: { ...parameterState, power: false }
+        })
+    );
 }
 
 

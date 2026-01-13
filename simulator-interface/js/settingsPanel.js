@@ -1,17 +1,14 @@
 const defaultSettings = {
     gridlines: false,
     gridDensity: '2mm',
-    gridIntensity: 55,
-    sweepSpeed: 25,
-    sweepWindow: 6,
-    amplitudeScaling: 10,
+    gridIntensity: 90,
     ecgBackground: 'monitor',
     traceColor: 'green',
     traceThickness: 'normal',
     hrDisplay: true,
-    hrColor: 'green',
+    hrColor: 'white',
     leadLabel: true,
-    leadLabelColor: 'green',
+    leadLabelColor: 'white',
     labelSize: 'large',
     sensitivityGuide: false,
     pacingSpikeLabel: false,
@@ -22,19 +19,27 @@ const defaultSettings = {
     soundVolume: 70,
     qrsBeep: 'on',
     autoLockKnobs: '60',
-    intrinsicRate: 60,
+    intrinsicRates: {
+        NSR: 70,
+        AV3: 40,
+        Mobitz2: 55,
+        SlowConduction: 50
+    },
     intrinsicRegularity: 'regular',
     actionLog: true
 };
 
+const sliderFormatters = {
+    gridIntensity: (value) => `${value}%`,
+    soundVolume: (value) => `${value}%`
+};
+
+const INTRINSIC_RATE_MIN = 20;
+const INTRINSIC_RATE_MAX = 220;
+
 let currentSettings = { ...defaultSettings };
 let settingsCardRef = null;
 let updateGridDependenciesRef = null;
-const sliderFormatters = {
-    gridIntensity: (value) => `${value}%`,
-    soundVolume: (value) => `${value}%`,
-    intrinsicRate: (value) => `${value} bpm`
-};
 
 function initSettingsPanel() {
     const settingsCard = document.querySelector('[data-settings-panel]');
@@ -153,9 +158,6 @@ function initSettingsPanel() {
     bindToggle(settingsCard, 'gridlinesToggle', 'gridlines', updateGridDependencies);
     bindRadios(settingsCard, 'gridDensity', 'gridDensity');
     bindSlider(settingsCard, 'gridIntensity', 'gridIntensity');
-    bindRadios(settingsCard, 'sweepSpeed', 'sweepSpeed', Number);
-    bindRadios(settingsCard, 'sweepWindow', 'sweepWindow', Number);
-    bindRadios(settingsCard, 'amplitudeScaling', 'amplitudeScaling', Number);
     bindRadios(settingsCard, 'ecgBackground', 'ecgBackground', (value) => value, (value) => {
         if (value === 'paper' && currentSettings.traceColor !== 'black') {
             currentSettings.traceColor = 'black';
@@ -182,9 +184,31 @@ function initSettingsPanel() {
     bindSlider(settingsCard, 'soundVolume', 'soundVolume');
 
     bindRadios(settingsCard, 'autoLockKnobs', 'autoLockKnobs');
-    bindSlider(settingsCard, 'intrinsicRate', 'intrinsicRate');
     bindRadios(settingsCard, 'intrinsicRegularity', 'intrinsicRegularity');
     bindToggle(settingsCard, 'actionLogToggle', 'actionLog');
+
+    const intrinsicRateInputs = Array.from(settingsCard.querySelectorAll('[data-intrinsic-rate-input]'));
+    intrinsicRateInputs.forEach((input) => {
+        const scenarioId = input.dataset.scenarioId;
+        if (!scenarioId) return;
+        const currentValue = currentSettings.intrinsicRates?.[scenarioId];
+        if (Number.isFinite(currentValue)) {
+            input.value = currentValue;
+        }
+        input.addEventListener('input', () => {
+            const raw = Number(input.value);
+            const nextValue = Math.min(Math.max(raw, INTRINSIC_RATE_MIN), INTRINSIC_RATE_MAX);
+            input.value = nextValue;
+            currentSettings = {
+                ...currentSettings,
+                intrinsicRates: {
+                    ...currentSettings.intrinsicRates,
+                    [scenarioId]: nextValue
+                }
+            };
+            emitSettings();
+        });
+    });
 
     const resetBtn = settingsCard.querySelector('[data-settings-reset]');
     if (resetBtn) {
@@ -275,6 +299,15 @@ function syncInputs(root) {
             }
         }
     });
+
+    const intrinsicRateInputs = root.querySelectorAll('[data-intrinsic-rate-input]');
+    intrinsicRateInputs.forEach((input) => {
+        const scenarioId = input.dataset.scenarioId;
+        const nextValue = currentSettings.intrinsicRates?.[scenarioId];
+        if (Number.isFinite(nextValue)) {
+            input.value = nextValue;
+        }
+    });
 }
 
 function emitSettings() {
@@ -287,7 +320,18 @@ function emitSettings() {
 
 function applySettingsPatch(patch) {
     if (!patch) return;
-    currentSettings = { ...currentSettings, ...patch };
+    if (patch.intrinsicRates) {
+        currentSettings = {
+            ...currentSettings,
+            ...patch,
+            intrinsicRates: {
+                ...currentSettings.intrinsicRates,
+                ...patch.intrinsicRates
+            }
+        };
+    } else {
+        currentSettings = { ...currentSettings, ...patch };
+    }
     if (settingsCardRef) {
         syncInputs(settingsCardRef);
         if (typeof updateGridDependenciesRef === 'function') {
