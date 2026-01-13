@@ -118,7 +118,7 @@ function initVirtualController() {
         setActionVisualState(
             actionButtons.lock,
             controllerState.locked,
-            controllerState.locked ? 'Locked' : 'Unlocked'
+            controllerState.locked ? '🔒' : '🔓'
         );
 
         const virtualMode = isVirtualMode();
