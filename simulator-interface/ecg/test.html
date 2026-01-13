@@ -94,7 +94,7 @@
 
       <div class="hint">
         Top: ECG paper view (0–6 s) with red grid and blue sensitivity line.<br/>
-        Bottom: monitor view (black) uses a write-sweep
+        Bottom: monitor view (black) uses a sweep to overwrite (no full reset) using the exact same trace
       </div>
 
       <div class="status">
@@ -108,7 +108,7 @@
       <div class="canvasTitle">ECG Paper Strip (static 0–6 s)</div>
       <canvas id="ecgPaper"></canvas>
 
-      <div class="canvasTitle" style="margin-top:14px;">ECG Monitor (write-sweep)</div>
+      <div class="canvasTitle" style="margin-top:14px;">ECG Monitor (sweep overwrite of same trace)</div>
       <canvas id="ecgMonitor"></canvas>
     </div>
   </div>
@@ -129,13 +129,11 @@
 
     const VIEW_SEC = 6;
 
-    // "Clinical" amplitude window (what your wave is generated within / expected)
+    // "Clinical" amplitude window
     const Y_MIN = -1;
     const Y_MAX =  1;
 
-    // Make both ECG windows taller WITHOUT stretching the wave:
-    // - We increase canvas height (more pixels)
-    // - AND we increase the rendered mV window by the same factor (so px/mV stays constant)
+    // Make both ECG windows taller WITHOUT stretching the wave
     const VERTICAL_SCALE = 1.6;
 
     // Render window (expanded so the waveform keeps the same pixel height)
@@ -177,7 +175,6 @@
 
     // -------------------------
     // Pacemaker ON/OFF
-    // Applies to ALL scenarios because generateStripFromUI() always uses getEffectivePacerRate()
     // -------------------------
     let pacerOn = true;
     let lastNonZeroPacerRate = Number(elRate.value) || 70;
@@ -188,7 +185,6 @@
 
     function setPacerUi() {
       if (pacerOn) {
-        // restore previous non-zero if UI currently shows 0 from OFF state
         const current = Number(elRate.value);
         const restore = (current > 0) ? current : (lastNonZeroPacerRate > 0 ? lastNonZeroPacerRate : 70);
         elRate.value = String(restore);
@@ -210,10 +206,11 @@
     function setPacerState(on) {
       pacerOn = !!on;
       setPacerUi();
-      refreshStrips(); // do not clear monitor history; sweep overwrites as it passes
+      // IMPORTANT: do NOT reset the monitor. Just rebuild the source strip;
+      // the monitor will overwrite progressively as the sweep passes.
+      refreshStrips(false);
     }
 
-    // Keep "lastNonZeroPacerRate" updated when user types a non-zero rate (only possible when ON)
     elRate.addEventListener("input", () => {
       const v = Number(elRate.value);
       if (v > 0) lastNonZeroPacerRate = v;
@@ -230,7 +227,7 @@
       canvas.height = Math.floor(cssH * dpr);
       const ctx = canvas.getContext("2d");
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      return { w: cssW, h: cssH };
+      return { w: cssW, h: cssH, dpr };
     }
 
     function paperCssSize() {
@@ -265,11 +262,8 @@
       paperCtx.fillRect(0, 0, w, h);
 
       const X = (t) => (t / VIEW_SEC) * w;
-
-      // IMPORTANT: use render window so wave is NOT stretched when canvas gets taller
       const Y = (v) => h - ((v - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
 
-      // Vertical grid (time) unchanged
       for (let t = 0; t <= VIEW_SEC + 1e-9; t += SMALL_T) {
         const isBig = Math.abs((t / BIG_T) - Math.round(t / BIG_T)) < 1e-6;
         paperCtx.beginPath();
@@ -280,7 +274,6 @@
         paperCtx.stroke();
       }
 
-      // Horizontal grid spans render window
       for (let v = R_Y_MIN; v <= R_Y_MAX + 1e-9; v += SMALL_A) {
         const isBig = Math.abs((v / BIG_A) - Math.round(v / BIG_A)) < 1e-6;
         paperCtx.beginPath();
@@ -291,7 +284,7 @@
         paperCtx.stroke();
       }
 
-      // Sensitivity line (blue) in mV, mapped into render window
+      // Sensitivity line
       paperCtx.beginPath();
       paperCtx.strokeStyle = "rgba(0,0,255,1)";
       paperCtx.lineWidth = 1.5;
@@ -313,61 +306,8 @@
       return lo;
     }
 
-    function sampleStripLinear(strip, t) {
-      const x = strip.x, y = strip.y;
-      const n = x.length;
-      if (n === 0) return 0;
-      if (t <= x[0]) return y[0];
-      if (t >= x[n - 1]) return y[n - 1];
-
-      const i = lowerBound(x, t);
-      if (i <= 0) return y[0];
-      const x0 = x[i - 1], x1 = x[i];
-      const y0 = y[i - 1], y1 = y[i];
-      const a = (t - x0) / (x1 - x0 || 1e-9);
-      return y0 + a * (y1 - y0);
-    }
-
-    function sampleStripPeakHold(strip, t0, t1) {
-      // Returns the value with the largest absolute magnitude within [t0, t1]
-      // (captures thin spikes that would be missed by a single sample)
-      const x = strip.x, y = strip.y;
-      const n = x.length;
-      if (!n) return 0;
-
-      if (t1 <= t0) return sampleStripLinear(strip, t0);
-      t0 = Math.max(t0, x[0]);
-      t1 = Math.min(t1, x[n - 1]);
-      if (t1 <= t0) return sampleStripLinear(strip, t0);
-
-      const i0 = Math.max(0, lowerBound(x, t0) - 1);
-      const i1 = Math.min(n - 1, lowerBound(x, t1) + 1);
-
-      let best = sampleStripLinear(strip, t0);
-      let bestAbs = Math.abs(best);
-
-      for (let i = i0; i <= i1; i++) {
-        const v = y[i];
-        const av = Math.abs(v);
-        if (av > bestAbs) {
-          bestAbs = av;
-          best = v;
-        }
-      }
-
-      const vEnd = sampleStripLinear(strip, t1);
-      if (Math.abs(vEnd) > bestAbs) best = vEnd;
-
-      return best;
-    }
-
-    function drawWaveWindow(ctx, canvas, strip, tLeft, tRight, strokeStyle, lineWidth) {
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
-
+    function drawWaveWindowToSize(ctx, w, h, strip, tLeft, tRight, strokeStyle, lineWidth) {
       const X = (t) => ((t - tLeft) / (tRight - tLeft)) * w;
-
-      // IMPORTANT: use render window so wave is NOT stretched when canvas gets taller
       const Y = (v) => h - ((v - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
 
       const i0 = lowerBound(strip.x, tLeft);
@@ -377,10 +317,16 @@
       ctx.beginPath();
       ctx.strokeStyle = strokeStyle;
       ctx.lineWidth = lineWidth;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
 
       ctx.moveTo(X(strip.x[i0]), Y(strip.y[i0]));
       for (let i = i0 + 1; i < i1; i++) ctx.lineTo(X(strip.x[i]), Y(strip.y[i]));
       ctx.stroke();
+    }
+
+    function drawWaveWindow(ctx, canvas, strip, tLeft, tRight, strokeStyle, lineWidth) {
+      drawWaveWindowToSize(ctx, canvas.clientWidth, canvas.clientHeight, strip, tLeft, tRight, strokeStyle, lineWidth);
     }
 
     // -------------------------
@@ -388,55 +334,22 @@
     // -------------------------
     function generateStripFromUI(iterations) {
       const patientHR = Number(elHr.value);
-      const rate = getEffectivePacerRate(); // <-- OFF forces 0 for ALL scenarios
+      const rate = getEffectivePacerRate();
       const sensitivity = Number(elSens.value);
       const output = Number(elOut.value);
       const asynchronous = (elAsync.value === "true");
       const scenario = elScenario.value;
 
       if (scenario === "NSR") {
-        return stitchBeats({
-          patientHR,
-          sensitivity,
-          rate,
-          output,
-          asynchronous,
-          iterations
-        });
+        return stitchBeats({ patientHR, sensitivity, rate, output, asynchronous, iterations });
       }
-
       if (scenario === "Mobitz2") {
-        return mobitzTypeII({
-          patientHR,
-          sensitivity,
-          rate,
-          output,
-          asynchronous,
-          iterations,
-          probConduction: 0.8,
-        });
+        return mobitzTypeII({ patientHR, sensitivity, rate, output, asynchronous, iterations, probConduction: 0.8 });
       }
-
       if (scenario === "SlowConduction") {
-        return slowConduction({
-          patientHR,
-          sensitivity,
-          rate,
-          output,
-          asynchronous,
-          iterations
-        });
+        return slowConduction({ patientHR, sensitivity, rate, output, asynchronous, iterations });
       }
-
-      // default: 3rd-degree
-      return thirdDegHeartBlock({
-        iterations,
-        sensitivity,
-        output,
-        rate,
-        patientHR,
-        asynchronous
-      });
+      return thirdDegHeartBlock({ iterations, sensitivity, output, rate, patientHR, asynchronous });
     }
 
     // -------------------------
@@ -466,147 +379,126 @@
     // -------------------------
     // Simulation state
     // -------------------------
-    let stripPaper = null; // static paper plot
-    let stripLive = null;  // monitor writing source
+    let stripPaper = null;
+    let stripLive = null;
 
     // -------------------------
-    // Monitor write-sweep (simple, no generations)
+    // Monitor: source buffer (full trace) + persistent "screen" + sweep overwrite
     // -------------------------
-    let monitorY = [];
-    let monitorWritten = [];
+    const monitorBuffer = document.createElement("canvas");
+    const monitorBufferCtx = monitorBuffer.getContext("2d");
+
+    const monitorScreen = document.createElement("canvas");
+    const monitorScreenCtx = monitorScreen.getContext("2d");
+
+    function dpr() { return window.devicePixelRatio || 1; }
+
+    function sizeOffscreenToMonitor(canvas) {
+      // mirror monitor canvas sizing & DPR transform
+      setCanvasSize(canvas, monitorCanvas.clientWidth, monitorCanvas.clientHeight);
+    }
+
+    function drawMonitorBackgroundTo(ctx, w, h) {
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, w, h);
+
+      // midline
+      ctx.globalAlpha = 0.12;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    function rebuildMonitorBuffer() {
+      const w = monitorCanvas.clientWidth;
+      const h = monitorCanvas.clientHeight;
+      if (!stripLive || !stripLive.x.length) return;
+
+      sizeOffscreenToMonitor(monitorBuffer);
+      drawMonitorBackgroundTo(monitorBufferCtx, w, h);
+
+      // draw the exact same waveform geometry as paper (just green, on black)
+      drawWaveWindowToSize(monitorBufferCtx, w, h, stripLive, 0, VIEW_SEC, "#33ff66", 2);
+    }
+
+    function initMonitorScreenBlank() {
+      const w = monitorCanvas.clientWidth;
+      const h = monitorCanvas.clientHeight;
+      sizeOffscreenToMonitor(monitorScreen);
+      drawMonitorBackgroundTo(monitorScreenCtx, w, h);
+    }
+
+    // Copy ONLY a vertical slice from source buffer onto the persistent screen.
+    function overwriteSliceOnScreen(x0, x1) {
+      const w = monitorCanvas.clientWidth;
+      const h = monitorCanvas.clientHeight;
+      if (x1 <= x0) return;
+
+      const D = dpr();
+
+      // Source rect is in *device pixels*
+      const sx = Math.floor(x0 * D);
+      const sw = Math.ceil((x1 - x0) * D);
+      const sy = 0;
+      const sh = Math.ceil(h * D);
+
+      // Dest coords are in CSS pixels (ctx is DPR-transformed already)
+      monitorScreenCtx.drawImage(
+        monitorBuffer,
+        sx, sy, sw, sh,
+        x0, 0, (x1 - x0), h
+      );
+    }
 
     let playing = true;
     let sweepX = 0;
+    let prevSweepX = 0;
     let lastTs = null;
 
-    function resetMonitorBuffer(keepExisting = false) {
-      const w = monitorCanvas.clientWidth;
-
-      if (!keepExisting || monitorY.length !== w) {
-        monitorY = new Array(w).fill(NaN);
-        monitorWritten = new Array(w).fill(false);
-      }
-
-      sweepX = Math.min(sweepX, w - 1);
+    function resetSweepAndBlankScreen() {
+      sweepX = 0;
+      prevSweepX = 0;
+      lastTs = null;
+      initMonitorScreenBlank();
     }
 
-    function drawMonitorBackground() {
-      const w = monitorCanvas.clientWidth;
-      const h = monitorCanvas.clientHeight;
-
-      monitorCtx.clearRect(0, 0, w, h);
-      monitorCtx.fillStyle = "#000000";
-      monitorCtx.fillRect(0, 0, w, h);
-
-      monitorCtx.globalAlpha = 0.12;
-      monitorCtx.strokeStyle = "#ffffff";
-      monitorCtx.lineWidth = 1;
-      monitorCtx.beginPath();
-      monitorCtx.moveTo(0, h / 2);
-      monitorCtx.lineTo(w, h / 2);
-      monitorCtx.stroke();
-      monitorCtx.globalAlpha = 1;
-    }
-
-    function yToMonitorPx(yVal) {
-      const h = monitorCanvas.clientHeight;
-      // IMPORTANT: use render window so wave is NOT stretched when canvas gets taller
-      return h - ((yVal - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
-    }
-
-    function ensureLiveStripLongEnough() {
-      if (!stripLive || !stripLive.x.length) return;
-
-      const tEnd = stripLive.x[stripLive.x.length - 1];
-      if (tEnd >= VIEW_SEC * 8) return;
-
-      stripLive = generateStripFromUI(120);
-      updateStatus(stripLive);
-    }
-
-    function writeSamplesUnderSweep(dtSec) {
-      if (!stripLive || !stripLive.x.length) return;
-      ensureLiveStripLongEnough();
-
+    function stepSweep(dtSec) {
       const w = monitorCanvas.clientWidth;
       const pxPerSec = (w / VIEW_SEC) * SWEEP_TIME_SCALE;
-      const advance = pxPerSec * dtSec;
 
-      const oldX = sweepX;
-      let newX = sweepX + advance;
+      prevSweepX = sweepX;
+      sweepX += pxPerSec * dtSec;
 
-      const wrapped = newX >= w;
-      if (wrapped) newX = newX % w;
-
-      const segments = [];
-      if (!wrapped) segments.push([oldX, newX]);
-      else {
-        segments.push([oldX, w]);
-        segments.push([0, newX]);
+      if (sweepX >= w) {
+        // wrap, but DO NOT clear the whole screen
+        sweepX = sweepX % w;
       }
 
-      for (const [aSeg, bSeg] of segments) {
-        const startCol = Math.max(0, Math.floor(aSeg));
-        const endCol = Math.min(w, Math.ceil(bSeg));
-
-        for (let col = startCol; col < endCol; col++) {
-          const tEnd = stripLive.x[stripLive.x.length - 1] || VIEW_SEC;
-
-          const t0 = (col / Math.max(1, (w - 1))) * VIEW_SEC;
-          const t1 = ((col + 1) / Math.max(1, (w - 1))) * VIEW_SEC;
-
-          // Wrap into strip time
-          const a = ((t0 % tEnd) + tEnd) % tEnd;
-          const b = ((t1 % tEnd) + tEnd) % tEnd;
-
-          let yVal;
-          if (b >= a) {
-            yVal = sampleStripPeakHold(stripLive, a, b);
-          } else {
-            const v1 = sampleStripPeakHold(stripLive, a, tEnd);
-            const v2 = sampleStripPeakHold(stripLive, 0, b);
-            yVal = (Math.abs(v1) >= Math.abs(v2)) ? v1 : v2;
-          }
-
-          monitorY[col] = yVal;
-          monitorWritten[col] = true;
-        }
+      // overwrite only the region we just swept through
+      if (sweepX >= prevSweepX) {
+        // normal forward movement
+        overwriteSliceOnScreen(prevSweepX, sweepX);
+      } else {
+        // wrapped: overwrite end part + beginning part
+        overwriteSliceOnScreen(prevSweepX, w);
+        overwriteSliceOnScreen(0, sweepX);
       }
-
-      sweepX = newX;
     }
 
     function renderMonitor() {
       const w = monitorCanvas.clientWidth;
       const h = monitorCanvas.clientHeight;
 
-      drawMonitorBackground();
+      // draw persistent screen as-is
+      monitorCtx.clearRect(0, 0, w, h);
+      monitorCtx.drawImage(monitorScreen, 0, 0, w, h);
 
-      // waveform: connect only adjacent written samples
-      monitorCtx.strokeStyle = "#33ff66";
-      monitorCtx.lineWidth = 2;
-      monitorCtx.beginPath();
-
-      let started = false;
-      for (let col = 0; col < w; col++) {
-        if (!monitorWritten[col] || !Number.isFinite(monitorY[col])) {
-          started = false;
-          continue;
-        }
-
-        const xPx = col + 0.5;
-        const yPx = yToMonitorPx(monitorY[col]);
-
-        if (!started) {
-          monitorCtx.moveTo(xPx, yPx);
-          started = true;
-        } else {
-          monitorCtx.lineTo(xPx, yPx);
-        }
-      }
-      monitorCtx.stroke();
-
-      // sweep bar
+      // sweep bar on top (NOT burned into the persistent screen)
       monitorCtx.strokeStyle = "rgba(51,255,102,0.95)";
       monitorCtx.lineWidth = 2;
       monitorCtx.beginPath();
@@ -634,13 +526,25 @@
     }
 
     // -------------------------
-    // Parameter changes (do not clear monitor)
+    // Regeneration
     // -------------------------
-    function refreshStrips() {
-      stripLive = generateStripFromUI(80);
-      stripPaper = generateStripFromUI(60);
+    function refreshStrips(alsoRestartAndBlank = false) {
+      // Use the SAME strip for paper + monitor so the trace matches exactly.
+      stripLive  = generateStripFromUI(80);
+      stripPaper = stripLive;
+
       updateStatus(stripLive);
       renderPaper();
+
+      // Update the SOURCE buffer immediately, but do NOT wipe the monitor screen unless asked.
+      rebuildMonitorBuffer();
+
+      if (alsoRestartAndBlank) {
+        resetSweepAndBlankScreen();
+      }
+
+      // If we DID blank, show the blank + bar right away; otherwise show current persistent screen.
+      renderMonitor();
     }
 
     // -------------------------
@@ -653,7 +557,7 @@
       const dt = (ts - lastTs) / 1000;
       lastTs = ts;
 
-      writeSamplesUnderSweep(dt);
+      stepSweep(dt);
       renderMonitor();
 
       requestAnimationFrame(animate);
@@ -662,16 +566,11 @@
     // -------------------------
     // Controls
     // -------------------------
-    btnPacerToggle.addEventListener("click", () => {
-      setPacerState(!pacerOn);
-    });
+    btnPacerToggle.addEventListener("click", () => setPacerState(!pacerOn));
 
     btnGen.addEventListener("click", () => {
-      stripPaper = generateStripFromUI(60);
-      stripLive  = generateStripFromUI(80);
-      updateStatus(stripLive);
-      renderPaper();
-      // do NOT clear monitor; sweep overwrites as it passes
+      // IMPORTANT: no reset. Just rebuild buffer; monitor overwrites progressively.
+      refreshStrips(false);
     });
 
     btnPlay.addEventListener("click", () => {
@@ -682,44 +581,33 @@
       }
     });
 
-    // All UI changes regenerate strips (monitor keeps history; sweep overwrites)
     [
       elScenario, elHr, elSens, elOut,
       elReg, elAsync, elSeed
-    ].forEach(el => el.addEventListener("change", refreshStrips));
+    ].forEach(el => el.addEventListener("change", () => refreshStrips(false)));
 
-    // If the user changes pacerRate (only possible while ON), regenerate strips too
     elRate.addEventListener("change", () => {
       if (pacerOn) {
         const v = Number(elRate.value);
         if (v > 0) lastNonZeroPacerRate = v;
       }
-      refreshStrips();
+      refreshStrips(false);
     });
 
     function onResize() {
       sizePaperCanvas();
       sizeMonitorCanvas();
 
-      // resize monitor buffers without wiping history
-      const newW = monitorCanvas.clientWidth;
-      if (monitorY.length && monitorY.length !== newW) {
-        const oldY = monitorY, oldW = oldY.length;
-        const oldWritten = monitorWritten;
+      // Rebuild source buffer at new size
+      rebuildMonitorBuffer();
 
-        monitorY = new Array(newW).fill(NaN);
-        monitorWritten = new Array(newW).fill(false);
-
-        for (let col = 0; col < newW; col++) {
-          const u = col / Math.max(1, newW - 1);
-          const oldCol = Math.round(u * (oldW - 1));
-          monitorY[col] = oldY[oldCol];
-          monitorWritten[col] = oldWritten[oldCol];
-        }
-        sweepX = Math.min(sweepX, newW - 1);
-      } else if (!monitorY.length) {
-        resetMonitorBuffer(false);
-      }
+      // Rebuild screen at new size, and preserve "already revealed" look:
+      // (blank background + reveal up to current sweepX)
+      initMonitorScreenBlank();
+      const w = monitorCanvas.clientWidth;
+      sweepX = Math.min(sweepX, w);
+      prevSweepX = 0;
+      overwriteSliceOnScreen(0, sweepX);
 
       renderPaper();
       renderMonitor();
@@ -731,19 +619,10 @@
     // -------------------------
     sizePaperCanvas();
     sizeMonitorCanvas();
-
-    // init pacer UI state (ON by default)
     setPacerUi();
 
-    stripPaper = generateStripFromUI(60);
-    stripLive  = generateStripFromUI(80);
-    updateStatus(stripLive);
-
-    renderPaper();
-
-    resetMonitorBuffer(false);
-    renderMonitor();
-
+    // First load: blank screen, then sweep draws in (no pre-existing green trace)
+    refreshStrips(true);
     requestAnimationFrame(animate);
   </script>
 </body>
