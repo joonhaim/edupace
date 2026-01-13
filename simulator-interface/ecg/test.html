@@ -7,7 +7,7 @@
   <style>
     :root{
       --bg:#0b0b0b; --panel:#141414; --text:#eaeaea; --muted:#a7a7a7; --border:#2a2a2a;
-      --btn:#1e1e1e; --btnHover:#2a2a2a;
+      --btn:#1e1e1e; --btnHover:#2a2a2a; --accent:#33ff66;
     }
     html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
@@ -15,13 +15,22 @@
     .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;}
     .row{display:flex;flex-wrap:wrap;gap:12px;align-items:end;}
     .field{display:grid;gap:6px;min-width:140px;}
+    .field.wide{min-width:220px;}
     label{font-size:12px;color:var(--muted);}
-    input,select{background:#0f0f0f;color:var(--text);border:1px solid var(--border);
-      border-radius:8px;padding:8px 10px;font-size:14px;outline:none;}
+    input,select{
+      background:#0f0f0f;color:var(--text);border:1px solid var(--border);
+      border-radius:8px;padding:8px 10px;font-size:14px;outline:none;
+    }
     input:focus,select:focus{border-color:#3a3a3a;}
-    .btn{background:var(--btn);color:var(--text);border:1px solid var(--border);
-      border-radius:8px;padding:9px 12px;font-size:14px;cursor:pointer;user-select:none;}
+    input[type="range"]{padding:0;height:32px;}
+    .btn{
+      background:var(--btn);color:var(--text);border:1px solid var(--border);
+      border-radius:8px;padding:9px 12px;font-size:14px;cursor:pointer;user-select:none;
+    }
     .btn:hover{background:var(--btnHover);}
+    .btn.primary{border-color:#2f2f2f;}
+    .btn.pill{border-radius:999px;padding:8px 12px;}
+    .btnGroup{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.35;}
     .canvasWrap{overflow:auto;border-radius:10px;border:1px solid var(--border);background:#070707;padding:8px;}
     .canvasTitle{font-size:12px;color:var(--muted);margin:6px 0 8px;}
@@ -30,71 +39,170 @@
     #ecgMonitor{background:#000000;border-radius:8px;border:1px solid #1f1f1f;}
     .status{font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:8px;}
     .pill{padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:#0f0f0f;}
+    .divider{height:1px;background:var(--border);margin:10px 0;}
+    .subpanel{
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px;
+      background:#111;
+    }
+    .subhead{
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 8px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .valueTag{
+      font-variant-numeric:tabular-nums;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#0f0f0f;
+      color:var(--text);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .rangeRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .rangeRow .field{min-width:200px;}
+    .miniBtns{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="panel">
-      <div class="row">
-        <div class="field">
-          <label for="scenario">Scenario</label>
-          <select id="scenario">
-            <option value="NSR" selected>NSR</option>
-            <option value="3rdDegHB">3rd-degree AV block</option>
-            <option value="Mobitz2">Mobitz II</option>
-            <option value="SlowConduction">Slow conduction</option>
-          </select>
+
+      <!-- Scenario + Intrinsic HR (separate from pacer params) -->
+      <div class="subpanel">
+        <div class="subhead">
+          <span>Patient</span>
+          <span class="valueTag" id="tagScenario">Scenario: —</span>
         </div>
 
-        <div class="field">
-          <label for="hr">Patient HR (bpm)</label>
-          <input id="hr" type="number" value="90" min="20" max="220" step="1">
+        <div class="row">
+          <div class="field wide">
+            <label for="scenario">Scenario</label>
+            <select id="scenario">
+              <option value="NSR" selected>NSR</option>
+              <option value="3rdDegHB">3rd-degree AV block</option>
+              <option value="Mobitz2">Mobitz II</option>
+              <option value="SlowConduction">Slow conduction</option>
+            </select>
+          </div>
+
+          <div class="field wide">
+            <label for="hrRange">Intrinsic HR (bpm)</label>
+            <input id="hrRange" type="range" min="20" max="220" step="1" value="90">
+          </div>
+
+          <div class="field" style="min-width:120px;">
+            <label for="hr">Value</label>
+            <input id="hr" type="number" value="90" min="20" max="220" step="1">
+          </div>
+
+          <div class="miniBtns">
+            <button class="btn pill" data-hr="-10">-10</button>
+            <button class="btn pill" data-hr="-1">-1</button>
+            <button class="btn pill" data-hr="+1">+1</button>
+            <button class="btn pill" data-hr="+10">+10</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Pacemaker parameters (the "3 parameters" + async + on/off + play) -->
+      <div class="subpanel">
+        <div class="subhead">
+          <span>Pacemaker</span>
+          <span class="valueTag" id="tagPacer">Pacer: —</span>
         </div>
 
-        <div class="field">
-          <label for="pacerRate">Pacemaker Rate (bpm)</label>
-          <input id="pacerRate" type="number" value="70" min="0" max="220" step="1">
+        <div class="row">
+          <div class="field wide">
+            <label for="pacerRateRange">Rate (bpm)</label>
+            <input id="pacerRateRange" type="range" min="0" max="220" step="1" value="70">
+          </div>
+
+          <div class="field" style="min-width:120px;">
+            <label for="pacerRate">Value</label>
+            <input id="pacerRate" type="number" value="70" min="0" max="220" step="1">
+          </div>
+
+          <div class="miniBtns">
+            <button class="btn pill" data-rate="-10">-10</button>
+            <button class="btn pill" data-rate="-1">-1</button>
+            <button class="btn pill" data-rate="+1">+1</button>
+            <button class="btn pill" data-rate="+10">+10</button>
+          </div>
         </div>
 
-        <div class="field">
-          <label for="sens">Sensitivity (mV)</label>
-          <input id="sens" type="number" value="0.5" min="0" max="20" step="0.1">
+        <div class="row" style="margin-top:8px;">
+          <div class="field wide">
+            <label for="sensRange">Sensitivity (mV)</label>
+            <input id="sensRange" type="range" min="0" max="20" step="0.1" value="0.5">
+          </div>
+
+          <div class="field" style="min-width:120px;">
+            <label for="sens">Value</label>
+            <input id="sens" type="number" value="0.5" min="0" max="20" step="0.1">
+          </div>
+
+          <div class="miniBtns">
+            <button class="btn pill" data-sens="-1">-1</button>
+            <button class="btn pill" data-sens="-0.1">-0.1</button>
+            <button class="btn pill" data-sens="+0.1">+0.1</button>
+            <button class="btn pill" data-sens="+1">+1</button>
+          </div>
         </div>
 
-        <div class="field">
-          <label for="out">Output (mA)</label>
-          <input id="out" type="number" value="1.8" min="0" max="25" step="0.1">
+        <div class="row" style="margin-top:8px;">
+          <div class="field wide">
+            <label for="outRange">Output (mA)</label>
+            <input id="outRange" type="range" min="0" max="25" step="0.1" value="1.8">
+          </div>
+
+          <div class="field" style="min-width:120px;">
+            <label for="out">Value</label>
+            <input id="out" type="number" value="1.8" min="0" max="25" step="0.1">
+          </div>
+
+          <div class="miniBtns">
+            <button class="btn pill" data-out="-1">-1</button>
+            <button class="btn pill" data-out="-0.1">-0.1</button>
+            <button class="btn pill" data-out="+0.1">+0.1</button>
+            <button class="btn pill" data-out="+1">+1</button>
+          </div>
         </div>
 
-        <div class="field" title="(Currently used only by some NSR stitcher variants)">
-          <label for="regularity">Regularity</label>
-          <select id="regularity">
-            <option value="Regular" selected>Regular</option>
-            <option value="Irregular">Irregular</option>
-          </select>
-        </div>
+        <div class="row" style="margin-top:10px;">
+          <div class="field">
+            <label for="async">Asynchronous</label>
+            <select id="async">
+              <option value="false" selected>false</option>
+              <option value="true">true</option>
+            </select>
+          </div>
 
-        <div class="field">
-          <label for="async">Asynchronous</label>
-          <select id="async">
-            <option value="false" selected>false</option>
-            <option value="true">true</option>
-          </select>
+          <div class="btnGroup">
+            <button id="pacerToggle" class="btn primary" title="When OFF, pacer rate is forced to 0">Pacemaker: ON</button>
+            <button id="play" class="btn">Monitor sweep (play/pause)</button>
+            <button id="blank" class="btn" title="Clear monitor screen (paper stays)">Clear monitor</button>
+          </div>
         </div>
-
-        <div class="field" title="(Currently used only by some NSR stitcher variants)">
-          <label for="seed">Seed (optional)</label>
-          <input id="seed" type="number" placeholder="e.g. 42">
-        </div>
-
-        <button id="pacerToggle" class="btn" title="When OFF, pacer rate is forced to 0">Pacemaker: ON</button>
-        <button id="gen" class="btn">Generate</button>
-        <button id="play" class="btn">Monitor sweep (play/pause)</button>
       </div>
 
       <div class="hint">
         Top: ECG paper view (0–6 s) with red grid and blue sensitivity line.<br/>
-        Bottom: monitor view (black) uses a sweep to overwrite (no full reset) using the exact same trace
+        Bottom: monitor view (black) uses a sweep to overwrite (no full reset) using the exact same trace.<br/>
+        Note: Regularity is fixed to <b>Regular</b> and Seed is removed.
       </div>
 
       <div class="status">
@@ -148,6 +256,9 @@
     // 1 screen (6s) per 6 real seconds
     const SWEEP_TIME_SCALE = 1.0;
 
+    // Debounce heavy regen on sliders (keeps UI feeling snappy)
+    const REGEN_DEBOUNCE_MS = 60;
+
     // -------------------------
     // DOM
     // -------------------------
@@ -157,17 +268,26 @@
     const monitorCtx = monitorCanvas.getContext("2d");
 
     const elScenario = document.getElementById("scenario");
+
+    // Intrinsic HR (separate)
     const elHr = document.getElementById("hr");
+    const elHrRange = document.getElementById("hrRange");
+
+    // Pacer params (3 + async)
     const elRate = document.getElementById("pacerRate");
+    const elRateRange = document.getElementById("pacerRateRange");
     const elSens = document.getElementById("sens");
+    const elSensRange = document.getElementById("sensRange");
     const elOut = document.getElementById("out");
-    const elReg = document.getElementById("regularity");
+    const elOutRange = document.getElementById("outRange");
     const elAsync = document.getElementById("async");
-    const elSeed = document.getElementById("seed");
 
     const btnPacerToggle = document.getElementById("pacerToggle");
-    const btnGen = document.getElementById("gen");
     const btnPlay = document.getElementById("play");
+    const btnBlank = document.getElementById("blank");
+
+    const tagScenario = document.getElementById("tagScenario");
+    const tagPacer = document.getElementById("tagPacer");
 
     const statusLen = document.getElementById("statusLen");
     const statusRange = document.getElementById("statusRange");
@@ -188,27 +308,31 @@
         const current = Number(elRate.value);
         const restore = (current > 0) ? current : (lastNonZeroPacerRate > 0 ? lastNonZeroPacerRate : 70);
         elRate.value = String(restore);
+        elRateRange.value = String(restore);
 
         btnPacerToggle.textContent = "Pacemaker: ON";
         btnPacerToggle.style.opacity = "1";
         elRate.disabled = false;
+        elRateRange.disabled = false;
       } else {
         const current = Number(elRate.value);
         if (current > 0) lastNonZeroPacerRate = current;
 
         elRate.value = "0";
+        elRateRange.value = "0";
         btnPacerToggle.textContent = "Pacemaker: OFF";
         btnPacerToggle.style.opacity = "0.75";
         elRate.disabled = true;
+        elRateRange.disabled = true;
       }
+      updateTags();
     }
 
     function setPacerState(on) {
       pacerOn = !!on;
       setPacerUi();
-      // IMPORTANT: do NOT reset the monitor. Just rebuild the source strip;
-      // the monitor will overwrite progressively as the sweep passes.
-      refreshStrips(false);
+      // do NOT reset monitor; just rebuild source strip
+      scheduleRefresh(false);
     }
 
     elRate.addEventListener("input", () => {
@@ -331,6 +455,7 @@
 
     // -------------------------
     // Scenario routing
+    // (Regularity fixed to "Regular"; Seed removed)
     // -------------------------
     function generateStripFromUI(iterations) {
       const patientHR = Number(elHr.value);
@@ -341,7 +466,11 @@
       const scenario = elScenario.value;
 
       if (scenario === "NSR") {
-        return stitchBeats({ patientHR, sensitivity, rate, output, asynchronous, iterations });
+        return stitchBeats({
+          patientHR, sensitivity, rate, output, asynchronous,
+          iterations
+          // regularity fixed; seed removed
+        });
       }
       if (scenario === "Mobitz2") {
         return mobitzTypeII({ patientHR, sensitivity, rate, output, asynchronous, iterations, probConduction: 0.8 });
@@ -353,7 +482,7 @@
     }
 
     // -------------------------
-    // Status
+    // Status + tags
     // -------------------------
     function updateStatus(stripObj) {
       if (!stripObj || !stripObj.x.length) return;
@@ -374,6 +503,14 @@
       const beats = Array.isArray(stripObj.beatList) ? stripObj.beatList : [];
       const paced = beats.filter(b => b === "Ventricular pacing").length;
       statusBeat.textContent = `beats: ${beats.length} (paced: ${paced})`;
+
+      updateTags();
+    }
+
+    function updateTags() {
+      const scenLabel = elScenario.options[elScenario.selectedIndex]?.textContent ?? elScenario.value;
+      tagScenario.textContent = `Scenario: ${scenLabel} · HR ${Number(elHr.value)} bpm`;
+      tagPacer.textContent = `Pacer ${pacerOn ? "ON" : "OFF"} · Rate ${getEffectivePacerRate()} bpm · Sens ${Number(elSens.value).toFixed(1)} mV · Out ${Number(elOut.value).toFixed(1)} mA · Async ${elAsync.value}`;
     }
 
     // -------------------------
@@ -394,7 +531,6 @@
     function dpr() { return window.devicePixelRatio || 1; }
 
     function sizeOffscreenToMonitor(canvas) {
-      // mirror monitor canvas sizing & DPR transform
       setCanvasSize(canvas, monitorCanvas.clientWidth, monitorCanvas.clientHeight);
     }
 
@@ -422,7 +558,7 @@
       sizeOffscreenToMonitor(monitorBuffer);
       drawMonitorBackgroundTo(monitorBufferCtx, w, h);
 
-      // draw the exact same waveform geometry as paper (just green, on black)
+      // exact same geometry as paper (green on black)
       drawWaveWindowToSize(monitorBufferCtx, w, h, stripLive, 0, VIEW_SEC, "#33ff66", 2);
     }
 
@@ -433,21 +569,17 @@
       drawMonitorBackgroundTo(monitorScreenCtx, w, h);
     }
 
-    // Copy ONLY a vertical slice from source buffer onto the persistent screen.
     function overwriteSliceOnScreen(x0, x1) {
       const w = monitorCanvas.clientWidth;
       const h = monitorCanvas.clientHeight;
       if (x1 <= x0) return;
 
       const D = dpr();
-
-      // Source rect is in *device pixels*
       const sx = Math.floor(x0 * D);
       const sw = Math.ceil((x1 - x0) * D);
       const sy = 0;
       const sh = Math.ceil(h * D);
 
-      // Dest coords are in CSS pixels (ctx is DPR-transformed already)
       monitorScreenCtx.drawImage(
         monitorBuffer,
         sx, sy, sw, sh,
@@ -474,17 +606,11 @@
       prevSweepX = sweepX;
       sweepX += pxPerSec * dtSec;
 
-      if (sweepX >= w) {
-        // wrap, but DO NOT clear the whole screen
-        sweepX = sweepX % w;
-      }
+      if (sweepX >= w) sweepX = sweepX % w;
 
-      // overwrite only the region we just swept through
       if (sweepX >= prevSweepX) {
-        // normal forward movement
         overwriteSliceOnScreen(prevSweepX, sweepX);
       } else {
-        // wrapped: overwrite end part + beginning part
         overwriteSliceOnScreen(prevSweepX, w);
         overwriteSliceOnScreen(0, sweepX);
       }
@@ -494,11 +620,10 @@
       const w = monitorCanvas.clientWidth;
       const h = monitorCanvas.clientHeight;
 
-      // draw persistent screen as-is
       monitorCtx.clearRect(0, 0, w, h);
       monitorCtx.drawImage(monitorScreen, 0, 0, w, h);
 
-      // sweep bar on top (NOT burned into the persistent screen)
+      // sweep bar
       monitorCtx.strokeStyle = "rgba(51,255,102,0.95)";
       monitorCtx.lineWidth = 2;
       monitorCtx.beginPath();
@@ -526,25 +651,28 @@
     }
 
     // -------------------------
-    // Regeneration
+    // Regeneration (no "Generate" button)
     // -------------------------
     function refreshStrips(alsoRestartAndBlank = false) {
-      // Use the SAME strip for paper + monitor so the trace matches exactly.
       stripLive  = generateStripFromUI(80);
       stripPaper = stripLive;
 
       updateStatus(stripLive);
       renderPaper();
-
-      // Update the SOURCE buffer immediately, but do NOT wipe the monitor screen unless asked.
       rebuildMonitorBuffer();
 
-      if (alsoRestartAndBlank) {
-        resetSweepAndBlankScreen();
-      }
-
-      // If we DID blank, show the blank + bar right away; otherwise show current persistent screen.
+      if (alsoRestartAndBlank) resetSweepAndBlankScreen();
       renderMonitor();
+    }
+
+    // Debounced refresh for sliders
+    let regenTimer = null;
+    function scheduleRefresh(alsoRestartAndBlank = false) {
+      if (regenTimer) clearTimeout(regenTimer);
+      regenTimer = setTimeout(() => {
+        regenTimer = null;
+        refreshStrips(alsoRestartAndBlank);
+      }, REGEN_DEBOUNCE_MS);
     }
 
     // -------------------------
@@ -564,14 +692,62 @@
     }
 
     // -------------------------
-    // Controls
+    // UI syncing helpers
+    // -------------------------
+    function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
+
+    function syncPair(rangeEl, numEl, val) {
+      rangeEl.value = String(val);
+      numEl.value = String(val);
+    }
+
+    function setHR(v, immediate=false) {
+      v = clamp(Math.round(v), Number(elHr.min), Number(elHr.max));
+      syncPair(elHrRange, elHr, v);
+      updateTags();
+      if (immediate) refreshStrips(false);
+      else scheduleRefresh(false);
+    }
+
+    function setRate(v, immediate=false) {
+      v = clamp(Math.round(v), Number(elRate.min), Number(elRate.max));
+      if (!pacerOn) v = 0;
+      syncPair(elRateRange, elRate, v);
+      if (v > 0) lastNonZeroPacerRate = v;
+      updateTags();
+      if (immediate) refreshStrips(false);
+      else scheduleRefresh(false);
+    }
+
+    function setSens(v, immediate=false) {
+      v = clamp(Number(v), Number(elSens.min), Number(elSens.max));
+      v = Math.round(v * 10) / 10;
+      syncPair(elSensRange, elSens, v);
+      updateTags();
+      if (immediate) refreshStrips(false);
+      else scheduleRefresh(false);
+    }
+
+    function setOut(v, immediate=false) {
+      v = clamp(Number(v), Number(elOut.min), Number(elOut.max));
+      v = Math.round(v * 10) / 10;
+      syncPair(elOutRange, elOut, v);
+      updateTags();
+      if (immediate) refreshStrips(false);
+      else scheduleRefresh(false);
+    }
+
+    function bumpFromButton(attr, delta) {
+      if (attr === "hr") setHR(Number(elHr.value) + delta);
+      if (attr === "rate") setRate(Number(elRate.value) + delta);
+      if (attr === "sens") setSens(Number(elSens.value) + delta);
+      if (attr === "out") setOut(Number(elOut.value) + delta);
+    }
+
+    // -------------------------
+    // Event wiring
     // -------------------------
     btnPacerToggle.addEventListener("click", () => setPacerState(!pacerOn));
-
-    btnGen.addEventListener("click", () => {
-      // IMPORTANT: no reset. Just rebuild buffer; monitor overwrites progressively.
-      refreshStrips(false);
-    });
 
     btnPlay.addEventListener("click", () => {
       playing = !playing;
@@ -581,28 +757,56 @@
       }
     });
 
-    [
-      elScenario, elHr, elSens, elOut,
-      elReg, elAsync, elSeed
-    ].forEach(el => el.addEventListener("change", () => refreshStrips(false)));
+    btnBlank.addEventListener("click", () => {
+      resetSweepAndBlankScreen();
+      renderMonitor();
+    });
 
-    elRate.addEventListener("change", () => {
-      if (pacerOn) {
-        const v = Number(elRate.value);
-        if (v > 0) lastNonZeroPacerRate = v;
-      }
-      refreshStrips(false);
+    // Scenario + async: apply immediately (feels better than waiting for debounce)
+    elScenario.addEventListener("change", () => { updateTags(); refreshStrips(false); });
+    elAsync.addEventListener("change", () => { updateTags(); refreshStrips(false); });
+
+    // HR pair
+    elHrRange.addEventListener("input", () => setHR(Number(elHrRange.value)));
+    elHr.addEventListener("input", () => setHR(Number(elHr.value)));
+    elHr.addEventListener("change", () => setHR(Number(elHr.value), true));
+
+    // Rate pair
+    elRateRange.addEventListener("input", () => setRate(Number(elRateRange.value)));
+    elRate.addEventListener("input", () => setRate(Number(elRate.value)));
+    elRate.addEventListener("change", () => setRate(Number(elRate.value), true));
+
+    // Sens pair
+    elSensRange.addEventListener("input", () => setSens(Number(elSensRange.value)));
+    elSens.addEventListener("input", () => setSens(Number(elSens.value)));
+    elSens.addEventListener("change", () => setSens(Number(elSens.value), true));
+
+    // Out pair
+    elOutRange.addEventListener("input", () => setOut(Number(elOutRange.value)));
+    elOut.addEventListener("input", () => setOut(Number(elOut.value)));
+    elOut.addEventListener("change", () => setOut(Number(elOut.value), true));
+
+    // +/- buttons
+    document.querySelectorAll("button[data-hr],button[data-rate],button[data-sens],button[data-out]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const hr = btn.getAttribute("data-hr");
+        const rate = btn.getAttribute("data-rate");
+        const sens = btn.getAttribute("data-sens");
+        const out = btn.getAttribute("data-out");
+        if (hr) bumpFromButton("hr", Number(hr));
+        if (rate) bumpFromButton("rate", Number(rate));
+        if (sens) bumpFromButton("sens", Number(sens));
+        if (out) bumpFromButton("out", Number(out));
+      });
     });
 
     function onResize() {
       sizePaperCanvas();
       sizeMonitorCanvas();
 
-      // Rebuild source buffer at new size
       rebuildMonitorBuffer();
 
-      // Rebuild screen at new size, and preserve "already revealed" look:
-      // (blank background + reveal up to current sweepX)
+      // preserve already-revealed look: blank + reveal up to current sweepX
       initMonitorScreenBlank();
       const w = monitorCanvas.clientWidth;
       sweepX = Math.min(sweepX, w);
@@ -619,9 +823,16 @@
     // -------------------------
     sizePaperCanvas();
     sizeMonitorCanvas();
+
+    // make sure pairs start synced
+    setHR(Number(elHr.value), true);
+    setSens(Number(elSens.value), true);
+    setOut(Number(elOut.value), true);
+    setRate(Number(elRate.value), true);
+
     setPacerUi();
 
-    // First load: blank screen, then sweep draws in (no pre-existing green trace)
+    // First load: blank screen, then sweep draws in
     refreshStrips(true);
     requestAnimationFrame(animate);
   </script>
