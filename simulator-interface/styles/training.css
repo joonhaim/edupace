@@ -730,7 +730,7 @@ body.simulation-light .theme-toggle {
 }
 
 .control-column {
-    width: min(100%, 360px);
+    width: min(100%, 320px);
 }
 
 .control-column > .card,
@@ -806,6 +806,8 @@ body.simulation-light .theme-toggle {
     max-width: 100%;
     aspect-ratio: var(--ecg-aspect-ratio, 2.18);
     flex: 0 0 auto;
+    --lead-label-color: #33ff66;
+    --hr-color: #33ff66;
 }
 
 .ecg-frame.is-fullscreen {

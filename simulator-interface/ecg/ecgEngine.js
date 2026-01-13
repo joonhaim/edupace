@@ -116,11 +116,12 @@ function initEcgEngine() {
             calibrationValue.textContent = `${VIEW_SEC} s window · 10 mm/mV · 25 mm/s`;
         }
 
-        const hrColor = TRACE_COLORS[state.settings.hrColor] ?? TRACE_COLORS.white;
+        const hrColor = TRACE_COLORS[state.settings.hrColor] ?? TRACE_COLORS.green;
         const leadLabelColor = TRACE_COLORS[state.settings.leadLabelColor] ?? TRACE_COLORS.green;
-        if (shell) {
-            shell.style.setProperty('--hr-color', hrColor);
-            shell.style.setProperty('--lead-label-color', leadLabelColor);
+        const colorHost = shell ?? frame ?? overlay;
+        if (colorHost) {
+            colorHost.style.setProperty('--hr-color', hrColor);
+            colorHost.style.setProperty('--lead-label-color', leadLabelColor);
         }
 
         hrEngine.setBeepMode(state.settings.qrsBeep ?? 'on');
@@ -426,31 +427,32 @@ function initEcgEngine() {
         ctx.fillStyle = '#050505';
         ctx.fillRect(0, 0, width, height);
 
-        if (!state.settings.gridlines) return;
-
         const X = (t) => (t / VIEW_SEC) * width;
         const Y = (v) => height - ((v - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * height;
-        const smallAlpha = 0.12 * intensity;
-        const bigAlpha = 0.32 * intensity;
 
-        for (let t = 0; t <= VIEW_SEC + 1e-9; t += smallT) {
-            const isBig = Math.abs((t / bigT) - Math.round(t / bigT)) < 1e-6;
-            ctx.beginPath();
-            ctx.strokeStyle = isBig ? `rgba(56, 189, 248, ${bigAlpha})` : `rgba(56, 189, 248, ${smallAlpha})`;
-            ctx.lineWidth = isBig ? 1.2 : 1.0;
-            ctx.moveTo(X(t), 0);
-            ctx.lineTo(X(t), height);
-            ctx.stroke();
-        }
+        if (state.settings.gridlines) {
+            const smallAlpha = 0.12 * intensity;
+            const bigAlpha = 0.32 * intensity;
 
-        for (let v = R_Y_MIN; v <= R_Y_MAX + 1e-9; v += smallA) {
-            const isBig = Math.abs((v / bigA) - Math.round(v / bigA)) < 1e-6;
-            ctx.beginPath();
-            ctx.strokeStyle = isBig ? `rgba(56, 189, 248, ${bigAlpha})` : `rgba(56, 189, 248, ${smallAlpha})`;
-            ctx.lineWidth = isBig ? 1.2 : 1.0;
-            ctx.moveTo(0, Y(v));
-            ctx.lineTo(width, Y(v));
-            ctx.stroke();
+            for (let t = 0; t <= VIEW_SEC + 1e-9; t += smallT) {
+                const isBig = Math.abs((t / bigT) - Math.round(t / bigT)) < 1e-6;
+                ctx.beginPath();
+                ctx.strokeStyle = isBig ? `rgba(56, 189, 248, ${bigAlpha})` : `rgba(56, 189, 248, ${smallAlpha})`;
+                ctx.lineWidth = isBig ? 1.2 : 1.0;
+                ctx.moveTo(X(t), 0);
+                ctx.lineTo(X(t), height);
+                ctx.stroke();
+            }
+
+            for (let v = R_Y_MIN; v <= R_Y_MAX + 1e-9; v += smallA) {
+                const isBig = Math.abs((v / bigA) - Math.round(v / bigA)) < 1e-6;
+                ctx.beginPath();
+                ctx.strokeStyle = isBig ? `rgba(56, 189, 248, ${bigAlpha})` : `rgba(56, 189, 248, ${smallAlpha})`;
+                ctx.lineWidth = isBig ? 1.2 : 1.0;
+                ctx.moveTo(0, Y(v));
+                ctx.lineTo(width, Y(v));
+                ctx.stroke();
+            }
         }
 
         if (state.settings.sensitivityGuide) {
