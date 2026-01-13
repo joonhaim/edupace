@@ -53,6 +53,8 @@ function initEcgEngine() {
     const pausedBadge = frame?.querySelector('.ecg-paused-badge');
     const calibrationToggle = frame?.querySelector('.calibration-toggle');
     const audioToggle = frame?.querySelector('.ecg-audio-toggle');
+    const pauseToggle = frame?.querySelector('.pause-toggle');
+    const caliperUnitToggle = frame?.querySelector('.caliper-unit-toggle');
     const fullscreenToggle = frame?.querySelector('.fullscreen-toggle');
     const ctx = canvas.getContext('2d');
     let suppressClick = false;
@@ -79,7 +81,8 @@ function initEcgEngine() {
             dragging: false,
             startX: 0,
             endX: 0,
-            dragMoved: false
+            dragMoved: false,
+            unit: 'ms'
         },
         needsRegenerate: true
     };
@@ -129,6 +132,13 @@ function initEcgEngine() {
         if (pausedBadge) {
             pausedBadge.toggleAttribute('hidden', !state.paused);
         }
+        if (pauseToggle) {
+            pauseToggle.classList.toggle('is-active', state.paused);
+            pauseToggle.setAttribute('aria-pressed', String(state.paused));
+            pauseToggle.setAttribute('aria-label', state.paused ? 'Resume ECG sweep' : 'Pause ECG sweep');
+            pauseToggle.setAttribute('title', state.paused ? 'Resume ECG sweep' : 'Pause ECG sweep');
+            pauseToggle.textContent = state.paused ? '▶' : '⏸';
+        }
         if (!state.paused) {
             state.calipers.active = false;
             state.calipers.dragging = false;
@@ -137,6 +147,11 @@ function initEcgEngine() {
                 caliperReadout.setAttribute('hidden', '');
             }
         }
+        window.dispatchEvent(
+            new CustomEvent('edupace-telemetry-pause', {
+                detail: { paused: state.paused }
+            })
+        );
     };
 
     const updateCaliperReadout = () => {
@@ -148,10 +163,23 @@ function initEcgEngine() {
         const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
         const deltaPx = Math.abs(state.calipers.endX - state.calipers.startX);
         const deltaSec = (deltaPx / Math.max(1, width)) * VIEW_SEC;
-        const deltaMs = Math.round(deltaSec * 1000);
-        const ppm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
-        caliperValue.textContent = `${deltaMs} ms · ${ppm} ppm`;
+        if (state.calipers.unit === 's') {
+            const bpm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
+            caliperValue.textContent = `${deltaSec.toFixed(2)} s · ${bpm} bpm`;
+        } else {
+            const deltaMs = Math.round(deltaSec * 1000);
+            const ppm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
+            caliperValue.textContent = `${deltaMs} ms · ${ppm} ppm`;
+        }
         caliperReadout.removeAttribute('hidden');
+    };
+
+    const updateCaliperUnitToggle = () => {
+        if (!caliperUnitToggle) return;
+        const isSeconds = state.calipers.unit === 's';
+        caliperUnitToggle.textContent = isSeconds ? 's' : 'ms';
+        caliperUnitToggle.setAttribute('aria-label', isSeconds ? 'Show calipers in milliseconds' : 'Show calipers in seconds');
+        caliperUnitToggle.setAttribute('title', isSeconds ? 'Show calipers in milliseconds' : 'Show calipers in seconds');
     };
 
     const setCalibrationVisible = (visible) => {
@@ -280,55 +308,63 @@ function initEcgEngine() {
         return best;
     };
 
+
     const generateStripFromParams = (iterations) => {
-        const intrinsicRate = Number(state.settings.intrinsicRate ?? 60);
-        const regularity = state.settings.intrinsicRegularity ?? 'regular';
-        const jitter = regularity === 'irregular' ? (0.85 + Math.random() * 0.3) : 1;
-        const patientHR = Math.max(20, intrinsicRate * jitter);
-        const asynchronous = getAsyncMode();
+    const intrinsicRate = Number(state.settings.intrinsicRate ?? 60);
+    const regularity = state.settings.intrinsicRegularity ?? 'regular';
+    const jitter = regularity === 'irregular' ? (0.85 + Math.random() * 0.3) : 1;
+    const patientHR = Math.max(20, intrinsicRate * jitter);
 
-        if (state.scenarioId === 'AV3') {
-            return thirdDegHeartBlock({
-                iterations,
-                sensitivity: state.params.sensitivity,
-                output: state.params.output,
-                rate: state.params.rate,
-                patientHR,
-                asynchronous
-            });
-        }
+    // ✅ Pacemaker power OFF => no pacing (force rate=0)
+    const pacingEnabled = state.params.power !== false;
+    const effectiveRate = pacingEnabled ? state.params.rate : 0;
 
-        if (state.scenarioId === 'Mobitz2') {
-            return mobitzTypeII({
-                iterations,
-                sensitivity: state.params.sensitivity,
-                output: state.params.output,
-                rate: state.params.rate,
-                patientHR,
-                asynchronous
-            });
-        }
+    // If pacing is off, async should not matter
+    const asynchronous = pacingEnabled ? getAsyncMode() : false;
 
-        if (state.scenarioId === 'SlowConduction') {
-            return slowConduction({
-                iterations,
-                sensitivity: state.params.sensitivity,
-                output: state.params.output,
-                rate: state.params.rate,
-                patientHR,
-                asynchronous
-            });
-        }
-
-        return stitchBeats({
-            patientHR,
+    if (state.scenarioId === 'AV3') {
+        return thirdDegHeartBlock({
+            iterations,
             sensitivity: state.params.sensitivity,
-            rate: state.params.rate,
             output: state.params.output,
-            asynchronous,
-            iterations
+            rate: effectiveRate,
+            patientHR,
+            asynchronous
         });
-    };
+    }
+
+    if (state.scenarioId === 'Mobitz2') {
+        return mobitzTypeII({
+            iterations,
+            sensitivity: state.params.sensitivity,
+            output: state.params.output,
+            rate: effectiveRate,
+            patientHR,
+            asynchronous
+        });
+    }
+
+    if (state.scenarioId === 'SlowConduction') {
+        return slowConduction({
+            iterations,
+            sensitivity: state.params.sensitivity,
+            output: state.params.output,
+            rate: effectiveRate,
+            patientHR,
+            asynchronous
+        });
+    }
+
+    return stitchBeats({
+        patientHR,
+        sensitivity: state.params.sensitivity,
+        rate: effectiveRate,
+        output: state.params.output,
+        asynchronous,
+        iterations
+    });
+};
+
 
     const refreshStrips = () => {
         state.stripPaper = generateStripFromParams(60);
@@ -499,55 +535,71 @@ function initEcgEngine() {
     };
 
     const writeSamplesUnderSweep = (dtSec, previousPlaybackTime) => {
-        if (!state.stripLive || !state.stripLive.x.length) return;
-        ensureLiveStripLongEnough();
+    if (!state.stripLive || !state.stripLive.x.length) return;
+    ensureLiveStripLongEnough();
 
-        const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
-        const sweepLimit = width;
-        const pxPerSec = (sweepLimit / VIEW_SEC) * SWEEP_TIME_SCALE;
-        const advance = pxPerSec * dtSec;
-        const oldX = state.sweepX;
-        let newX = state.sweepX + advance;
-        const wrapped = newX >= sweepLimit;
-        if (wrapped) newX = newX % sweepLimit;
+    const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
+    const sweepLimit = width;
 
-        const segments = [];
-        if (!wrapped) {
-            segments.push([oldX, newX]);
-        } else {
-            segments.push([oldX, sweepLimit]);
-            segments.push([0, newX]);
-        }
+    const pxPerSec = (sweepLimit / VIEW_SEC) * SWEEP_TIME_SCALE;
+    const advance = pxPerSec * dtSec;
 
-        for (const [start, end] of segments) {
-            const startCol = Math.max(0, Math.floor(start));
-            const endCol = Math.min(sweepLimit, Math.ceil(end));
-            for (let col = startCol; col < endCol; col += 1) {
-                const tEnd = state.stripLive.x[state.stripLive.x.length - 1] || VIEW_SEC;
-                const t0 = (col / Math.max(1, sweepLimit - 1)) * VIEW_SEC;
-                const t1 = ((col + 1) / Math.max(1, sweepLimit - 1)) * VIEW_SEC;
-                const a = ((t0 % tEnd) + tEnd) % tEnd;
-                const b = ((t1 % tEnd) + tEnd) % tEnd;
+    const oldX = state.sweepX;
+    let newX = state.sweepX + advance;
 
-                let yVal;
-                if (b >= a) {
-                    yVal = sampleStripPeakHold(state.stripLive, a, b);
-                } else {
-                    const v1 = sampleStripPeakHold(state.stripLive, a, tEnd);
-                    const v2 = sampleStripPeakHold(state.stripLive, 0, b);
-                    yVal = Math.abs(v1) >= Math.abs(v2) ? v1 : v2;
-                }
+    const wrapped = newX >= sweepLimit;
+    if (wrapped) newX = newX % sweepLimit;
 
-                state.monitorY[col] = yVal;
-                state.monitorWritten[col] = true;
-                const timeSeconds = state.playbackTime - ((end - col) / pxPerSec);
-                hrEngine.processSample(timeSeconds, yVal);
+    // Build segments like test.html, but also track the segment startTime so HR samples are monotonic.
+    const segments = [];
+    if (!wrapped) {
+        segments.push({ startPx: oldX, endPx: newX, startTime: previousPlaybackTime });
+    } else {
+        const dur1 = (sweepLimit - oldX) / pxPerSec; // seconds to reach the end
+        segments.push({ startPx: oldX, endPx: sweepLimit, startTime: previousPlaybackTime });
+        segments.push({ startPx: 0, endPx: newX, startTime: previousPlaybackTime + dur1 });
+    }
+
+    for (const seg of segments) {
+        const { startPx, endPx, startTime } = seg;
+
+        const startCol = Math.max(0, Math.floor(startPx));
+        const endCol = Math.min(sweepLimit, Math.ceil(endPx));
+
+        for (let col = startCol; col < endCol; col += 1) {
+            const tEnd = state.stripLive.x[state.stripLive.x.length - 1] || VIEW_SEC;
+
+            // Map pixel column -> time window [0, VIEW_SEC]
+            const t0 = (col / Math.max(1, sweepLimit - 1)) * VIEW_SEC;
+            const t1 = ((col + 1) / Math.max(1, sweepLimit - 1)) * VIEW_SEC;
+
+            // Wrap into strip time
+            const a = ((t0 % tEnd) + tEnd) % tEnd;
+            const b = ((t1 % tEnd) + tEnd) % tEnd;
+
+            // Peak-hold per pixel interval (captures thin pacing spikes / sharp QRS)
+            let yVal;
+            if (b >= a) {
+                yVal = sampleStripPeakHold(state.stripLive, a, b);
+            } else {
+                const v1 = sampleStripPeakHold(state.stripLive, a, tEnd);
+                const v2 = sampleStripPeakHold(state.stripLive, 0, b);
+                yVal = Math.abs(v1) >= Math.abs(v2) ? v1 : v2;
             }
-        }
 
-        dispatchLedEvents(previousPlaybackTime, state.playbackTime);
-        state.sweepX = newX;
-    };
+            state.monitorY[col] = yVal;
+            state.monitorWritten[col] = true;
+
+            // Timestamp for HR engine: when sweep crosses this column during this frame.
+            const timeSeconds = startTime + (col + 0.5 - startPx) / pxPerSec;
+            hrEngine.processSample(timeSeconds, yVal);
+        }
+    }
+
+    dispatchLedEvents(previousPlaybackTime, state.playbackTime);
+    state.sweepX = newX;
+};
+
 
     const renderMonitor = () => {
         const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
@@ -565,21 +617,34 @@ function initEcgEngine() {
         ctx.lineWidth = traceWeight;
         ctx.beginPath();
 
-        let started = false;
-        for (let col = 0; col < width; col += 1) {
-            if (!state.monitorWritten[col] || !Number.isFinite(state.monitorY[col])) {
-                started = false;
-                continue;
-            }
-            const xPx = col + 0.5;
-            const yPx = yToCanvasPx(state.monitorY[col]);
-            if (!started) {
-                ctx.moveTo(xPx, yPx);
-                started = true;
-            } else {
-                ctx.lineTo(xPx, yPx);
-            }
-        }
+        const sweepBreak = Math.floor(state.sweepX);
+const sweepBreak2 = (sweepBreak + 1) % width;
+
+let started = false;
+for (let col = 0; col < width; col += 1) {
+    // IMPORTANT: don’t connect across the sweep position
+    if (col === sweepBreak || col === sweepBreak2) {
+        started = false;
+    }
+
+    if (!state.monitorWritten[col] || !Number.isFinite(state.monitorY[col])) {
+        started = false;
+        continue;
+    }
+
+
+
+    const xPx = col + 0.5;
+    const yPx = yToCanvasPx(state.monitorY[col]);
+
+    if (!started) {
+        ctx.moveTo(xPx, yPx);
+        started = true;
+    } else {
+        ctx.lineTo(xPx, yPx);
+    }
+}
+
         ctx.stroke();
 
         if (!state.paused) {
@@ -661,6 +726,7 @@ function initEcgEngine() {
     applyOverlaySettings();
     setAudioMuted(false);
     setCalibrationVisible(false);
+    updateCaliperUnitToggle();
     fixFrameSize();
     resizeCanvas();
     refreshStrips();
@@ -676,6 +742,18 @@ function initEcgEngine() {
             return;
         }
         setPaused(!state.paused);
+    });
+
+    pauseToggle?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setPaused(!state.paused);
+    });
+
+    caliperUnitToggle?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        state.calipers.unit = state.calipers.unit === 'ms' ? 's' : 'ms';
+        updateCaliperUnitToggle();
+        updateCaliperReadout();
     });
 
     canvas.addEventListener('pointerdown', (event) => {

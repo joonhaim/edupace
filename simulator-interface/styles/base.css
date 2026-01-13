@@ -293,42 +293,6 @@ h1, h2, h3 {
 .sidebar-footer {
     margin-top: auto;
     position: relative;
-    display: grid;
-    gap: 16px;
-}
-
-.sidebar-control {
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 12px;
-    background: var(--surface-2);
-    display: grid;
-    gap: 10px;
-}
-
-.sidebar-control-heading {
-    display: grid;
-    gap: 0.1rem;
-}
-
-.sidebar-control-title {
-    font-weight: 700;
-    color: var(--deep-navy);
-}
-
-.sidebar-control .mode-toggle {
-    width: 100%;
-    justify-content: space-between;
-}
-
-.sidebar-control .mode-pill {
-    flex: 1;
-    justify-content: center;
-}
-
-.sidebar-control-caption {
-    font-size: 0.85rem;
-    line-height: 1.4;
 }
 
 .connection-card {
