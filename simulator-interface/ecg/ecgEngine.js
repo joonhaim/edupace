@@ -702,21 +702,16 @@ for (let col = 0; col < width; col += 1) {
     const fixFrameSize = () => {
         if (!frame) return;
         if (frame.classList.contains('is-fullscreen')) {
-            frame.style.width = '';
-            frame.style.height = '';
-            frame.style.minWidth = '';
-            frame.style.maxWidth = '';
-            frame.style.minHeight = '';
-            frame.style.maxHeight = '';
+            frame.style.removeProperty('--ecg-base-width');
+            frame.style.removeProperty('--ecg-base-height');
+            frame.style.removeProperty('--ecg-aspect-ratio');
             return;
         }
         const { widthCss, heightCss } = paperCssSize();
-        frame.style.width = `${widthCss}px`;
-        frame.style.height = `${heightCss}px`;
-        frame.style.minWidth = `${widthCss}px`;
-        frame.style.maxWidth = `${widthCss}px`;
-        frame.style.minHeight = `${heightCss}px`;
-        frame.style.maxHeight = `${heightCss}px`;
+        const aspectRatio = widthCss / heightCss;
+        frame.style.setProperty('--ecg-base-width', `${widthCss}px`);
+        frame.style.setProperty('--ecg-base-height', `${heightCss}px`);
+        frame.style.setProperty('--ecg-aspect-ratio', aspectRatio.toFixed(4));
         if (shell) {
             shell.style.setProperty('--ecg-width', `${widthCss}px`);
             shell.style.setProperty('--ecg-height', `${heightCss}px`);
