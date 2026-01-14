@@ -353,7 +353,7 @@ function initEcgEngine() {
 
         const i0 = lowerBound(strip.x, tLeft);
         const i1 = lowerBound(strip.x, tRight);
-        if (i1 - i0 < 2) return;
+        if (i0 >= strip.x.length) return;
 
         drawCtx.beginPath();
         drawCtx.strokeStyle = strokeStyle;
@@ -362,8 +362,17 @@ function initEcgEngine() {
         drawCtx.lineCap = 'round';
 
         drawCtx.moveTo(X(strip.x[i0]), Y(strip.y[i0]));
-        for (let i = i0 + 1; i < i1; i += 1) {
+        let endIdx = Math.min(i1, strip.x.length - 1);
+        if (endIdx >= 0 && strip.x[endIdx] > tRight) endIdx -= 1;
+
+        for (let i = i0 + 1; i <= endIdx; i += 1) {
+            if (i < 0 || i >= strip.x.length) break;
             drawCtx.lineTo(X(strip.x[i]), Y(strip.y[i]));
+        }
+
+        const lastX = strip.x[Math.max(i0, endIdx)] ?? strip.x[i0];
+        if (Number.isFinite(lastX) && lastX < tRight && tRight <= strip.x[strip.x.length - 1]) {
+            drawCtx.lineTo(X(tRight), Y(sampleStripLinear(strip, tRight)));
         }
         drawCtx.stroke();
     };
