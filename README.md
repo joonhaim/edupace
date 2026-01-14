@@ -39,6 +39,7 @@ EduPace addresses this gap by providing a safe and interactive simulator that re
 
 ```text
 .
+├── .github/                  # GitHub workflows and configuration
 ├── README.md
 ├── package.json               # Electron wrapper metadata and scripts
 ├── package-lock.json
@@ -52,20 +53,17 @@ EduPace addresses this gap by providing a safe and interactive simulator that re
 │       ├── edupace_logo*.{c,png}
 │       └── tu_logo.{c,jpg}
 ├── electron/                  # Electron wrapper for the simulator
+│   ├── about.html
 │   ├── icons/
 │   ├── main.js
 │   └── preload.js
 └── simulator-interface/       # Browser-based pacing & ECG simulator
     ├── assets/
-    ├── data/scenarios.json
+    ├── data/
     ├── ecg/
     ├── js/
-    ├── partials/
     ├── styles/
-    ├── index.html
-    ├── instructions.html
-    ├── logs.html
-    └── training.html
+    └── index.html
 ```
 
 ___
