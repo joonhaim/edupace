@@ -230,7 +230,7 @@ function initEcgEngine() {
 
     const updateCaliperReadout = (forceHidden = false) => {
         if (!caliperReadout) return;
-        if (forceHidden || !state.calipers.dragging || !state.calipers.dragMoved) {
+        if (forceHidden || !state.calipers.active || !state.settings.intervalRulers) {
             caliperReadout.toggleAttribute('hidden', true);
             return;
         }
@@ -972,7 +972,7 @@ function initEcgEngine() {
         if (!state.calipers.dragMoved) {
             state.calipers.active = false;
         }
-        updateCaliperReadout(true);
+        updateCaliperReadout();
         canvas.releasePointerCapture(event.pointerId);
     });
 
