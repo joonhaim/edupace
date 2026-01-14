@@ -371,7 +371,7 @@ function initEcgEngine() {
     // -------------------------
     // Background draw (to arbitrary ctx) — so buffer/screen match main
     // -------------------------
-    const drawPaperGridTo = (drawCtx, width, height, sensitivity) => {
+    const drawPaperGridTo = (drawCtx, width, height) => {
         drawCtx.clearRect(0, 0, width, height);
         drawCtx.fillStyle = '#ffffff';
         drawCtx.fillRect(0, 0, width, height);
@@ -399,15 +399,9 @@ function initEcgEngine() {
             drawCtx.stroke();
         }
 
-        drawCtx.beginPath();
-        drawCtx.strokeStyle = 'rgba(0, 0, 255, 1)';
-        drawCtx.lineWidth = 1.5;
-        drawCtx.moveTo(0, Y(sensitivity));
-        drawCtx.lineTo(width, Y(sensitivity));
-        drawCtx.stroke();
     };
 
-    const drawMonitorGridTo = (drawCtx, width, height, sensitivity) => {
+    const drawMonitorGridTo = (drawCtx, width, height) => {
         const density = state.settings.gridDensity ?? '2mm';
         const intensity = Math.max(0, Math.min(1, (state.settings.gridIntensity ?? 55) / 100));
         const smallT = density === '1mm' ? SMALL_T : SMALL_T * 2;
@@ -451,19 +445,33 @@ function initEcgEngine() {
             }
         }
 
-        if (state.settings.sensitivityGuide) {
-            drawCtx.beginPath();
-            drawCtx.strokeStyle = `rgba(125, 211, 252, ${0.6 * intensity + 0.2})`;
-            drawCtx.lineWidth = 1.2;
-            drawCtx.moveTo(0, Y(sensitivity));
-            drawCtx.lineTo(width, Y(sensitivity));
-            drawCtx.stroke();
-        }
     };
 
     const yToCanvasPx = (value) => {
         const height = canvas.clientHeight || state.lastCanvasSize.height || 1;
         return height - ((value - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * height;
+    };
+
+    const shouldRenderSensitivityGuide = () =>
+        state.settings.sensitivityGuide && state.params.power !== false && Number.isFinite(state.params.sensitivity);
+
+    const drawSensitivityGuideLine = (drawCtx, width, height) => {
+        if (!shouldRenderSensitivityGuide()) return;
+        const y = height - ((state.params.sensitivity - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * height;
+        if (!Number.isFinite(y)) return;
+
+        drawCtx.beginPath();
+        if (state.settings.ecgBackground === 'paper') {
+            drawCtx.strokeStyle = 'rgba(0, 0, 255, 1)';
+            drawCtx.lineWidth = 1.5;
+        } else {
+            const intensity = Math.max(0, Math.min(1, (state.settings.gridIntensity ?? 55) / 100));
+            drawCtx.strokeStyle = `rgba(125, 211, 252, ${0.6 * intensity + 0.2})`;
+            drawCtx.lineWidth = 1.2;
+        }
+        drawCtx.moveTo(0, y);
+        drawCtx.lineTo(width, y);
+        drawCtx.stroke();
     };
 
     // -------------------------
@@ -612,9 +620,9 @@ function initEcgEngine() {
 
     const drawBackgroundTo = (drawCtx, w, h) => {
         if (state.settings.ecgBackground === 'paper') {
-            drawPaperGridTo(drawCtx, w, h, state.params.sensitivity);
+            drawPaperGridTo(drawCtx, w, h);
         } else {
-            drawMonitorGridTo(drawCtx, w, h, state.params.sensitivity);
+            drawMonitorGridTo(drawCtx, w, h);
         }
     };
 
@@ -807,6 +815,8 @@ function initEcgEngine() {
 
         ctx.clearRect(0, 0, width, height);
         ctx.drawImage(monitorScreen, 0, 0, width, height);
+
+        drawSensitivityGuideLine(ctx, width, height);
 
         if (!state.paused) {
             // sweep bar (keep your existing color/glow)
