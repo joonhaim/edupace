@@ -1026,6 +1026,30 @@ body.ecg-fullscreen-active {
     font-size: 0.7rem;
 }
 
+.ecg-overlay[data-label-size="normal"] .ecg-label {
+    font-size: 1rem;
+}
+
+.ecg-overlay[data-label-size="normal"] .vital-label {
+    font-size: 0.8rem;
+}
+
+.ecg-overlay[data-label-size="normal"] .vital-value {
+    font-size: 1.9rem;
+}
+
+.ecg-overlay[data-label-size="normal"] .hr-value {
+    font-size: 2.2rem;
+}
+
+.ecg-overlay[data-label-size="normal"] .pace-value {
+    font-size: 1.2rem;
+}
+
+.ecg-overlay[data-label-size="normal"] .vital-unit {
+    font-size: 0.75rem;
+}
+
 .ecg-overlay[data-label-size="large"] .ecg-label {
     font-size: 1.2rem;
 }

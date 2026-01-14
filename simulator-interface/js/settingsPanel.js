@@ -2,9 +2,6 @@ const defaultSettings = {
     gridlines: false,
     gridDensity: '2mm',
     gridIntensity: 55,
-    sweepSpeed: 25,
-    sweepWindow: 6,
-    amplitudeScaling: 10,
     ecgBackground: 'monitor',
     traceColor: 'green',
     traceThickness: 'normal',
@@ -153,9 +150,6 @@ function initSettingsPanel() {
     bindToggle(settingsCard, 'gridlinesToggle', 'gridlines', updateGridDependencies);
     bindRadios(settingsCard, 'gridDensity', 'gridDensity');
     bindSlider(settingsCard, 'gridIntensity', 'gridIntensity');
-    bindRadios(settingsCard, 'sweepSpeed', 'sweepSpeed', Number);
-    bindRadios(settingsCard, 'sweepWindow', 'sweepWindow', Number);
-    bindRadios(settingsCard, 'amplitudeScaling', 'amplitudeScaling', Number);
     bindRadios(settingsCard, 'ecgBackground', 'ecgBackground', (value) => value, (value) => {
         if (value === 'paper' && currentSettings.traceColor !== 'black') {
             currentSettings.traceColor = 'black';

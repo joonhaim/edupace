@@ -846,75 +846,6 @@
                                         <div class="settings-body">
                                             <div class="settings-panel" id="ecgSettings" data-settings-panel-target="ecg">
                                                 <div class="settings-section">
-                                                    <div class="section-label" data-i18n-key="settings.section.layout">Layout</div>
-                                                    <div class="settings-grid">
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.sweepSpeed.title">Sweep speed</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.sweepSpeed.hint">Millimeters per second.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep speed" data-i18n-key="settings.sweepSpeed.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepSpeed" value="12.5">
-                                                                    <span>12.5 mm/s</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepSpeed" value="25" checked>
-                                                                    <span>25 mm/s</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepSpeed" value="50">
-                                                                    <span>50 mm/s</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.sweepWindow.title">Sweep window</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.sweepWindow.hint">Visible seconds on screen.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Sweep window" data-i18n-key="settings.sweepWindow.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepWindow" value="4">
-                                                                    <span>4 s</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepWindow" value="6" checked>
-                                                                    <span>6 s</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="sweepWindow" value="10">
-                                                                    <span>10 s</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.amplitude.title">Amplitude</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.amplitude.hint">Millimeters per mV.</p>
-                                                            </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Amplitude scaling" data-i18n-key="settings.amplitude.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="amplitudeScaling" value="5">
-                                                                    <span>5 mm/mV</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="amplitudeScaling" value="10" checked>
-                                                                    <span>10 mm/mV</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="amplitudeScaling" value="20">
-                                                                    <span>20 mm/mV</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
-                                                </div>
-
-                                                <div class="settings-section">
                                                     <div class="section-label" data-i18n-key="settings.section.appearance">Appearance</div>
                                                     <div class="settings-grid">
                                                         <div class="setting-row full-span">
@@ -1201,43 +1132,18 @@
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
                                                                 <div class="setting-title" data-i18n-key="settings.qrsBeep.title">ECG QRS beep</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.qrsBeep.hint">Classic, soft, or off.</p>
+                                                                <p class="setting-hint" data-i18n-key="settings.qrsBeep.hint">On or off.</p>
                                                             </div>
                                                             <div class="pill-group" role="radiogroup" aria-label="QRS beep" data-i18n-key="settings.qrsBeep.aria" data-i18n-attr="aria-label">
                                                                 <label class="pill-option">
-                                                                    <input type="radio" name="qrsBeep" value="classic" checked>
-                                                                    <span data-i18n-key="settings.qrsBeep.classic">Classic</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="qrsBeep" value="soft">
-                                                                    <span data-i18n-key="settings.qrsBeep.soft">Soft</span>
+                                                                    <input type="radio" name="qrsBeep" value="on" checked>
+                                                                    <span data-i18n-key="settings.shared.on">On</span>
                                                                 </label>
                                                                 <label class="pill-option">
                                                                     <input type="radio" name="qrsBeep" value="off">
                                                                     <span data-i18n-key="settings.shared.off">Off</span>
                                                                 </label>
                                                             </div>
-                                                        </div>
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.alarmSounds.title">Alarm sounds</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.alarmSounds.hint">Enable audible alarms.</p>
-                                                            </div>
-                                                            <label class="switch">
-                                                                <input type="checkbox" id="alarmSoundToggle" checked>
-                                                                <span class="switch-track"></span>
-                                                            </label>
-                                                        </div>
-
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.buttonBeeps.title">Button beeps</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.buttonBeeps.hint">Feedback tones when controls are used.</p>
-                                                            </div>
-                                                            <label class="switch">
-                                                                <input type="checkbox" id="buttonBeepsToggle" checked>
-                                                                <span class="switch-track"></span>
-                                                            </label>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1247,8 +1153,8 @@
                                                     <div class="settings-grid">
                                                         <div class="setting-row full-span">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.notificationVolume.title">Notification volume</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.notificationVolume.hint">Overall alert volume.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.qrsBeepVolume.title">ECG beep volume</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.qrsBeepVolume.hint">Adjust the ECG beep loudness.</p>
                                                             </div>
                                                             <div class="slider-row">
                                                                 <input type="range" id="soundVolume" min="0" max="100" value="70">
