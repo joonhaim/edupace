@@ -53,8 +53,6 @@ function initEcgEngine() {
     const shell = frame?.closest('.ecg-shell');
     const calibrationInline = frame?.querySelector('.calibration-inline');
     const calibrationValue = calibrationInline?.querySelector('.calibration-value');
-    const caliperReadout = frame?.querySelector('.caliper-readout');
-    const caliperValue = caliperReadout?.querySelector('.caliper-value');
     const pausedBadge = frame?.querySelector('.ecg-paused-badge');
     const calibrationToggle = frame?.querySelector('.calibration-toggle');
     const audioToggle = frame?.querySelector('.ecg-audio-toggle');
@@ -197,29 +195,12 @@ function initEcgEngine() {
             state.calipers.active = false;
             state.calipers.dragging = false;
             state.calipers.dragMoved = false;
-            if (caliperReadout) {
-                caliperReadout.setAttribute('hidden', '');
-            }
         }
         window.dispatchEvent(
             new CustomEvent('edupace-telemetry-pause', {
                 detail: { paused: state.paused }
             })
         );
-    };
-
-    const updateCaliperReadout = () => {
-        if (!caliperReadout || !caliperValue) return;
-        if (!state.paused || !state.calipers.active || !state.settings.intervalRulers) {
-            caliperReadout.setAttribute('hidden', '');
-            return;
-        }
-        const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
-        const deltaPx = Math.abs(state.calipers.endX - state.calipers.startX);
-        const deltaSec = (deltaPx / Math.max(1, width)) * VIEW_SEC;
-        const bpm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
-        caliperValue.textContent = `${deltaSec.toFixed(2)} s · ${bpm} bpm`;
-        caliperReadout.removeAttribute('hidden');
     };
 
     const setCalibrationVisible = (visible) => {
@@ -871,9 +852,6 @@ function initEcgEngine() {
                 state.calipers.dragging = false;
                 state.calipers.dragMoved = false;
             }
-            if (caliperReadout && !caliperReadout.hasAttribute('hidden')) {
-                caliperReadout.setAttribute('hidden', '');
-            }
             stepSweepAndProcess(dt, previousPlaybackTime);
         }
 
@@ -940,7 +918,6 @@ function initEcgEngine() {
         state.calipers.dragging = true;
         state.calipers.startX = x;
         state.calipers.endX = x;
-        updateCaliperReadout();
         canvas.setPointerCapture(event.pointerId);
     });
 
@@ -953,7 +930,6 @@ function initEcgEngine() {
             state.calipers.active = true;
         }
         state.calipers.endX = nextX;
-        updateCaliperReadout();
     });
 
     canvas.addEventListener('pointerup', (event) => {
@@ -963,7 +939,6 @@ function initEcgEngine() {
         if (!state.calipers.dragMoved) {
             state.calipers.active = false;
         }
-        updateCaliperReadout();
         canvas.releasePointerCapture(event.pointerId);
     });
 
@@ -972,7 +947,6 @@ function initEcgEngine() {
         state.calipers.dragging = false;
         state.calipers.active = false;
         state.calipers.dragMoved = false;
-        updateCaliperReadout();
         canvas.releasePointerCapture(event.pointerId);
     });
 
@@ -982,7 +956,6 @@ function initEcgEngine() {
         if (!state.settings.intervalRulers) {
             state.calipers.active = false;
         }
-        updateCaliperReadout();
         state.needsRegenerate = true;
         // visuals will be refreshed via key in applyOverlaySettings
     });

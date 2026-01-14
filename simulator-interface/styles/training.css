@@ -852,37 +852,6 @@ body.ecg-fullscreen-active {
     pointer-events: none;
 }
 
-.caliper-readout {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.35rem 0.7rem;
-    border-radius: 999px;
-    background: rgba(3, 7, 18, 0.7);
-    color: #f8fafc;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    width: fit-content;
-}
-
-.caliper-readout:not([hidden]) {
-    font-size: 0.9rem;
-}
-
-.ecg-shell[data-background="paper"] .caliper-readout {
-    background: rgba(241, 245, 249, 0.95);
-    color: #0f172a;
-}
-
-.caliper-title {
-    font-weight: 700;
-}
-
-.caliper-value {
-    font-variant-numeric: tabular-nums;
-}
-
 .ecg-paused-badge {
     align-self: flex-start;
     padding: 0.35rem 0.75rem;
