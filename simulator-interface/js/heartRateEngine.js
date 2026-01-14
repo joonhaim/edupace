@@ -259,11 +259,14 @@ function createHeartRateEngine(displayElement) {
         updateDisplay();
     }
 
-    function recordPeak(timeSeconds) {
+    function recordPeak(timeSeconds, options = {}) {
+        const { beep = true } = options;
         state.lastPeakTime = timeSeconds;
         state.peaks.push(timeSeconds);
         purgeOldPeaks(timeSeconds);
-        playBeep();
+        if (beep) {
+            playBeep();
+        }
         updateFromPeaks();
     }
 
@@ -271,7 +274,7 @@ function createHeartRateEngine(displayElement) {
         if (!Number.isFinite(timeSeconds)) return;
         const separated = (timeSeconds - state.lastPeakTime) >= MIN_PEAK_INTERVAL_SECONDS;
         if (!separated) return;
-        recordPeak(timeSeconds);
+        recordPeak(timeSeconds, { beep: false });
     }
 
     // -----------------------------

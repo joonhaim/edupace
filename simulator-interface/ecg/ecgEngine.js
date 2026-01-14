@@ -591,7 +591,7 @@ function initEcgEngine() {
             }
 
             if (eventTime !== null) {
-                if (typeof hrEngine.recordBeat === 'function') {
+                if (event.kind === 'pace' && typeof hrEngine.recordBeat === 'function') {
                     hrEngine.recordBeat(eventTime);
                 }
                 flashLed(event.kind);
