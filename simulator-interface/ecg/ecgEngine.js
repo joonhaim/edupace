@@ -10,7 +10,7 @@ const DEFAULT_PARAMS = {
     rate: 70,
     output: 1.5,
     sensitivity: 2.0,
-    power: true,
+    power: false,
     asynchronous: false
 };
 
@@ -470,7 +470,11 @@ function initEcgEngine() {
     // Scenario generation (kept as you wrote it)
     // -------------------------
     const generateStripFromParams = (iterations) => {
-        const intrinsicRate = Number(state.settings.intrinsicRate ?? 60);
+        const scenarioRates = state.settings.scenarioIntrinsicRates ?? {};
+        const fallbackRate = Number(state.settings.intrinsicRate ?? 60);
+        const scenarioRate = Number(scenarioRates[state.scenarioId]);
+        const rawIntrinsicRate = Number.isFinite(scenarioRate) ? scenarioRate : fallbackRate;
+        const intrinsicRate = Math.min(Math.max(rawIntrinsicRate, 30), 120);
         const regularity = state.settings.intrinsicRegularity ?? 'regular';
         const jitter = regularity === 'irregular' ? (0.85 + Math.random() * 0.3) : 1;
         const patientHR = Math.max(20, intrinsicRate * jitter);
