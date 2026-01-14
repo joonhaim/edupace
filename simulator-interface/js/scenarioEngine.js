@@ -1,5 +1,6 @@
 import { getCurrentLanguage, translateKey } from './languageToggle.js';
 import { localizeScenarioList } from './scenarioLocalization.js';
+import { applySettingsPatch, defaultSettings } from './settingsPanel.js';
 
 const ALARM_LEVELS = ['normal', 'warning', 'critical'];
 
@@ -74,6 +75,36 @@ function getCategoryLabel(category) {
 function getCategoryClasses(category) {
     const base = 'scenario-menu-section';
     return `${base} ${base}-${category}`.trim();
+}
+
+function getScenarioId(scenario) {
+    return scenario?.id ?? scenario?.code ?? null;
+}
+
+function applyScenarioIntrinsicRate(scenario) {
+    const fallbackRate = defaultSettings?.intrinsicRate ?? 60;
+    const intrinsicRate = Number.isFinite(scenario?.intrinsicRate) ? scenario.intrinsicRate : fallbackRate;
+    applySettingsPatch({ intrinsicRate });
+}
+
+function updateScenarioIntrinsicRate(scenarioId, intrinsicRate) {
+    if (!scenarioId || !Number.isFinite(intrinsicRate)) return;
+
+    scenarioState.baseScenarios = scenarioState.baseScenarios.map((scenario) => {
+        const id = getScenarioId(scenario);
+        if (id !== scenarioId) return scenario;
+        return { ...scenario, intrinsicRate };
+    });
+
+    scenarioState.scenarios = scenarioState.scenarios.map((scenario) => {
+        const id = getScenarioId(scenario);
+        if (id !== scenarioId) return scenario;
+        return { ...scenario, intrinsicRate };
+    });
+
+    if (scenarioState.activeScenario && getScenarioId(scenarioState.activeScenario) === scenarioId) {
+        scenarioState.activeScenario = { ...scenarioState.activeScenario, intrinsicRate };
+    }
 }
 
 
@@ -338,6 +369,7 @@ function startScenario(index) {
     scenarioState.activeScenario = scenario;
     scenarioState.activeIndex = index;
     applyScenarioText(scenario);
+    applyScenarioIntrinsicRate(scenario);
     highlightActiveOption();
 
     window.dispatchEvent(
@@ -422,6 +454,14 @@ async function initScenarios() {
         const status = event.detail?.session?.status;
         const shouldLock = status === 'running' || status === 'paused';
         setScenarioLock(shouldLock);
+    });
+
+    window.addEventListener('edupace-ecg-settings', (event) => {
+        if (!scenarioState.activeScenario) return;
+        const intrinsicRate = event.detail?.intrinsicRate;
+        if (!Number.isFinite(intrinsicRate)) return;
+        const scenarioId = getScenarioId(scenarioState.activeScenario);
+        updateScenarioIntrinsicRate(scenarioId, intrinsicRate);
     });
 
     const params = new URLSearchParams(window.location.search);

@@ -574,13 +574,26 @@ function initEcgEngine() {
         const start = mod(startTime);
         const end = mod(endTime);
         const wrapped = end < start;
+        const startCycle = startTime - start;
+        const endCycle = endTime - end;
 
         state.eventSchedule.forEach((event) => {
             if (!Number.isFinite(event.time)) return;
-            const inRange = wrapped
-                ? event.time > start || event.time <= end
-                : event.time > start && event.time <= end;
-            if (inRange) {
+            let eventTime = null;
+            if (wrapped) {
+                if (event.time > start) {
+                    eventTime = startCycle + event.time;
+                } else if (event.time <= end) {
+                    eventTime = endCycle + event.time;
+                }
+            } else if (event.time > start && event.time <= end) {
+                eventTime = startCycle + event.time;
+            }
+
+            if (eventTime !== null) {
+                if (typeof hrEngine.recordBeat === 'function') {
+                    hrEngine.recordBeat(eventTime);
+                }
                 flashLed(event.kind);
             }
         });

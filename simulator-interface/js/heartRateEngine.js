@@ -267,6 +267,13 @@ function createHeartRateEngine(displayElement) {
         updateFromPeaks();
     }
 
+    function recordBeat(timeSeconds) {
+        if (!Number.isFinite(timeSeconds)) return;
+        const separated = (timeSeconds - state.lastPeakTime) >= MIN_PEAK_INTERVAL_SECONDS;
+        if (!separated) return;
+        recordPeak(timeSeconds);
+    }
+
     // -----------------------------
     // Public-facing sample processing
     // -----------------------------
@@ -312,6 +319,7 @@ function createHeartRateEngine(displayElement) {
 
     return {
         processSample,
+        recordBeat,
         reset,
         setMaxWaveAmplitude,
         setBeepMode,
