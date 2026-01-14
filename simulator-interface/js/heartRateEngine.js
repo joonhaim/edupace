@@ -14,10 +14,10 @@ const MIN_PEAK_INTERVAL_SECONDS = 0.3;
 const RWAVE_BEEP_SRC = 'assets/audio/r-wave-beep.wav';
 
 // Peak detection threshold relative to max amplitude
-const MIN_PEAK_FRACTION = 0.45;
+const MIN_PEAK_FRACTION = 0.25;
 
 // Absolute minimum peak amplitude (in normalized units) to be considered real
-const MIN_PEAK_ABSOLUTE = 0.5;
+const MIN_PEAK_ABSOLUTE = 0.4;
 
 // Physiologic range for output BPM (clamped)
 const MIN_VALID_BPM = 20;
