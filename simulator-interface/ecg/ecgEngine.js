@@ -54,6 +54,7 @@ function initEcgEngine() {
     const calibrationInline = frame?.querySelector('.calibration-inline');
     const calibrationValue = calibrationInline?.querySelector('.calibration-value');
     const pausedBadge = frame?.querySelector('.ecg-paused-badge');
+    const caliperReadout = frame?.querySelector('#caliperReadout');
     const calibrationToggle = frame?.querySelector('.calibration-toggle');
     const audioToggle = frame?.querySelector('.ecg-audio-toggle');
     const pauseToggle = frame?.querySelector('.pause-toggle');
@@ -184,6 +185,9 @@ function initEcgEngine() {
         if (pausedBadge) {
             pausedBadge.toggleAttribute('hidden', !state.paused);
         }
+        if (caliperReadout) {
+            caliperReadout.toggleAttribute('hidden', true);
+        }
         if (pauseToggle) {
             pauseToggle.classList.toggle('is-active', state.paused);
             pauseToggle.setAttribute('aria-pressed', String(state.paused));
@@ -222,6 +226,23 @@ function initEcgEngine() {
             audioToggle.setAttribute('aria-pressed', String(state.muted));
             audioToggle.setAttribute('aria-label', state.muted ? 'Unmute QRS beep' : 'Mute QRS beep');
         }
+    };
+
+    const updateCaliperReadout = (forceHidden = false) => {
+        if (!caliperReadout) return;
+        if (forceHidden || !state.calipers.active || !state.settings.intervalRulers) {
+            caliperReadout.toggleAttribute('hidden', true);
+            return;
+        }
+
+        const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
+        const deltaPx = Math.abs(state.calipers.endX - state.calipers.startX);
+        const intervalSeconds = (deltaPx / width) * VIEW_SEC;
+        const intervalMs = Math.max(0, Math.round(intervalSeconds * 1000));
+        const ppmValue = intervalSeconds > 0 ? Math.round(60 / intervalSeconds) : 0;
+        const ppmDisplay = intervalSeconds > 0 ? `${ppmValue}` : '--';
+        caliperReadout.textContent = `${intervalMs} ms · ${ppmDisplay} ppm`;
+        caliperReadout.toggleAttribute('hidden', false);
     };
 
     const paperCssSize = () => {
@@ -860,6 +881,7 @@ function initEcgEngine() {
                 state.calipers.active = false;
                 state.calipers.dragging = false;
                 state.calipers.dragMoved = false;
+                updateCaliperReadout(true);
             }
             stepSweepAndProcess(dt, previousPlaybackTime);
         }
@@ -927,6 +949,7 @@ function initEcgEngine() {
         state.calipers.dragging = true;
         state.calipers.startX = x;
         state.calipers.endX = x;
+        updateCaliperReadout(true);
         canvas.setPointerCapture(event.pointerId);
     });
 
@@ -939,6 +962,7 @@ function initEcgEngine() {
             state.calipers.active = true;
         }
         state.calipers.endX = nextX;
+        updateCaliperReadout();
     });
 
     canvas.addEventListener('pointerup', (event) => {
@@ -948,6 +972,7 @@ function initEcgEngine() {
         if (!state.calipers.dragMoved) {
             state.calipers.active = false;
         }
+        updateCaliperReadout();
         canvas.releasePointerCapture(event.pointerId);
     });
 
@@ -956,6 +981,7 @@ function initEcgEngine() {
         state.calipers.dragging = false;
         state.calipers.active = false;
         state.calipers.dragMoved = false;
+        updateCaliperReadout(true);
         canvas.releasePointerCapture(event.pointerId);
     });
 
@@ -964,6 +990,7 @@ function initEcgEngine() {
         applyOverlaySettings();
         if (!state.settings.intervalRulers) {
             state.calipers.active = false;
+            updateCaliperReadout(true);
         }
         state.needsRegenerate = true;
         // visuals will be refreshed via key in applyOverlaySettings
