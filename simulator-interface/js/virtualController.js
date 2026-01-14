@@ -3,6 +3,21 @@ import { knobPresets } from './knobPresets.js';
 
 const ASYNC_SENSITIVITY_THRESHOLD = 20;
 
+const lockIcons = {
+    locked: `
+        <svg class="lock-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M7 10V7a5 5 0 0 1 10 0v3" />
+            <rect x="5" y="10" width="14" height="10" rx="2" />
+        </svg>
+    `,
+    unlocked: `
+        <svg class="lock-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M7 10V7a5 5 0 0 1 9.5-2" />
+            <rect x="5" y="10" width="14" height="10" rx="2" />
+        </svg>
+    `
+};
+
 const controllerState = {
     rate: getNearestPreset('rate', 80),
     output: getNearestPreset('output', 10),
@@ -101,14 +116,19 @@ function initVirtualController() {
         }
     };
 
-    const setActionVisualState = (button, active, label) => {
+    const setActionVisualState = (button, active, label, { isIcon = false } = {}) => {
         if (!button) return;
 
         button.classList.toggle('is-active', active);
         button.setAttribute('aria-pressed', String(active));
         const stateLabel = button.querySelector('[data-action-state]');
         if (stateLabel) {
-            stateLabel.textContent = label;
+            stateLabel.classList.toggle('is-icon', isIcon);
+            if (isIcon) {
+                stateLabel.innerHTML = label;
+            } else {
+                stateLabel.textContent = label;
+            }
         }
     };
 
@@ -118,7 +138,8 @@ function initVirtualController() {
         setActionVisualState(
             actionButtons.lock,
             controllerState.locked,
-            controllerState.locked ? '🔒' : '🔓'
+            controllerState.locked ? lockIcons.locked : lockIcons.unlocked,
+            { isIcon: true }
         );
 
         const virtualMode = isVirtualMode();

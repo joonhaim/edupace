@@ -1175,10 +1175,26 @@ body.ecg-fullscreen-active {
 }
 
 .virtual-action-btn .action-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 0.85rem;
     color: #4b5565;
     text-transform: uppercase;
     letter-spacing: 0.03em;
+}
+
+.virtual-action-btn .action-state.is-icon {
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.virtual-action-btn .action-state .lock-icon {
+    width: 1.05rem;
+    height: 1.05rem;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
 }
 
 .virtual-action-btn:hover,
