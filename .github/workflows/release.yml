@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -30,38 +30,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Build installers only — do NOT publish (prevents latest.yml/blockmap uploads, etc.)
+      # Build installers only — do NOT publish from electron-builder
       - name: Build Electron app
         run: npm run dist -- --publish never
 
-      # Upload only the final installers as workflow artifacts
-      - name: Upload installers
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-installers
-          path: |
-            dist/*.dmg
-            dist/*.exe
-          if-no-files-found: error
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-
-    steps:
-      # Needed so gh knows which repo it's in (fixes "not a git repository")
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download installers
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Create GitHub Release & upload installers
+      # Create the GitHub Release if needed, then upload this OS's installers directly
+      - name: Create GitHub Release (if missing) + upload installers
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
@@ -73,12 +50,14 @@ jobs:
               --notes "EduPace desktop release."
           fi
 
-          shopt -s globstar nullglob
-          files=(artifacts/**/*.dmg artifacts/**/*.exe)
+          # Upload installers from this runner
+          shopt -s nullglob
+          files=(dist/*.dmg dist/*.exe)
 
           if ((${#files[@]})); then
             gh release upload "$TAG" "${files[@]}" --clobber
           else
-            echo "No installers found to upload."
+            echo "No installers found in dist/."
+            ls -la dist || true
             exit 1
           fi
