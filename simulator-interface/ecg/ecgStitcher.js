@@ -96,6 +96,10 @@ export function stitchBeats(cfg) {
   // Keep these so other modules / UI won’t break if they expect it.
   const paceEvents = [];
   const senseEvents = [];
+  const recordPaceEvent = (xArr) => {
+    const time = arrayMin(xArr) + pacemakerSpike;
+    if (Number.isFinite(time)) paceEvents.push(time);
+  };
 
   for (let i = 0; i < iterations; i++) {
     let { x: xTemp0, y: yTemp0 } = getECGWave(beatList[i]);
@@ -128,6 +132,7 @@ export function stitchBeats(cfg) {
 
           x = xTemp;
           y = yTemp;
+          recordPaceEvent(xTemp);
 
           beatList.push("Ventricular pacing");
           offset = maxTimeSinceSensed + arrayMin(xTemp);
@@ -159,6 +164,7 @@ export function stitchBeats(cfg) {
 
             x = xTemp;
             y = yTemp;
+            recordPaceEvent(xTemp);
 
             beatList.push("Normal");
             offset = gap + arrayMin(xTemp);
@@ -204,6 +210,7 @@ export function stitchBeats(cfg) {
 
             x = xTemp;
             y = yTemp;
+            recordPaceEvent(xTemp);
 
             beatList.push("Normal");
             offset = gap + arrayMin(xTemp);
@@ -233,6 +240,7 @@ export function stitchBeats(cfg) {
 
       if (asyncMode) {
         if (output >= captureThreshold) {
+          recordPaceEvent(xTemp);
           ({ x, y } = concatWithOverlapCut(x, y, xTemp, yTemp));
           beatList.push("Ventricular pacing");
           offset = maxTimeSinceSensed + arrayMin(xTemp);
@@ -270,6 +278,7 @@ export function stitchBeats(cfg) {
             }
 
             shiftInPlace(xTemp, offset);
+            recordPaceEvent(xTemp);
             ({ x, y } = concatWithOverlapCut(x, y, xTemp, yTemp));
 
             beatList.push("Normal");
@@ -321,6 +330,7 @@ export function stitchBeats(cfg) {
             }
 
             shiftInPlace(xTemp, offset);
+            recordPaceEvent(xTemp);
             ({ x, y } = concatWithOverlapCut(x, y, xTemp, yTemp));
 
             beatList.push("Normal");
