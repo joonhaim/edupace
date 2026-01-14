@@ -59,7 +59,6 @@ function initEcgEngine() {
     const calibrationToggle = frame?.querySelector('.calibration-toggle');
     const audioToggle = frame?.querySelector('.ecg-audio-toggle');
     const pauseToggle = frame?.querySelector('.pause-toggle');
-    const caliperUnitToggle = frame?.querySelector('.caliper-unit-toggle');
     const fullscreenToggle = frame?.querySelector('.fullscreen-toggle');
     const ctx = canvas.getContext('2d');
     let suppressClick = false;
@@ -114,8 +113,7 @@ function initEcgEngine() {
             dragging: false,
             startX: 0,
             endX: 0,
-            dragMoved: false,
-            unit: 'ms'
+            dragMoved: false
         },
 
         needsRegenerate: true,
@@ -219,23 +217,9 @@ function initEcgEngine() {
         const width = canvas.clientWidth || state.lastCanvasSize.width || 1;
         const deltaPx = Math.abs(state.calipers.endX - state.calipers.startX);
         const deltaSec = (deltaPx / Math.max(1, width)) * VIEW_SEC;
-        if (state.calipers.unit === 's') {
-            const bpm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
-            caliperValue.textContent = `${deltaSec.toFixed(2)} s · ${bpm} bpm`;
-        } else {
-            const deltaMs = Math.round(deltaSec * 1000);
-            const ppm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
-            caliperValue.textContent = `${deltaMs} ms · ${ppm} ppm`;
-        }
+        const bpm = deltaSec > 0 ? Math.round(60 / deltaSec) : 0;
+        caliperValue.textContent = `${deltaSec.toFixed(2)} s · ${bpm} bpm`;
         caliperReadout.removeAttribute('hidden');
-    };
-
-    const updateCaliperUnitToggle = () => {
-        if (!caliperUnitToggle) return;
-        const isSeconds = state.calipers.unit === 's';
-        caliperUnitToggle.textContent = isSeconds ? 's' : 'ms';
-        caliperUnitToggle.setAttribute('aria-label', isSeconds ? 'Show calipers in milliseconds' : 'Show calipers in seconds');
-        caliperUnitToggle.setAttribute('title', isSeconds ? 'Show calipers in milliseconds' : 'Show calipers in seconds');
     };
 
     const setCalibrationVisible = (visible) => {
@@ -917,7 +901,6 @@ function initEcgEngine() {
     applyOverlaySettings();
     setAudioMuted(false);
     setCalibrationVisible(false);
-    updateCaliperUnitToggle();
     fixFrameSize();
     resizeCanvas();
     refreshStrips();
@@ -938,13 +921,6 @@ function initEcgEngine() {
     pauseToggle?.addEventListener('click', (event) => {
         event.stopPropagation();
         setPaused(!state.paused);
-    });
-
-    caliperUnitToggle?.addEventListener('click', (event) => {
-        event.stopPropagation();
-        state.calipers.unit = state.calipers.unit === 'ms' ? 's' : 'ms';
-        updateCaliperUnitToggle();
-        updateCaliperReadout();
     });
 
     canvas.addEventListener('pointerdown', (event) => {
