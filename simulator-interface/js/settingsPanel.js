@@ -22,6 +22,12 @@ const defaultSettings = {
     soundVolume: 70,
     qrsBeep: 'on',
     autoLockKnobs: '60',
+    scenarioIntrinsicRates: {
+        NSR: 60,
+        AV3: 60,
+        Mobitz2: 60,
+        SlowConduction: 60
+    },
     intrinsicRate: 60,
     intrinsicRegularity: 'regular',
     actionLog: true
@@ -34,6 +40,11 @@ const sliderFormatters = {
     gridIntensity: (value) => `${value}%`,
     soundVolume: (value) => `${value}%`,
     intrinsicRate: (value) => `${value} bpm`
+};
+
+const intrinsicRateRange = {
+    min: 30,
+    max: 120
 };
 
 function initSettingsPanel() {
@@ -182,6 +193,7 @@ function initSettingsPanel() {
     bindSlider(settingsCard, 'soundVolume', 'soundVolume');
 
     bindRadios(settingsCard, 'autoLockKnobs', 'autoLockKnobs');
+    bindScenarioIntrinsicRates(settingsCard);
     bindSlider(settingsCard, 'intrinsicRate', 'intrinsicRate');
     bindRadios(settingsCard, 'intrinsicRegularity', 'intrinsicRegularity');
     bindToggle(settingsCard, 'actionLogToggle', 'actionLog');
@@ -252,6 +264,36 @@ function bindSlider(root, inputId, key) {
     updateValue();
 }
 
+function bindScenarioIntrinsicRates(root) {
+    const inputs = Array.from(root.querySelectorAll('[data-intrinsic-rate]'));
+    if (!inputs.length) return;
+
+    inputs.forEach((input) => {
+        const scenarioId = input.dataset.intrinsicRate;
+        if (!scenarioId) return;
+
+        const currentValue = currentSettings.scenarioIntrinsicRates?.[scenarioId];
+        if (Number.isFinite(currentValue)) {
+            input.value = currentValue;
+        }
+
+        const commitValue = () => {
+            const rawValue = Number(input.value);
+            if (!Number.isFinite(rawValue)) return;
+            const nextValue = Math.min(Math.max(rawValue, intrinsicRateRange.min), intrinsicRateRange.max);
+            input.value = nextValue;
+            currentSettings.scenarioIntrinsicRates = {
+                ...(currentSettings.scenarioIntrinsicRates ?? {}),
+                [scenarioId]: nextValue
+            };
+            emitSettings();
+        };
+
+        input.addEventListener('change', commitValue);
+        input.addEventListener('blur', commitValue);
+    });
+}
+
 function syncInputs(root) {
     const entries = Object.entries(currentSettings);
     entries.forEach(([key, value]) => {
@@ -275,6 +317,16 @@ function syncInputs(root) {
             }
         }
     });
+
+    const intrinsicInputs = Array.from(root.querySelectorAll('[data-intrinsic-rate]'));
+    intrinsicInputs.forEach((input) => {
+        const scenarioId = input.dataset.intrinsicRate;
+        if (!scenarioId) return;
+        const value = currentSettings.scenarioIntrinsicRates?.[scenarioId];
+        if (Number.isFinite(value)) {
+            input.value = value;
+        }
+    });
 }
 
 function emitSettings() {
@@ -287,7 +339,17 @@ function emitSettings() {
 
 function applySettingsPatch(patch) {
     if (!patch) return;
-    currentSettings = { ...currentSettings, ...patch };
+    if (patch.scenarioIntrinsicRates) {
+        currentSettings = {
+            ...currentSettings,
+            scenarioIntrinsicRates: {
+                ...(currentSettings.scenarioIntrinsicRates ?? {}),
+                ...patch.scenarioIntrinsicRates
+            }
+        };
+    }
+    const { scenarioIntrinsicRates, ...restPatch } = patch;
+    currentSettings = { ...currentSettings, ...restPatch };
     if (settingsCardRef) {
         syncInputs(settingsCardRef);
         if (typeof updateGridDependenciesRef === 'function') {

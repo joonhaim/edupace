@@ -1302,52 +1302,81 @@
                                                 </div>
 
                                                 <div class="settings-section">
-                                                    <div class="section-label" data-i18n-key="settings.section.realism">Physiology realism</div>
+                                                    <div class="section-label" data-i18n-key="settings.section.intrinsicRates">Scenario intrinsic rates</div>
                                                     <div class="settings-grid">
-                                                        <div class="setting-row full-span">
+                                                        <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.captureDrift.title">Capture threshold drift</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.captureDrift.hint">Off, mild, or strong drift.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.intrinsicScenario.nsr.title">Normal Sinus Rhythm</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicScenario.hint">Set baseline intrinsic bpm for this scenario.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Capture threshold drift" data-i18n-key="settings.captureDrift.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="captureDrift" value="off" checked>
-                                                                    <span data-i18n-key="settings.shared.off">Off</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="captureDrift" value="mild">
-                                                                    <span data-i18n-key="settings.captureDrift.mild">Mild</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="captureDrift" value="strong">
-                                                                    <span data-i18n-key="settings.captureDrift.strong">Strong</span>
-                                                                </label>
+                                                            <div class="setting-field">
+                                                                <label class="setting-label" for="intrinsicRateNSR" data-i18n-key="settings.intrinsicScenario.rateLabel">Intrinsic rate (bpm)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    class="setting-select"
+                                                                    id="intrinsicRateNSR"
+                                                                    min="30"
+                                                                    max="120"
+                                                                    step="1"
+                                                                    data-intrinsic-rate="NSR"
+                                                                />
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </div>
 
-                                                <div class="settings-section">
-                                                    <div class="section-label" data-i18n-key="settings.section.training">Training</div>
-                                                    <div class="settings-grid">
-                                                        <div class="setting-row full-span">
+                                                        <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.postReview.title">Post-scenario review</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.postReview.hint">Auto-open, ask, or off.</p>
+                                                                <div class="setting-title" data-i18n-key="settings.intrinsicScenario.av3.title">3rd Degree AV Block</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicScenario.hint">Set baseline intrinsic bpm for this scenario.</p>
                                                             </div>
-                                                            <div class="pill-group" role="radiogroup" aria-label="Post-scenario review" data-i18n-key="settings.postReview.aria" data-i18n-attr="aria-label">
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="postScenarioReview" value="auto" checked>
-                                                                    <span data-i18n-key="settings.postReview.auto">Auto-open</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="postScenarioReview" value="ask">
-                                                                    <span data-i18n-key="settings.postReview.ask">Ask</span>
-                                                                </label>
-                                                                <label class="pill-option">
-                                                                    <input type="radio" name="postScenarioReview" value="off">
-                                                                    <span data-i18n-key="settings.shared.off">Off</span>
-                                                                </label>
+                                                            <div class="setting-field">
+                                                                <label class="setting-label" for="intrinsicRateAV3" data-i18n-key="settings.intrinsicScenario.rateLabel">Intrinsic rate (bpm)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    class="setting-select"
+                                                                    id="intrinsicRateAV3"
+                                                                    min="30"
+                                                                    max="120"
+                                                                    step="1"
+                                                                    data-intrinsic-rate="AV3"
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title" data-i18n-key="settings.intrinsicScenario.mobitz2.title">Mobitz II</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicScenario.hint">Set baseline intrinsic bpm for this scenario.</p>
+                                                            </div>
+                                                            <div class="setting-field">
+                                                                <label class="setting-label" for="intrinsicRateMobitz2" data-i18n-key="settings.intrinsicScenario.rateLabel">Intrinsic rate (bpm)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    class="setting-select"
+                                                                    id="intrinsicRateMobitz2"
+                                                                    min="30"
+                                                                    max="120"
+                                                                    step="1"
+                                                                    data-intrinsic-rate="Mobitz2"
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title" data-i18n-key="settings.intrinsicScenario.slowConduction.title">Slow Conduction</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicScenario.hint">Set baseline intrinsic bpm for this scenario.</p>
+                                                            </div>
+                                                            <div class="setting-field">
+                                                                <label class="setting-label" for="intrinsicRateSlowConduction" data-i18n-key="settings.intrinsicScenario.rateLabel">Intrinsic rate (bpm)</label>
+                                                                <input
+                                                                    type="number"
+                                                                    class="setting-select"
+                                                                    id="intrinsicRateSlowConduction"
+                                                                    min="30"
+                                                                    max="120"
+                                                                    step="1"
+                                                                    data-intrinsic-rate="SlowConduction"
+                                                                />
                                                             </div>
                                                         </div>
                                                     </div>
