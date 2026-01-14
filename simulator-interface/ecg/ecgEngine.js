@@ -866,6 +866,14 @@ function initEcgEngine() {
         state.playbackTime += dt;
 
         if (!state.paused) {
+            if (state.calipers.active || state.calipers.dragging || state.calipers.dragMoved) {
+                state.calipers.active = false;
+                state.calipers.dragging = false;
+                state.calipers.dragMoved = false;
+            }
+            if (caliperReadout && !caliperReadout.hasAttribute('hidden')) {
+                caliperReadout.setAttribute('hidden', '');
+            }
             stepSweepAndProcess(dt, previousPlaybackTime);
         }
 
