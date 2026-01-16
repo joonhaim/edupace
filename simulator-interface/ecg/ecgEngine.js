@@ -560,6 +560,11 @@ function initEcgEngine() {
             led.classList.remove('led-on');
         }, 180);
 
+        const hardware = window.edupaceHardware;
+        if (hardware?.sendLedCommand) {
+            hardware.sendLedCommand(kind === 'pace' ? 'PACE' : 'SENSE');
+        }
+
         window.dispatchEvent(
             new CustomEvent('edupace-led-flash', {
                 detail: {
