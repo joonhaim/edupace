@@ -248,14 +248,7 @@ async function populateDeviceList({ requestAccess = false } = {}) {
 
     try {
         const ports = await navigator.serial.getPorts();
-        const connectedPorts = ports.filter((port) => {
-            if (!port || typeof port.getInfo !== 'function') {
-                return false;
-            }
-
-            const info = port.getInfo();
-            return Boolean(info?.usbVendorId) && Boolean(info?.usbProductId);
-        });
+        const connectedPorts = ports.filter((port) => Boolean(port));
 
         renderDeviceList(connectedPorts);
     } catch (error) {
