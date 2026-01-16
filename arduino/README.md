@@ -37,6 +37,8 @@
 - PACE=< value >, OUTPUT=< value >, SENSE=< value >
 - POWER_ON
 - POWER_OFF
+- LOCK_ON
+- LOCK_OFF
 
 ### User Interaction
 ► Power Button:

@@ -54,6 +54,9 @@ const parameterState = {
 let isPoweredOn = false;
 let unsupportedHintDismissed = false;
 const resettableParameterKeys = Object.keys(parameterState);
+const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03]);
+const EDUPACE_PRODUCT_IDS = new Set([0x0266, 0x0366, 0x0066]);
+const EDUPACE_PORT_FILTERS = Array.from(EDUPACE_VENDOR_IDS, (vendorId) => ({ vendorId }));
 
 function createUnsupportedHint() {
     if (!ui.connectionGroup || ui.unsupportedHint) return;
@@ -107,6 +110,20 @@ function toggleDevicePopover(visible) {
     }
 }
 
+function isEduPaceDevice(info) {
+    if (!info) return false;
+    if (!EDUPACE_VENDOR_IDS.has(info.usbVendorId)) return false;
+    if (!info.usbProductId) return true;
+    if (!EDUPACE_PRODUCT_IDS.size) return true;
+    return EDUPACE_PRODUCT_IDS.has(info.usbProductId);
+}
+
+function formatUsbId(info) {
+    const vendor = info?.usbVendorId ? info.usbVendorId.toString(16).padStart(4, '0') : '----';
+    const product = info?.usbProductId ? info.usbProductId.toString(16).padStart(4, '0') : '----';
+    return `${vendor}:${product}`;
+}
+
 function describeSerialPort(port, index = 0) {
     if (!port || typeof port.getInfo !== 'function') {
         return {
@@ -116,22 +133,19 @@ function describeSerialPort(port, index = 0) {
     }
 
     const info = port.getInfo();
-    const vendor = info?.usbVendorId ? info.usbVendorId.toString(16).padStart(4, '0') : null;
-    const product = info?.usbProductId ? info.usbProductId.toString(16).padStart(4, '0') : null;
     const serial = info?.serialNumber;
-
-    const isEduPaceDevice = info?.usbVendorId === 0x2341 && info?.usbProductId === 0x0266;
+    const isEduPace = isEduPaceDevice(info);
 
     let name = 'USB Serial Device';
-    if (isEduPaceDevice) {
-        name = 'EduPace Device (2341:0266)';
-    } else if (vendor || product) {
-        name = `USB ${vendor ?? '----'}:${product ?? '----'}`;
+    if (isEduPace) {
+        name = 'EduPace Console';
+    } else if (info?.usbVendorId || info?.usbProductId) {
+        name = `USB ${formatUsbId(info)}`;
     }
 
     return {
         name,
-        meta: serial ? `Serial: ${serial}` : 'Click to connect to this port'
+        meta: serial ? `Serial: ${serial}` : isEduPace ? `USB ${formatUsbId(info)}` : 'Click to connect to this port'
     };
 }
 
@@ -192,7 +206,14 @@ function renderDeviceList(ports) {
 
     ui.deviceListEmpty.hidden = true;
 
-    list.forEach((port, index) => {
+    const sorted = [...list].sort((a, b) => {
+        const aIsEdu = isEduPaceDevice(a?.getInfo?.());
+        const bIsEdu = isEduPaceDevice(b?.getInfo?.());
+        if (aIsEdu === bIsEdu) return 0;
+        return aIsEdu ? -1 : 1;
+    });
+
+    sorted.forEach((port, index) => {
         const { name, meta } = describeSerialPort(port, index);
         const option = document.createElement('div');
         option.className = 'device-option';
@@ -238,7 +259,7 @@ async function populateDeviceList({ requestAccess = false } = {}) {
 
     if (requestAccess) {
         try {
-            await navigator.serial.requestPort();
+            await navigator.serial.requestPort({ filters: EDUPACE_PORT_FILTERS });
         } catch (error) {
             if (error?.name !== 'NotFoundError') {
                 console.error('Unable to request serial device', error);
@@ -249,7 +270,6 @@ async function populateDeviceList({ requestAccess = false } = {}) {
     try {
         const ports = await navigator.serial.getPorts();
         const connectedPorts = ports.filter((port) => Boolean(port));
-
         renderDeviceList(connectedPorts);
     } catch (error) {
         console.error('Unable to list serial ports', error);
@@ -481,7 +501,7 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
     }
 
     try {
-        const port = selectedPort ?? (await navigator.serial.requestPort());
+        const port = selectedPort ?? (await navigator.serial.requestPort({ filters: EDUPACE_PORT_FILTERS }));
         await port.open({ baudRate: 115200 });
 
         serialState.port = port;
@@ -681,6 +701,18 @@ function parsePayload(line) {
     }
     if (trimmed === 'POWER_OFF') {
         return { power: 'OFF' };
+    }
+    if (trimmed === 'LOCK_ON') {
+        return { lock: true };
+    }
+    if (trimmed === 'LOCK_OFF') {
+        return { lock: false };
+    }
+    if (trimmed === 'PACE_LED') {
+        return { paceLed: true };
+    }
+    if (trimmed === 'SENSE_LED') {
+        return { senseLed: true };
     }
 
     const payload = {};

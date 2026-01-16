@@ -25,6 +25,8 @@ static void key_button_event_cb(lv_event_t * e) {
     lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
     lv_obj_set_style_bg_color(cont, lv_color_white(), LV_PART_MAIN); // white
   }
+
+  Serial.println(key_pressed ? "LOCK_ON" : "LOCK_OFF");
 }
 
 void checkAutoLock() {
@@ -42,5 +44,7 @@ void checkAutoLock() {
     lv_obj_set_style_border_color(key_btn, lv_color_hex(0xFFEF46), LV_PART_MAIN);
     lv_obj_set_style_text_color(label, lv_color_hex(0xFFEF46), LV_PART_MAIN);
     lv_obj_set_style_bg_color(cont, lv_color_hex(0xB0CECD), LV_PART_MAIN);
+
+    Serial.println("LOCK_ON");
   }
 }
