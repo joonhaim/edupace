@@ -79,6 +79,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
+    max-height: 260px;
+    overflow-y: auto;
+    padding-right: 0.35rem;
+    scrollbar-gutter: stable;
 }
 
 .device-option {

@@ -1,32 +1,32 @@
 const ui = {
-    connectionStatus: document.getElementById('connectionStatus'),
-    connectionStatusText: document.querySelector('#connectionStatus .status-text'),
-    powerStatus: document.getElementById('powerStatus'),
-    lockStatus: document.getElementById('lockStatus'),
-    connectBtn: document.getElementById('connectBtn'),
-    rate: document.getElementById('rateValue'),
-    output: document.getElementById('outputValue'),
-    sensitivity: document.getElementById('sensValue'),
-    sensitivityUnit: document.querySelector('#sensValue + .param-unit'),
-    paceMode: document.getElementById('paceMode'),
-    paceLed: document.getElementById('paceLed'),
-    senseLed: document.getElementById('senseLed'),
-    ledTestPace: document.getElementById('ledTestPace'),
-    ledTestSense: document.getElementById('ledTestSense'),
-    inputModeRadios: document.querySelectorAll('input[name="inputMode"]'),
-    connectionGroup: document.querySelector('.connection-group'),
-    devicePopover: document.getElementById('devicePopover'),
-    devicePopoverClose: document.getElementById('devicePopoverClose'),
-    deviceOverlay: document.getElementById('devicePopoverOverlay'),
-    deviceList: document.getElementById('deviceList'),
-    deviceListEmpty: document.getElementById('deviceListEmpty'),
-    refreshDevicesBtn: document.getElementById('refreshDevicesBtn'),
-    requestDeviceBtn: document.getElementById('requestDeviceBtn'),
+    connectionStatus: null,
+    connectionStatusText: null,
+    powerStatus: null,
+    lockStatus: null,
+    connectBtn: null,
+    rate: null,
+    output: null,
+    sensitivity: null,
+    sensitivityUnit: null,
+    paceMode: null,
+    paceLed: null,
+    senseLed: null,
+    ledTestPace: null,
+    ledTestSense: null,
+    inputModeRadios: [],
+    connectionGroup: null,
+    devicePopover: null,
+    devicePopoverClose: null,
+    deviceOverlay: null,
+    deviceList: null,
+    deviceListEmpty: null,
+    refreshDevicesBtn: null,
+    requestDeviceBtn: null,
     unsupportedHint: null,
     unsupportedHintClose: null
 };
 
-const defaultPaceMode = ui.paceMode?.textContent ?? '--';
+let defaultPaceMode = '--';
 const ASYNC_SENSITIVITY_THRESHOLD = 20;
 
 const serialState = {
@@ -53,10 +53,37 @@ const parameterState = {
 };
 let isPoweredOn = false;
 let unsupportedHintDismissed = false;
+let hasInitialized = false;
 const resettableParameterKeys = Object.keys(parameterState);
 const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03]);
 const EDUPACE_PRODUCT_IDS = new Set([0x0266, 0x0366, 0x0066]);
 const EDUPACE_PORT_FILTERS = Array.from(EDUPACE_VENDOR_IDS, (vendorId) => ({ vendorId }));
+
+function refreshUiBindings() {
+    ui.connectionStatus = document.getElementById('connectionStatus');
+    ui.connectionStatusText = document.querySelector('#connectionStatus .status-text');
+    ui.powerStatus = document.getElementById('powerStatus');
+    ui.lockStatus = document.getElementById('lockStatus');
+    ui.connectBtn = document.getElementById('connectBtn');
+    ui.rate = document.getElementById('rateValue');
+    ui.output = document.getElementById('outputValue');
+    ui.sensitivity = document.getElementById('sensValue');
+    ui.sensitivityUnit = document.querySelector('#sensValue + .param-unit');
+    ui.paceMode = document.getElementById('paceMode');
+    ui.paceLed = document.getElementById('paceLed');
+    ui.senseLed = document.getElementById('senseLed');
+    ui.ledTestPace = document.getElementById('ledTestPace');
+    ui.ledTestSense = document.getElementById('ledTestSense');
+    ui.inputModeRadios = document.querySelectorAll('input[name="inputMode"]');
+    ui.connectionGroup = document.querySelector('.connection-group');
+    ui.devicePopover = document.getElementById('devicePopover');
+    ui.devicePopoverClose = document.getElementById('devicePopoverClose');
+    ui.deviceOverlay = document.getElementById('devicePopoverOverlay');
+    ui.deviceList = document.getElementById('deviceList');
+    ui.deviceListEmpty = document.getElementById('deviceListEmpty');
+    ui.refreshDevicesBtn = document.getElementById('refreshDevicesBtn');
+    ui.requestDeviceBtn = document.getElementById('requestDeviceBtn');
+}
 
 function createUnsupportedHint() {
     if (!ui.connectionGroup || ui.unsupportedHint) return;
@@ -115,7 +142,9 @@ function isEduPaceDevice(info) {
     if (!EDUPACE_VENDOR_IDS.has(info.usbVendorId)) return false;
     if (!info.usbProductId) return true;
     if (!EDUPACE_PRODUCT_IDS.size) return true;
-    return EDUPACE_PRODUCT_IDS.has(info.usbProductId);
+    if (EDUPACE_PRODUCT_IDS.has(info.usbProductId)) return true;
+    // Fall back to vendor-only matching so newer Arduino IDs still surface as EduPace devices.
+    return true;
 }
 
 function formatUsbId(info) {
@@ -420,9 +449,19 @@ function applyParameterDisplay({ rate, output, sensitivity, power, asynchronous,
 
 
 async function initHardwareIntegration() {
+    refreshUiBindings();
+    if (!ui.connectBtn || !ui.connectionStatus) {
+        return;
+    }
+    if (hasInitialized) {
+        return;
+    }
+    hasInitialized = true;
+
     const supported = 'serial' in navigator;
 
     createUnsupportedHint();
+    defaultPaceMode = ui.paceMode?.textContent ?? '--';
     setBasePaceMode(defaultPaceMode);
 
     if (!supported) {
