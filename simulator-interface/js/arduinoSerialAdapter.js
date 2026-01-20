@@ -55,7 +55,8 @@ let isPoweredOn = false;
 let unsupportedHintDismissed = false;
 let hasInitialized = false;
 const resettableParameterKeys = Object.keys(parameterState);
-const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03]);
+// Include common USB-serial bridge vendors used on Arduino-compatible boards.
+const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03, 0x1a86, 0x10c4, 0x0403, 0x067b]);
 const EDUPACE_PRODUCT_IDS = new Set([0x0266, 0x0366, 0x0066]);
 const EDUPACE_PORT_FILTERS = Array.from(EDUPACE_VENDOR_IDS, (vendorId) => ({ vendorId }));
 
