@@ -80,6 +80,17 @@ function closeSessionReview() {
     activeLogId = null;
 }
 
+async function saveAndClose() {
+    if (reviewElements.nameInput) {
+        try {
+            await persistName(reviewElements.nameInput.value);
+        } catch (error) {
+            console.warn('Unable to save operator name', error);
+        }
+    }
+    closeSessionReview();
+}
+
 function openSessionReview(summary) {
     if (!reviewElements.modal) return;
     const scenarioTitle = summary?.scenarioTitle ?? translateKey('logs.unknownScenario');
@@ -132,7 +143,7 @@ function openSessionReview(summary) {
 function initSessionReview() {
     if (!reviewElements.modal) return;
     reviewElements.closeBtn?.addEventListener('click', closeSessionReview);
-    reviewElements.doneBtn?.addEventListener('click', closeSessionReview);
+    reviewElements.doneBtn?.addEventListener('click', saveAndClose);
     reviewElements.overlay?.addEventListener('click', closeSessionReview);
     if (reviewElements.nameInput) {
         reviewElements.nameInput.addEventListener('input', (event) => {

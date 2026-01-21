@@ -375,6 +375,58 @@
     font-weight: 700;
 }
 
+.leaderboard-carousel {
+    position: relative;
+    min-height: 150px;
+}
+
+.leaderboard-panel {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    display: grid;
+    gap: 0.8rem;
+    pointer-events: none;
+}
+
+.leaderboard-panel.is-active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.leaderboard-panel-heading {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.leaderboard-total {
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+    justify-items: center;
+    padding: 1.2rem 0;
+    border-radius: 14px;
+    border: 1px dashed var(--border);
+    background: var(--surface-2);
+}
+
+.leaderboard-total__value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--deep-navy);
+}
+
+.leaderboard-total__label {
+    color: var(--muted);
+    font-weight: 600;
+}
+
 .leaderboard-list {
     display: grid;
     gap: 0.6rem;

@@ -4,7 +4,7 @@ import { getSessionLogs, initSessionStore } from './sessionStore.js';
 
 const recentList = document.querySelector('[data-recent-list]');
 const recentEmpty = document.querySelector('[data-recent-empty]');
-const leaderboardList = document.querySelector('[data-leaderboard-list]');
+const leaderboardCarousel = document.querySelector('[data-leaderboard-carousel]');
 const leaderboardEmpty = document.querySelector('[data-leaderboard-empty]');
 
 const progressFill = document.querySelector('[data-progress-fill]');
@@ -17,6 +17,9 @@ const suggestRefreshBtn = document.querySelector('[data-suggest-refresh]');
 let baseScenarios = [];
 let localizedScenarios = [];
 let clinicalScenarios = [];
+let leaderboardRotationTimer = null;
+let leaderboardPanels = [];
+let leaderboardIndex = 0;
 
 function translateTemplate(key, replacements = {}) {
     let text = translateKey(key) || key;
@@ -42,10 +45,110 @@ function formatDuration(seconds) {
     return remaining ? `${minutes}m ${remaining}s` : `${minutes}m`;
 }
 
-function renderLeaderboard() {
-    if (!leaderboardList || !leaderboardEmpty) return;
+function getScenarioKey(log) {
+    return log?.scenarioId || log?.scenarioCode || log?.scenarioTitle || '';
+}
 
-    leaderboardList.innerHTML = '';
+function normalizeOperator(name) {
+    return name?.trim() ?? '';
+}
+
+function stopLeaderboardRotation() {
+    if (leaderboardRotationTimer) {
+        window.clearInterval(leaderboardRotationTimer);
+        leaderboardRotationTimer = null;
+    }
+}
+
+function showLeaderboardPanel(index) {
+    leaderboardPanels.forEach((panel, panelIndex) => {
+        panel.classList.toggle('is-active', panelIndex === index);
+    });
+    leaderboardIndex = index;
+}
+
+function startLeaderboardRotation() {
+    stopLeaderboardRotation();
+    if (leaderboardPanels.length <= 1) return;
+    leaderboardRotationTimer = window.setInterval(() => {
+        const nextIndex = (leaderboardIndex + 1) % leaderboardPanels.length;
+        showLeaderboardPanel(nextIndex);
+    }, 6000);
+}
+
+function buildTotalSessionsPanel(totalCount) {
+    const panel = document.createElement('div');
+    panel.className = 'leaderboard-panel';
+
+    const total = document.createElement('div');
+    total.className = 'leaderboard-total';
+
+    const value = document.createElement('div');
+    value.className = 'leaderboard-total__value';
+    value.textContent = String(totalCount);
+
+    const label = document.createElement('div');
+    label.className = 'leaderboard-total__label';
+    label.textContent = translateKey('home.leaderboard.totalLabel');
+
+    total.append(value, label);
+    panel.appendChild(total);
+    return panel;
+}
+
+function buildScenarioPanel(scenarioTitle, entries) {
+    const panel = document.createElement('div');
+    panel.className = 'leaderboard-panel';
+
+    const heading = document.createElement('div');
+    heading.className = 'leaderboard-panel-heading';
+    heading.textContent = translateTemplate('home.leaderboard.scenarioTitle', { scenario: scenarioTitle });
+
+    const list = document.createElement('div');
+    list.className = 'leaderboard-list';
+
+    if (!entries.length) {
+        const empty = document.createElement('div');
+        empty.className = 'leaderboard-empty';
+        empty.textContent = translateKey('home.leaderboard.noTime');
+        list.appendChild(empty);
+    } else {
+        entries.forEach((entry, index) => {
+            const row = document.createElement('div');
+            row.className = 'home-leaderboard-row';
+
+            const rank = document.createElement('div');
+            rank.className = 'home-leaderboard-rank';
+            rank.textContent = String(index + 1);
+
+            const name = document.createElement('div');
+            name.className = 'home-leaderboard-name';
+            const nameText = document.createElement('span');
+            nameText.textContent = entry.name;
+            const nameMeta = document.createElement('small');
+            nameMeta.textContent = translateTemplate('home.leaderboard.sessions', { count: entry.count });
+            name.append(nameText, nameMeta);
+
+            const time = document.createElement('div');
+            time.className = 'home-leaderboard-time';
+            time.textContent = formatDuration(entry.bestTime);
+
+            row.append(rank, name, time);
+            list.appendChild(row);
+        });
+    }
+
+    panel.append(heading, list);
+    return panel;
+}
+
+function renderLeaderboard() {
+    if (!leaderboardCarousel || !leaderboardEmpty) return;
+
+    leaderboardCarousel.innerHTML = '';
+    leaderboardPanels = [];
+    leaderboardIndex = 0;
+    stopLeaderboardRotation();
     const logs = getSessionLogs().filter((log) => log.status === 'ended');
 
     if (!logs.length) {
@@ -53,18 +156,35 @@ function renderLeaderboard() {
         return;
     }
 
-    const grouped = new Map();
+    leaderboardEmpty.hidden = true;
+
+    const totalPanel = buildTotalSessionsPanel(logs.length);
+    leaderboardPanels.push(totalPanel);
+    leaderboardCarousel.appendChild(totalPanel);
+
+    const scenarioMap = new Map();
     logs.forEach((log) => {
-        const operatorName = log.metadata?.operator?.trim();
-        const key = operatorName ? operatorName.toLowerCase() : '__anonymous__';
-        if (!grouped.has(key)) {
-            grouped.set(key, {
+        const scenarioKey = getScenarioKey(log);
+        if (!scenarioKey) return;
+        if (!scenarioMap.has(scenarioKey)) {
+            scenarioMap.set(scenarioKey, {
+                title: log.scenarioTitle || translateKey('logs.unknownScenario'),
+                latestAt: log.endedAt || log.startedAt || '',
+                entries: new Map()
+            });
+        }
+        const scenario = scenarioMap.get(scenarioKey);
+        scenario.latestAt = log.endedAt || log.startedAt || scenario.latestAt;
+        const operatorName = normalizeOperator(log.metadata?.operator);
+        const operatorKey = operatorName ? operatorName.toLowerCase() : '__anonymous__';
+        if (!scenario.entries.has(operatorKey)) {
+            scenario.entries.set(operatorKey, {
                 name: operatorName || translateKey('home.leaderboard.anonymous'),
                 count: 0,
                 bestTime: null
             });
         }
-        const entry = grouped.get(key);
+        const entry = scenario.entries.get(operatorKey);
         entry.count += 1;
         if (log.stabilized === true && Number.isFinite(log.stabilizationSeconds)) {
             const currentBest = entry.bestTime ?? Number.POSITIVE_INFINITY;
@@ -72,42 +192,25 @@ function renderLeaderboard() {
         }
     });
 
-    const rows = Array.from(grouped.values()).sort((a, b) => {
-        const aTime = a.bestTime ?? Number.POSITIVE_INFINITY;
-        const bTime = b.bestTime ?? Number.POSITIVE_INFINITY;
-        if (aTime !== bTime) return aTime - bTime;
-        if (a.count !== b.count) return b.count - a.count;
-        return a.name.localeCompare(b.name);
+    const scenarios = Array.from(scenarioMap.values())
+        .sort((a, b) => new Date(b.latestAt) - new Date(a.latestAt))
+        .slice(0, 5);
+
+    scenarios.forEach((scenario) => {
+        const entries = Array.from(scenario.entries.values())
+            .filter((entry) => Number.isFinite(entry.bestTime))
+            .sort((a, b) => a.bestTime - b.bestTime)
+            .slice(0, 3);
+
+        const panel = buildScenarioPanel(scenario.title, entries);
+        leaderboardPanels.push(panel);
+        leaderboardCarousel.appendChild(panel);
     });
 
-    const displayRows = rows.slice(0, 3);
-    leaderboardEmpty.hidden = displayRows.length > 0;
-
-    displayRows.forEach((entry, index) => {
-        const row = document.createElement('div');
-        row.className = 'home-leaderboard-row';
-
-        const rank = document.createElement('div');
-        rank.className = 'home-leaderboard-rank';
-        rank.textContent = String(index + 1);
-
-        const name = document.createElement('div');
-        name.className = 'home-leaderboard-name';
-        const nameText = document.createElement('span');
-        nameText.textContent = entry.name;
-        const nameMeta = document.createElement('small');
-        nameMeta.textContent = translateTemplate('home.leaderboard.sessions', { count: entry.count });
-        name.append(nameText, nameMeta);
-
-        const time = document.createElement('div');
-        time.className = 'home-leaderboard-time';
-        time.textContent = entry.bestTime === null
-            ? translateKey('home.leaderboard.noTime')
-            : formatDuration(entry.bestTime);
-
-        row.append(rank, name, time);
-        leaderboardList.appendChild(row);
-    });
+    if (leaderboardPanels.length) {
+        showLeaderboardPanel(0);
+        startLeaderboardRotation();
+    }
 }
 
 function renderRecentSessions() {
