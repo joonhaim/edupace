@@ -451,6 +451,18 @@ body.simulation-dark.page-logs .log-empty {
     color: #e3e9f4;
 }
 
+body.simulation-dark.page-logs .log-list-actions,
+body.simulation-dark.page-logs .leaderboard-podium-panel {
+    background: #0f1624;
+    border-color: #1c2738;
+    box-shadow: none;
+}
+
+body.simulation-dark.page-logs .log-list-count,
+body.simulation-dark.page-logs .leaderboard-podium-title {
+    color: #e3e9f4;
+}
+
 body.simulation-dark.page-logs .logs-header p,
 body.simulation-dark.page-logs .logs-header-actions p,
 body.simulation-dark.page-logs .log-card .log-meta,
@@ -464,6 +476,11 @@ body.simulation-dark.page-logs .log-card .log-title,
 body.simulation-dark.page-logs .detail-heading h2,
 body.simulation-dark.page-logs .logs-header h1 {
     color: #e3e9f4;
+}
+
+body.simulation-dark.page-logs .log-select-box {
+    background: #101827;
+    border-color: #1c2738;
 }
 
 body.simulation-dark.page-logs .logs-filter input,

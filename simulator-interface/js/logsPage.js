@@ -1,9 +1,12 @@
 import {
     chooseLogStoragePath,
     deleteSessionLog,
+    deleteSessionLogs,
+    deleteSessionLogsByOperator,
     getLogStoragePath,
     getSessionLogs,
     initSessionStore,
+    resetSessionLogs,
     openLogStoragePath,
     serializeSessionToCsv,
     syncFromDisk,
@@ -38,7 +41,19 @@ let logDisplaySettings = { ...defaultLogSettings };
 let logLocationElements = { display: null, openBtn: null, hint: null, refreshBtn: null };
 const leaderboardElements = {
     scenarioLabel: document.getElementById('logsLeaderboardScenario'),
-    table: document.getElementById('logsLeaderboardTable')
+    table: document.getElementById('logsLeaderboardTable'),
+    podium: document.getElementById('logsLeaderboardPodium')
+};
+const bulkElements = {
+    wrapper: document.querySelector('[data-log-bulk]'),
+    count: document.querySelector('[data-log-bulk-count]'),
+    selectAllBtn: document.querySelector('[data-log-select-all]'),
+    clearBtn: document.querySelector('[data-log-clear-selection]'),
+    deleteBtn: document.querySelector('[data-log-delete-selected]')
+};
+
+const selectionState = {
+    selectedIds: new Set()
 };
 
 function translateTemplate(key, replacements = {}) {
@@ -140,6 +155,16 @@ function initLogSettingsPanel() {
         renderLogs();
     });
 
+    panel.querySelector('[data-log-reset]')?.addEventListener('click', async () => {
+        const confirmed = window.confirm(translateKey('settings.logReset.confirm'));
+        if (!confirmed) return;
+        await resetSessionLogs();
+        selectionState.selectedIds.clear();
+        filterState.selectedId = null;
+        resetDetailState();
+        renderLogs();
+    });
+
     updateLogLocationUi();
 }
 
@@ -188,9 +213,6 @@ function sortLogs(logs) {
         case 'duration':
             sorted.sort((a, b) => (b.durationSeconds ?? 0) - (a.durationSeconds ?? 0));
             break;
-        case 'events':
-            sorted.sort((a, b) => (b.events?.length ?? 0) - (a.events?.length ?? 0));
-            break;
         case 'newest':
         default:
             sorted.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
@@ -220,8 +242,74 @@ function normalizeOperator(name) {
     return name?.trim() ?? '';
 }
 
+function getStabilizationSummary(log) {
+    if (log?.stabilized === true && Number.isFinite(log.stabilizationSeconds)) {
+        return translateTemplate('logs.card.stabilization', {
+            time: formatDuration(log.stabilizationSeconds)
+        });
+    }
+    return translateKey('logs.card.stabilization.none');
+}
+
+function updateBulkActions() {
+    if (!bulkElements.wrapper || !bulkElements.count) return;
+    const count = selectionState.selectedIds.size;
+    bulkElements.wrapper.hidden = count === 0;
+    bulkElements.count.textContent = translateTemplate('logs.selection.count', { count });
+}
+
+function toggleSelection(id, isSelected) {
+    if (isSelected) {
+        selectionState.selectedIds.add(id);
+    } else {
+        selectionState.selectedIds.delete(id);
+    }
+    updateBulkActions();
+}
+
+function clearSelections() {
+    selectionState.selectedIds.clear();
+    updateBulkActions();
+    renderLogs();
+}
+
+function syncSelections(logs) {
+    const ids = new Set(logs.map((log) => log.id));
+    selectionState.selectedIds.forEach((id) => {
+        if (!ids.has(id)) selectionState.selectedIds.delete(id);
+    });
+}
+
+async function deleteSelectedLogs() {
+    const ids = Array.from(selectionState.selectedIds);
+    if (!ids.length) return;
+    const confirmed = window.confirm(
+        translateTemplate('logs.actions.deleteSelectedConfirm', { count: ids.length })
+    );
+    if (!confirmed) return;
+    await deleteSessionLogs(ids);
+    selectionState.selectedIds.clear();
+    filterState.selectedId = null;
+    resetDetailState();
+    renderLogs();
+}
+
+async function deleteOperatorLogs(operatorName) {
+    const confirmed = window.confirm(
+        translateTemplate('logs.actions.deleteOperatorConfirm', { name: operatorName })
+    );
+    if (!confirmed) return;
+    const deletedIds = await deleteSessionLogsByOperator(operatorName);
+    deletedIds.forEach((id) => selectionState.selectedIds.delete(id));
+    if (deletedIds.includes(filterState.selectedId)) {
+        filterState.selectedId = null;
+        resetDetailState();
+    }
+    renderLogs();
+}
+
 function renderLeaderboard(activeLog) {
-    if (!leaderboardElements.table || !leaderboardElements.scenarioLabel) return;
+    if (!leaderboardElements.table || !leaderboardElements.scenarioLabel || !leaderboardElements.podium) return;
 
     const scenarioKey = getScenarioKey(activeLog);
     const scenarioTitle = activeLog?.scenarioTitle ?? translateKey('logs.unknownScenario');
@@ -230,12 +318,14 @@ function renderLeaderboard(activeLog) {
         : translateKey('logs.leaderboard.noScenario');
 
     leaderboardElements.table.innerHTML = '';
+    leaderboardElements.podium.innerHTML = '';
 
     if (!scenarioKey) {
         const empty = document.createElement('div');
         empty.className = 'leaderboard-empty';
         empty.textContent = translateKey('logs.leaderboard.empty');
         leaderboardElements.table.appendChild(empty);
+        leaderboardElements.podium.appendChild(empty.cloneNode(true));
         return;
     }
 
@@ -247,6 +337,7 @@ function renderLeaderboard(activeLog) {
         empty.className = 'leaderboard-empty';
         empty.textContent = translateKey('logs.leaderboard.empty');
         leaderboardElements.table.appendChild(empty);
+        leaderboardElements.podium.appendChild(empty.cloneNode(true));
         return;
     }
 
@@ -283,6 +374,7 @@ function renderLeaderboard(activeLog) {
         empty.className = 'leaderboard-empty';
         empty.textContent = translateKey('logs.leaderboard.empty');
         leaderboardElements.table.appendChild(empty);
+        leaderboardElements.podium.appendChild(empty.cloneNode(true));
         return;
     }
 
@@ -292,7 +384,6 @@ function renderLeaderboard(activeLog) {
         <span>${translateKey('logs.leaderboard.rank')}</span>
         <span>${translateKey('logs.leaderboard.name')}</span>
         <span>${translateKey('logs.leaderboard.bestTime')}</span>
-        <span>${translateKey('logs.leaderboard.sessionCount')}</span>
     `;
     leaderboardElements.table.appendChild(head);
 
@@ -314,12 +405,40 @@ function renderLeaderboard(activeLog) {
             ? translateKey('logs.leaderboard.noTime')
             : formatDuration(entry.bestTime);
 
-        const count = document.createElement('span');
-        count.className = 'leaderboard-stat';
-        count.textContent = translateTemplate('logs.leaderboard.sessions', { count: entry.count });
-
-        row.append(rank, name, time, count);
+        row.append(rank, name, time);
         leaderboardElements.table.appendChild(row);
+    });
+
+    const podiumPositions = [
+        { rank: 2, className: 'podium-place podium-place--second', entry: rows[1] },
+        { rank: 1, className: 'podium-place podium-place--first', entry: rows[0] },
+        { rank: 3, className: 'podium-place podium-place--third', entry: rows[2] }
+    ];
+
+    podiumPositions.forEach(({ rank, className, entry }) => {
+        const place = document.createElement('div');
+        place.className = className;
+
+        const rankBadge = document.createElement('div');
+        rankBadge.className = 'podium-rank';
+        rankBadge.textContent = String(rank);
+
+        const name = document.createElement('div');
+        name.className = 'podium-name';
+        name.textContent = entry?.name ?? '—';
+
+        const time = document.createElement('div');
+        time.className = 'podium-sessions';
+        time.textContent = entry?.bestTime === null || entry?.bestTime === undefined
+            ? translateKey('logs.leaderboard.noTime')
+            : formatDuration(entry.bestTime);
+
+        if (!entry) {
+            place.classList.add('is-empty');
+        }
+
+        place.append(rankBadge, name, time);
+        leaderboardElements.podium.appendChild(place);
     });
 }
 
@@ -348,17 +467,16 @@ function formatDate(timestamp) {
 
     let hours = date.getHours();
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
     let suffix = '';
 
     if (logDisplaySettings.timeFormat === '12h') {
         suffix = hours >= 12 ? 'pm' : 'am';
         hours = hours % 12 || 12;
         const displayHours = String(hours).padStart(2, '0');
-        return `${datePart} ${displayHours}:${minutes}:${seconds} ${suffix}`;
+        return `${datePart} ${displayHours}:${minutes} ${suffix}`;
     }
 
-    return `${datePart} ${String(hours).padStart(2, '0')}:${minutes}:${seconds}`;
+    return `${datePart} ${String(hours).padStart(2, '0')}:${minutes}`;
 }
 
 function setSelectedLog(id) {
@@ -431,10 +549,24 @@ function enterEditMode(log, focusField) {
 }
 
 function renderLogCard(log) {
-    const card = document.createElement('button');
-    card.type = 'button';
+    const card = document.createElement('div');
     card.className = 'log-card';
     card.dataset.id = log.id;
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+
+    const selectionWrap = document.createElement('label');
+    selectionWrap.className = 'log-select';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = selectionState.selectedIds.has(log.id);
+    checkbox.setAttribute('aria-label', translateKey('logs.actions.selectSession'));
+    checkbox.addEventListener('change', (event) => {
+        toggleSelection(log.id, event.target.checked);
+    });
+    const checkboxBox = document.createElement('span');
+    checkboxBox.className = 'log-select-box';
+    selectionWrap.append(checkbox, checkboxBox);
 
     const title = document.createElement('div');
     title.className = 'log-title';
@@ -442,11 +574,10 @@ function renderLogCard(log) {
 
     const meta = document.createElement('div');
     meta.className = 'log-meta';
-    const eventSummary = translateTemplate('logs.events.count', { count: log.events?.length ?? 0 });
     meta.textContent = translateTemplate('logs.card.meta', {
         date: formatDate(log.startedAt),
         duration: formatDuration(log.durationSeconds),
-        events: eventSummary
+        stabilization: getStabilizationSummary(log)
     });
 
     const label = document.createElement('div');
@@ -454,9 +585,22 @@ function renderLogCard(log) {
     const labelText = log.metadata?.label || log.metadata?.operator;
     label.textContent = labelText ? labelText : translateKey('logs.card.addLabel');
 
-    card.append(title, meta, label);
+    const content = document.createElement('div');
+    content.className = 'log-content';
+    content.append(title, meta, label);
 
-    card.addEventListener('click', () => setSelectedLog(log.id));
+    card.append(selectionWrap, content);
+
+    card.addEventListener('click', (event) => {
+        if (event.target.closest('.log-select')) return;
+        setSelectedLog(log.id);
+    });
+    card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setSelectedLog(log.id);
+        }
+    });
     if (filterState.selectedId === log.id) {
         card.classList.add('is-active');
     }
@@ -487,11 +631,10 @@ function renderDetail(log) {
     title.textContent = log.scenarioTitle || translateKey('logs.unknownScenario');
     const sub = document.createElement('p');
     sub.className = 'detail-subtitle';
-    const detailEventSummary = translateTemplate('logs.events.count', { count: log.events?.length ?? 0 });
     sub.textContent = translateTemplate('logs.card.meta', {
         date: formatDate(log.startedAt),
         duration: formatDuration(log.durationSeconds),
-        events: detailEventSummary
+        stabilization: getStabilizationSummary(log)
     });
     headingText.append(title, sub);
 
@@ -518,15 +661,10 @@ function renderDetail(log) {
             : '—';
 
     const summaryItems = [
-        { label: translateKey('logs.detail.sessionId'), value: log.id },
         { label: translateKey('logs.detail.started'), value: formatDate(log.startedAt) },
         { label: translateKey('logs.detail.duration'), value: formatDuration(log.durationSeconds) },
         { label: translateKey('logs.detail.stabilized'), value: stabilizedValue },
         { label: translateKey('logs.detail.stabilizationTime'), value: stabilizationTime },
-        {
-            label: translateKey('logs.detail.events'),
-            value: translateTemplate('logs.events.count', { count: log.events?.length ?? 0 })
-        }
     ];
 
     summaryItems.forEach((item) => {
@@ -569,6 +707,8 @@ function renderDetail(log) {
     deleteBtn.textContent = translateKey('logs.actions.delete');
     deleteBtn.addEventListener('click', async () => {
         await deleteSessionLog(log.id);
+        selectionState.selectedIds.delete(log.id);
+        updateBulkActions();
         filterState.selectedId = null;
         resetDetailState();
         renderLogs();
@@ -706,6 +846,19 @@ function renderDetail(log) {
         primaryActions.append(editBtn, reviewBtn);
         exportActions.append(downloadJson, downloadCsv);
         dangerActions.append(deleteBtn);
+
+        const operatorName = normalizeOperator(log.metadata?.operator);
+        if (operatorName) {
+            const deleteOperatorBtn = document.createElement('button');
+            deleteOperatorBtn.type = 'button';
+            deleteOperatorBtn.className = 'btn btn-ghost btn-small danger';
+            deleteOperatorBtn.textContent = translateKey('logs.actions.deleteOperator');
+            deleteOperatorBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                deleteOperatorLogs(operatorName);
+            });
+            dangerActions.append(deleteOperatorBtn);
+        }
         actions.append(primaryActions, exportActions, dangerActions);
     }
 
@@ -719,6 +872,8 @@ function renderLogs() {
 
     list.innerHTML = '';
     const logs = applyFilters(getSessionLogs());
+    syncSelections(logs);
+    updateBulkActions();
 
     if (!logs.length) {
         emptyState.style.display = 'block';
@@ -758,6 +913,23 @@ function bindFilters() {
     });
 }
 
+function bindBulkActions() {
+    bulkElements.selectAllBtn?.addEventListener('click', () => {
+        const logs = applyFilters(getSessionLogs());
+        logs.forEach((log) => selectionState.selectedIds.add(log.id));
+        updateBulkActions();
+        renderLogs();
+    });
+
+    bulkElements.clearBtn?.addEventListener('click', () => {
+        clearSelections();
+    });
+
+    bulkElements.deleteBtn?.addEventListener('click', () => {
+        deleteSelectedLogs();
+    });
+}
+
 function bindListDeselect() {
     const list = document.getElementById('logsList');
     if (!list) return;
@@ -788,6 +960,7 @@ async function initLogsPage() {
     await syncFromDisk();
     initLogSettingsPanel();
     bindFilters();
+    bindBulkActions();
     bindListDeselect();
     bindBackgroundDeselect();
     renderLogs();
