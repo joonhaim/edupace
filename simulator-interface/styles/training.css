@@ -845,6 +845,10 @@ body.simulation-light .theme-toggle {
 .btn-icon {
     font-size: 1rem;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 1em;
 }
 
 .session-meta {
