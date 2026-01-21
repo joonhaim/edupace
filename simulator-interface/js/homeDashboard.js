@@ -242,10 +242,6 @@ function renderLeaderboard() {
 
     leaderboardEmpty.hidden = true;
 
-    const totalPanel = buildTotalSessionsPanel(logs.length);
-    leaderboardPanels.push(totalPanel);
-    leaderboardCarousel.appendChild(totalPanel);
-
     const operatorMap = new Map();
     logs.forEach((log) => {
         const rawName = normalizeOperator(log.metadata?.operator);
@@ -269,6 +265,10 @@ function renderLeaderboard() {
     const podiumPanel = buildPodiumPanel(topOperators);
     leaderboardPanels.push(podiumPanel);
     leaderboardCarousel.appendChild(podiumPanel);
+
+    const totalPanel = buildTotalSessionsPanel(logs.length);
+    leaderboardPanels.push(totalPanel);
+    leaderboardCarousel.appendChild(totalPanel);
 
     stabilizationScenarioIds.forEach((scenarioId) => {
         const stabilizationPanel = buildScenarioStabilizationPanel(logs, scenarioId);
