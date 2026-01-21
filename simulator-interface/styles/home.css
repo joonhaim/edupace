@@ -309,6 +309,22 @@
     gap: 0.8rem;
 }
 
+.progress-selector {
+    margin-left: auto;
+}
+
+.progress-selector select {
+    width: 160px;
+    max-width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    padding: 0.5rem 0.75rem;
+    font-weight: 700;
+    color: var(--deep-navy);
+    font-size: 0.9rem;
+}
+
 .progress-meter {
     position: relative;
     height: 12px;
@@ -439,6 +455,79 @@
 .leaderboard-list {
     display: grid;
     gap: 0.6rem;
+}
+
+.leaderboard-podium {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.6rem;
+    align-items: end;
+    min-height: 170px;
+}
+
+.podium-place {
+    display: grid;
+    gap: 0.35rem;
+    align-content: start;
+    justify-items: center;
+    padding: 0.65rem 0.5rem 0.9rem;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    text-align: center;
+    font-weight: 700;
+}
+
+.podium-place--first {
+    min-height: 155px;
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05));
+}
+
+.podium-place--second {
+    min-height: 130px;
+}
+
+.podium-place--third {
+    min-height: 110px;
+}
+
+.podium-rank {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--deep-navy);
+    font-weight: 800;
+}
+
+.podium-place--first .podium-rank {
+    background: #f5c542;
+}
+
+.podium-place--second .podium-rank {
+    background: #c0c0c0;
+}
+
+.podium-place--third .podium-rank {
+    background: #cd7f32;
+}
+
+.podium-name {
+    font-weight: 800;
+    color: var(--deep-navy);
+}
+
+.podium-sessions {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.podium-place.is-empty {
+    color: var(--muted);
+    font-weight: 600;
 }
 
 .home-leaderboard-row {

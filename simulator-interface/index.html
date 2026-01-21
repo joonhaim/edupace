@@ -99,7 +99,7 @@
           </div>
 
           <p class="device-popover-hint" data-i18n-key="connection.support">
-            Chrome or Edge recommended.
+            EduPace App, Chrome, or Edge recommended
           </p>
         </div>
         <div id="devicePopoverOverlay" class="device-popover-overlay" hidden></div>
@@ -239,7 +239,7 @@
             <div class="panel-header">
               <div>
                 <p class="eyebrow" data-i18n-key="home.leaderboard.label">Leaderboard</p>
-                <h2 style="margin-bottom: 0;" data-i18n-key="home.leaderboard.title">Top stabilization times</h2>
+                <h2 style="margin-bottom: 0;" data-i18n-key="home.leaderboard.title">Top session leaders</h2>
               </div>
             </div>
             <div class="leaderboard-carousel" data-leaderboard-carousel></div>
@@ -252,13 +252,17 @@
           <article class="panel dash-card dash-card--progress" aria-label="My progress">
             <div class="panel-header">
               <h2 style="margin-bottom: 0;" data-i18n-key="home.progress.title">My progress</h2>
+              <label class="progress-selector">
+                <span class="sr-only" data-i18n-key="home.progress.selectorLabel">Select your name</span>
+                <select data-progress-operator aria-label="Select your name"></select>
+              </label>
             </div>
             <div class="progress-card" data-progress-card>
               <div class="progress-meter" role="progressbar" aria-label="Scenario completion" aria-valuemin="0" aria-valuemax="100">
                 <div class="progress-fill" data-progress-fill style="width: 0%"></div>
               </div>
               <div class="progress-meta">
-                <div class="progress-count" data-progress-count>0 / 0 scenarios complete</div>
+                <div class="progress-count" data-progress-count>0 / 0 scenarios stabilized</div>
                 <p class="muted" data-progress-hint>We'll update this once you complete your first scenario.</p>
               </div>
             </div>
