@@ -1888,6 +1888,15 @@ body.ecg-fullscreen-active {
     justify-content: flex-end;
 }
 
+.settings-window-actions .btn {
+    height: 36px;
+    padding: 0 12px;
+    font-size: 0.92rem;
+    letter-spacing: -0.01em;
+    border-radius: 10px;
+    min-width: 140px;
+}
+
 .settings-window .btn {
     height: 32px;
     padding: 0 0.75rem;
@@ -1993,6 +2002,14 @@ body.ecg-fullscreen-active {
     border-top: 1px solid var(--border);
 }
 
+.settings-actions .btn-primary {
+    height: 36px;
+    width: 140px;
+    font-size: 0.92rem;
+    letter-spacing: -0.01em;
+    border-radius: 10px;
+}
+
 .icon-button {
     display: inline-flex;
     align-items: center;
@@ -2048,7 +2065,7 @@ body.ecg-fullscreen-active {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.65rem;
+    gap: 1rem;
     padding: 0.2rem 0.25rem;
 }
 
@@ -2063,6 +2080,7 @@ body.ecg-fullscreen-active {
     justify-content: flex-end;
     flex-wrap: wrap;
     gap: 0.65rem;
+    margin-left: 1.25rem;
 }
 
 .setting-controls-stacked {
@@ -2093,6 +2111,7 @@ body.ecg-fullscreen-active {
     gap: 0.35rem;
     font-weight: 700;
     color: var(--deep-navy);
+    margin-left: 1.25rem;
 }
 
 .setting-field--stacked {
@@ -2119,6 +2138,7 @@ body.ecg-fullscreen-active {
     flex-wrap: wrap;
     justify-content: flex-end;
     width: 100%;
+    margin-left: 1.25rem;
 }
 
 .setting-actions-inline .btn {
