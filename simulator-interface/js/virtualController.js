@@ -18,10 +18,14 @@ const lockIcons = {
     `
 };
 
-const controllerState = {
+const defaultControllerState = {
     rate: getNearestPreset('rate', 80),
     output: getNearestPreset('output', 10),
-    sensitivity: getNearestPreset('sensitivity', 2.0),
+    sensitivity: getNearestPreset('sensitivity', 2.0)
+};
+
+const controllerState = {
+    ...defaultControllerState,
     power: false,
     locked: false
 };
@@ -372,17 +376,20 @@ function initVirtualController() {
     actionButtons.lock?.addEventListener('click', toggleLock);
 
     const applyScenarioDefaults = (scenario) => {
+        if (!isVirtualMode()) return;
+
+        controllerState.rate = defaultControllerState.rate;
+        controllerState.output = defaultControllerState.output;
+        controllerState.sensitivity = defaultControllerState.sensitivity;
         controllerState.locked = false;
+        controllerState.power = typeof scenario?.pacing?.poweredOn === 'boolean' ? scenario.pacing.poweredOn : false;
 
-        if (typeof scenario?.pacing?.poweredOn === 'boolean') {
-            controllerState.power = scenario.pacing.poweredOn;
+        if (autoLockTimer) {
+            clearTimeout(autoLockTimer);
+            autoLockTimer = null;
         }
 
-        refreshDisplay();
-
-        if (isVirtualMode()) {
-            broadcastParameters();
-        }
+        broadcastParameters();
     };
 
     window.addEventListener('edupace-scenario-change', (event) => applyScenarioDefaults(event.detail));
