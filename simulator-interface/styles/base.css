@@ -545,6 +545,7 @@ h1, h2, h3 {
     grid-template-areas:
         "start browse"
         "recent browse"
+        "leaderboard suggested"
         "progress suggested"
         "resources resources";
     align-items: stretch;
@@ -597,6 +598,11 @@ h1, h2, h3 {
 
 .dash-card--progress {
     grid-area: progress;
+}
+
+.dash-card--leaderboard {
+    grid-area: leaderboard;
+    min-height: 320px;
 }
 
 .dash-card--suggested {
@@ -734,7 +740,6 @@ h1, h2, h3 {
 /* only when live */
 .chip-connected .status-dot{
   animation:
-    dot-breathe 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite,
-    dot-glow-soft 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  will-change: transform, opacity, box-shadow;
+    dot-breathe 2.8s ease-in-out infinite,
+    dot-glow-soft 2.8s ease-in-out infinite;
 }

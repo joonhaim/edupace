@@ -235,6 +235,19 @@
             </div>
           </article>
 
+          <article class="panel dash-card dash-card--leaderboard" aria-label="Leaderboard">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow" data-i18n-key="home.leaderboard.label">Leaderboard</p>
+                <h2 style="margin-bottom: 0;" data-i18n-key="home.leaderboard.title">Top stabilization times</h2>
+              </div>
+            </div>
+            <div class="leaderboard-carousel" data-leaderboard-carousel></div>
+            <div class="empty muted" data-leaderboard-empty data-i18n-key="home.leaderboard.empty">
+              Complete a session to populate the leaderboard.
+            </div>
+          </article>
+
           <!-- My progress tile -->
           <article class="panel dash-card dash-card--progress" aria-label="My progress">
             <div class="panel-header">
@@ -674,6 +687,17 @@
                             </select>
                         </label>
                     </div>
+
+                    <section class="logs-leaderboard" aria-live="polite">
+                        <div class="leaderboard-header">
+                            <div>
+                                <p class="eyebrow" data-i18n-key="logs.leaderboard.label">Leaderboard</p>
+                                <h2 data-i18n-key="logs.leaderboard.title">Scenario leaderboard</h2>
+                                <p id="logsLeaderboardScenario" class="leaderboard-subtitle"></p>
+                            </div>
+                        </div>
+                        <div class="leaderboard-table" id="logsLeaderboardTable" aria-label="Scenario leaderboard"></div>
+                    </section>
 
                     <div id="logsEmpty" class="log-empty" role="status" data-i18n-key="logs.empty">
                         No sessions have been logged yet. Complete a run to see it here.
@@ -1389,15 +1413,30 @@
                   <span id="sessionReviewTimeValue" class="metric-value">—</span>
                 </div>
               </div>
+              <div class="session-review-field">
+                <label for="sessionReviewName" class="session-review-label" data-i18n-key="review.nameLabel">Your name (optional)</label>
+                <input
+                  id="sessionReviewName"
+                  class="session-review-input"
+                  type="text"
+                  list="sessionReviewNameSuggestions"
+                  placeholder="Enter your name"
+                  data-i18n-key="review.namePlaceholder"
+                  data-i18n-attr="placeholder"
+                  autocomplete="name"
+                />
+                <datalist id="sessionReviewNameSuggestions"></datalist>
+                <p class="session-review-hint" data-i18n-key="review.nameHint">Start typing to see past names.</p>
+              </div>
             </div>
             <div class="session-review-actions">
               <button
                 id="sessionReviewDone"
                 type="button"
                 class="btn btn-primary"
-                data-i18n-key="review.close"
+                data-i18n-key="review.saveClose"
               >
-                Close
+                Save & Close
               </button>
             </div>
           </div>

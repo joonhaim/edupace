@@ -1,4 +1,5 @@
 import { translateKey } from './languageToggle.js';
+import { getSessionLogs, updateSessionLogMetadata } from './sessionStore.js';
 
 const reviewElements = {
     modal: document.getElementById('sessionReviewModal'),
@@ -9,8 +10,13 @@ const reviewElements = {
     status: document.getElementById('sessionReviewStatus'),
     stabilizedValue: document.getElementById('sessionReviewStabilizedValue'),
     timeRow: document.getElementById('sessionReviewTimeRow'),
-    timeValue: document.getElementById('sessionReviewTimeValue')
+    timeValue: document.getElementById('sessionReviewTimeValue'),
+    nameInput: document.getElementById('sessionReviewName'),
+    nameSuggestions: document.getElementById('sessionReviewNameSuggestions')
 };
+
+let activeLogId = null;
+let nameSaveTimer = null;
 
 function formatDuration(seconds) {
     if (!Number.isFinite(seconds) || seconds < 0) return translateKey('review.timeUnknown');
@@ -18,6 +24,46 @@ function formatDuration(seconds) {
     const minutes = Math.floor(seconds / 60);
     const remaining = seconds % 60;
     return remaining ? `${minutes}m ${remaining}s` : `${minutes}m`;
+}
+
+function collectKnownNames() {
+    const names = new Set();
+    getSessionLogs().forEach((log) => {
+        const operator = log.metadata?.operator?.trim();
+        if (operator) names.add(operator);
+    });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+}
+
+function renderNameSuggestions() {
+    if (!reviewElements.nameSuggestions) return;
+    reviewElements.nameSuggestions.innerHTML = '';
+    const names = collectKnownNames();
+    names.forEach((name) => {
+        const option = document.createElement('option');
+        option.value = name;
+        reviewElements.nameSuggestions.appendChild(option);
+    });
+}
+
+async function persistName(name) {
+    if (!activeLogId) return;
+    const trimmed = name.trim();
+    await updateSessionLogMetadata(activeLogId, {
+        operator: trimmed
+    });
+}
+
+function scheduleNameSave(value) {
+    if (!activeLogId) return;
+    if (nameSaveTimer) {
+        window.clearTimeout(nameSaveTimer);
+    }
+    nameSaveTimer = window.setTimeout(() => {
+        persistName(value).catch((error) => {
+            console.warn('Unable to save operator name', error);
+        });
+    }, 300);
 }
 
 function setVisibility(isVisible) {
@@ -31,6 +77,18 @@ function setVisibility(isVisible) {
 
 function closeSessionReview() {
     setVisibility(false);
+    activeLogId = null;
+}
+
+async function saveAndClose() {
+    if (reviewElements.nameInput) {
+        try {
+            await persistName(reviewElements.nameInput.value);
+        } catch (error) {
+            console.warn('Unable to save operator name', error);
+        }
+    }
+    closeSessionReview();
 }
 
 function openSessionReview(summary) {
@@ -73,14 +131,33 @@ function openSessionReview(summary) {
         }
     }
 
+    activeLogId = summary?.id ?? null;
+    if (reviewElements.nameInput) {
+        reviewElements.nameInput.value = summary?.metadata?.operator ?? '';
+    }
+    renderNameSuggestions();
+
     setVisibility(true);
 }
 
 function initSessionReview() {
     if (!reviewElements.modal) return;
     reviewElements.closeBtn?.addEventListener('click', closeSessionReview);
-    reviewElements.doneBtn?.addEventListener('click', closeSessionReview);
+    reviewElements.doneBtn?.addEventListener('click', saveAndClose);
     reviewElements.overlay?.addEventListener('click', closeSessionReview);
+    if (reviewElements.nameInput) {
+        reviewElements.nameInput.addEventListener('input', (event) => {
+            scheduleNameSave(event.target.value);
+        });
+        reviewElements.nameInput.addEventListener('blur', (event) => {
+            persistName(event.target.value).catch((error) => {
+                console.warn('Unable to save operator name', error);
+            });
+        });
+    }
+    window.addEventListener('edupace:session-logs-changed', () => {
+        renderNameSuggestions();
+    });
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && reviewElements.modal?.classList.contains('is-visible')) {
             closeSessionReview();

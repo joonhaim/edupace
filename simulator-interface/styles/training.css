@@ -248,6 +248,39 @@
     gap: 0.9rem;
 }
 
+.session-review-field {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.session-review-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.session-review-input {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 0.55rem 0.7rem;
+    font-weight: 600;
+    color: var(--deep-navy);
+    background: var(--surface-2);
+}
+
+.session-review-input:focus {
+    outline: 2px solid rgba(37, 99, 235, 0.25);
+    border-color: rgba(37, 99, 235, 0.4);
+}
+
+.session-review-hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
 .session-review-metric {
     display: flex;
     flex-direction: column;

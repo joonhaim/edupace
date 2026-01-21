@@ -36,6 +36,10 @@ const LOG_SETTINGS_KEY = 'edupace-log-settings';
 
 let logDisplaySettings = { ...defaultLogSettings };
 let logLocationElements = { display: null, openBtn: null, hint: null, refreshBtn: null };
+const leaderboardElements = {
+    scenarioLabel: document.getElementById('logsLeaderboardScenario'),
+    table: document.getElementById('logsLeaderboardTable')
+};
 
 function translateTemplate(key, replacements = {}) {
     let text = translateKey(key) || key;
@@ -206,6 +210,117 @@ function formatDuration(seconds) {
     const minutes = Math.floor(seconds / 60);
     const remaining = seconds % 60;
     return remaining ? `${minutes}m ${remaining}s` : `${minutes}m`;
+}
+
+function getScenarioKey(log) {
+    return log?.scenarioId || log?.scenarioCode || log?.scenarioTitle || '';
+}
+
+function normalizeOperator(name) {
+    return name?.trim() ?? '';
+}
+
+function renderLeaderboard(activeLog) {
+    if (!leaderboardElements.table || !leaderboardElements.scenarioLabel) return;
+
+    const scenarioKey = getScenarioKey(activeLog);
+    const scenarioTitle = activeLog?.scenarioTitle ?? translateKey('logs.unknownScenario');
+    leaderboardElements.scenarioLabel.textContent = scenarioKey
+        ? translateTemplate('logs.leaderboard.scenario', { scenario: scenarioTitle })
+        : translateKey('logs.leaderboard.noScenario');
+
+    leaderboardElements.table.innerHTML = '';
+
+    if (!scenarioKey) {
+        const empty = document.createElement('div');
+        empty.className = 'leaderboard-empty';
+        empty.textContent = translateKey('logs.leaderboard.empty');
+        leaderboardElements.table.appendChild(empty);
+        return;
+    }
+
+    const logs = getSessionLogs()
+        .filter((log) => log.status === 'ended' && getScenarioKey(log) === scenarioKey);
+
+    if (!logs.length) {
+        const empty = document.createElement('div');
+        empty.className = 'leaderboard-empty';
+        empty.textContent = translateKey('logs.leaderboard.empty');
+        leaderboardElements.table.appendChild(empty);
+        return;
+    }
+
+    const grouped = new Map();
+    logs.forEach((log) => {
+        const operatorName = normalizeOperator(log.metadata?.operator);
+        if (!operatorName) return;
+        const key = operatorName.toLowerCase();
+        if (!grouped.has(key)) {
+            grouped.set(key, {
+                name: operatorName,
+                count: 0,
+                bestTime: null
+            });
+        }
+        const entry = grouped.get(key);
+        entry.count += 1;
+        if (log.stabilized === true && Number.isFinite(log.stabilizationSeconds)) {
+            const currentBest = entry.bestTime ?? Number.POSITIVE_INFINITY;
+            entry.bestTime = Math.min(currentBest, log.stabilizationSeconds);
+        }
+    });
+
+    const rows = Array.from(grouped.values()).sort((a, b) => {
+        const aTime = a.bestTime ?? Number.POSITIVE_INFINITY;
+        const bTime = b.bestTime ?? Number.POSITIVE_INFINITY;
+        if (aTime !== bTime) return aTime - bTime;
+        if (a.count !== b.count) return b.count - a.count;
+        return a.name.localeCompare(b.name);
+    });
+
+    if (!rows.length) {
+        const empty = document.createElement('div');
+        empty.className = 'leaderboard-empty';
+        empty.textContent = translateKey('logs.leaderboard.empty');
+        leaderboardElements.table.appendChild(empty);
+        return;
+    }
+
+    const head = document.createElement('div');
+    head.className = 'leaderboard-row leaderboard-head';
+    head.innerHTML = `
+        <span>${translateKey('logs.leaderboard.rank')}</span>
+        <span>${translateKey('logs.leaderboard.name')}</span>
+        <span>${translateKey('logs.leaderboard.bestTime')}</span>
+        <span>${translateKey('logs.leaderboard.sessionCount')}</span>
+    `;
+    leaderboardElements.table.appendChild(head);
+
+    rows.forEach((entry, index) => {
+        const row = document.createElement('div');
+        row.className = 'leaderboard-row';
+
+        const rank = document.createElement('span');
+        rank.className = 'leaderboard-rank';
+        rank.textContent = String(index + 1);
+
+        const name = document.createElement('span');
+        name.className = 'leaderboard-name';
+        name.textContent = entry.name;
+
+        const time = document.createElement('span');
+        time.className = 'leaderboard-stat';
+        time.textContent = entry.bestTime === null
+            ? translateKey('logs.leaderboard.noTime')
+            : formatDuration(entry.bestTime);
+
+        const count = document.createElement('span');
+        count.className = 'leaderboard-stat';
+        count.textContent = translateTemplate('logs.leaderboard.sessions', { count: entry.count });
+
+        row.append(rank, name, time, count);
+        leaderboardElements.table.appendChild(row);
+    });
 }
 
 function formatDate(timestamp) {
@@ -610,6 +725,7 @@ function renderLogs() {
         emptyState.textContent = translateKey('logs.list.empty');
         resetDetailState();
         renderDetail(null);
+        renderLeaderboard(null);
         selectionManuallyCleared = false;
         return;
     }
@@ -624,6 +740,7 @@ function renderLogs() {
     }
 
     renderDetail(activeLog);
+    renderLeaderboard(activeLog);
 }
 
 function bindFilters() {

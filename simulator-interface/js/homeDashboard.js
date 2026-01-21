@@ -4,6 +4,8 @@ import { getSessionLogs, initSessionStore } from './sessionStore.js';
 
 const recentList = document.querySelector('[data-recent-list]');
 const recentEmpty = document.querySelector('[data-recent-empty]');
+const leaderboardCarousel = document.querySelector('[data-leaderboard-carousel]');
+const leaderboardEmpty = document.querySelector('[data-leaderboard-empty]');
 
 const progressFill = document.querySelector('[data-progress-fill]');
 const progressCount = document.querySelector('[data-progress-count]');
@@ -15,6 +17,9 @@ const suggestRefreshBtn = document.querySelector('[data-suggest-refresh]');
 let baseScenarios = [];
 let localizedScenarios = [];
 let clinicalScenarios = [];
+let leaderboardRotationTimer = null;
+let leaderboardPanels = [];
+let leaderboardIndex = 0;
 
 function translateTemplate(key, replacements = {}) {
     let text = translateKey(key) || key;
@@ -38,6 +43,194 @@ function formatDuration(seconds) {
     const minutes = Math.floor(seconds / 60);
     const remaining = seconds % 60;
     return remaining ? `${minutes}m ${remaining}s` : `${minutes}m`;
+}
+
+function getScenarioKey(log) {
+    return log?.scenarioId || log?.scenarioCode || log?.scenarioTitle || '';
+}
+
+function normalizeOperator(name) {
+    return name?.trim() ?? '';
+}
+
+function stopLeaderboardRotation() {
+    if (leaderboardRotationTimer) {
+        window.clearInterval(leaderboardRotationTimer);
+        leaderboardRotationTimer = null;
+    }
+}
+
+function showLeaderboardPanel(index) {
+    leaderboardPanels.forEach((panel, panelIndex) => {
+        panel.classList.toggle('is-active', panelIndex === index);
+    });
+    leaderboardIndex = index;
+}
+
+function startLeaderboardRotation() {
+    stopLeaderboardRotation();
+    if (leaderboardPanels.length <= 1) return;
+    leaderboardRotationTimer = window.setInterval(() => {
+        const nextIndex = (leaderboardIndex + 1) % leaderboardPanels.length;
+        showLeaderboardPanel(nextIndex);
+    }, 6000);
+}
+
+function buildTotalSessionsPanel(totalCount) {
+    const panel = document.createElement('div');
+    panel.className = 'leaderboard-panel';
+
+    const total = document.createElement('div');
+    total.className = 'leaderboard-total';
+
+    const value = document.createElement('div');
+    value.className = 'leaderboard-total__value';
+    value.textContent = String(totalCount);
+
+    const label = document.createElement('div');
+    label.className = 'leaderboard-total__label';
+    label.textContent = translateKey('home.leaderboard.totalLabel');
+
+    total.append(value, label);
+    panel.appendChild(total);
+    return panel;
+}
+
+function buildScenarioPanel(scenarioTitle, entries) {
+    const panel = document.createElement('div');
+    panel.className = 'leaderboard-panel';
+
+    const heading = document.createElement('div');
+    heading.className = 'leaderboard-panel-heading';
+    heading.textContent = translateTemplate('home.leaderboard.scenarioTitle', { scenario: scenarioTitle });
+
+    const list = document.createElement('div');
+    list.className = 'leaderboard-list';
+
+    if (!entries.length) {
+        const empty = document.createElement('div');
+        empty.className = 'leaderboard-empty';
+        empty.textContent = translateKey('home.leaderboard.noTime');
+        list.appendChild(empty);
+    } else {
+        entries.forEach((entry, index) => {
+            const row = document.createElement('div');
+            row.className = 'home-leaderboard-row';
+
+            const rank = document.createElement('div');
+            rank.className = 'home-leaderboard-rank';
+            rank.textContent = String(index + 1);
+
+            const name = document.createElement('div');
+            name.className = 'home-leaderboard-name';
+            const nameText = document.createElement('span');
+            nameText.textContent = entry.name;
+            const nameMeta = document.createElement('small');
+            nameMeta.textContent = translateTemplate('home.leaderboard.sessions', { count: entry.count });
+            name.append(nameText, nameMeta);
+
+            const time = document.createElement('div');
+            time.className = 'home-leaderboard-time';
+            time.textContent = formatDuration(entry.bestTime);
+
+            row.append(rank, name, time);
+            list.appendChild(row);
+        });
+    }
+
+    panel.append(heading, list);
+    return panel;
+}
+
+function renderLeaderboard() {
+    if (!leaderboardCarousel || !leaderboardEmpty) return;
+
+    leaderboardCarousel.innerHTML = '';
+    leaderboardPanels = [];
+    leaderboardIndex = 0;
+    stopLeaderboardRotation();
+    const logs = getSessionLogs().filter((log) => log.status === 'ended');
+
+    if (!logs.length) {
+        leaderboardEmpty.hidden = false;
+        return;
+    }
+
+    leaderboardEmpty.hidden = true;
+
+    const totalPanel = buildTotalSessionsPanel(logs.length);
+    leaderboardPanels.push(totalPanel);
+    leaderboardCarousel.appendChild(totalPanel);
+
+    const scenarioMap = new Map();
+    logs.forEach((log) => {
+        const scenarioKey = getScenarioKey(log);
+        if (!scenarioKey) return;
+        const operatorName = normalizeOperator(log.metadata?.operator);
+        if (!operatorName) return;
+        if (!scenarioMap.has(scenarioKey)) {
+            scenarioMap.set(scenarioKey, {
+                title: log.scenarioTitle || translateKey('logs.unknownScenario'),
+                latestAt: log.endedAt || log.startedAt || '',
+                entries: new Map()
+            });
+        }
+        const scenario = scenarioMap.get(scenarioKey);
+        scenario.latestAt = log.endedAt || log.startedAt || scenario.latestAt;
+        const operatorKey = operatorName.toLowerCase();
+        if (!scenario.entries.has(operatorKey)) {
+            scenario.entries.set(operatorKey, {
+                name: operatorName,
+                count: 0,
+                bestTime: null
+            });
+        }
+        const entry = scenario.entries.get(operatorKey);
+        entry.count += 1;
+        if (log.stabilized === true && Number.isFinite(log.stabilizationSeconds)) {
+            const currentBest = entry.bestTime ?? Number.POSITIVE_INFINITY;
+            entry.bestTime = Math.min(currentBest, log.stabilizationSeconds);
+        }
+    });
+
+    const scenarios = Array.from(scenarioMap.values())
+        .sort((a, b) => new Date(b.latestAt) - new Date(a.latestAt))
+        .slice(0, 5);
+
+    scenarios.forEach((scenario) => {
+        const entries = Array.from(scenario.entries.values())
+            .filter((entry) => Number.isFinite(entry.bestTime))
+            .sort((a, b) => a.bestTime - b.bestTime)
+            .slice(0, 3);
+
+        const panel = buildScenarioPanel(scenario.title, entries);
+        leaderboardPanels.push(panel);
+        leaderboardCarousel.appendChild(panel);
+    });
+
+    if (leaderboardPanels.length) {
+        showLeaderboardPanel(0);
+        startLeaderboardRotation();
+    }
+}
+
+function pickSuggestedScenarios(count = 2) {
+    const completedIds = new Set(
+        getSessionLogs()
+            .filter((log) => log.status === 'ended' && (log.scenarioId || log.scenarioCode))
+            .map((log) => log.scenarioId || log.scenarioCode)
+    );
+
+    const unplayed = clinicalScenarios.filter((scenario) => {
+        const code = scenario.id || scenario.code;
+        return code && !completedIds.has(code);
+    });
+
+    const pool = unplayed.length ? unplayed : clinicalScenarios;
+    if (!pool.length) return [];
+
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
 }
 
 function renderRecentSessions() {
@@ -132,31 +325,12 @@ function summarizeCompletion() {
     }
 }
 
-function pickRandomScenario() {
-    const completedIds = new Set(
-        getSessionLogs()
-            .filter((log) => log.status === 'ended' && (log.scenarioId || log.scenarioCode))
-            .map((log) => log.scenarioId || log.scenarioCode)
-    );
-
-    const unplayed = clinicalScenarios.filter((scenario) => {
-        const code = scenario.id || scenario.code;
-        return code && !completedIds.has(code);
-    });
-
-    const pool = unplayed.length ? unplayed : clinicalScenarios;
-    if (!pool.length) return null;
-
-    const randomIndex = Math.floor(Math.random() * pool.length);
-    return pool[randomIndex];
-}
-
 function renderSuggestedCard() {
     if (!suggestedCard) return;
     suggestedCard.innerHTML = '';
 
-    const scenario = pickRandomScenario();
-    if (!scenario) {
+    const scenarios = pickSuggestedScenarios(2);
+    if (!scenarios.length) {
         const empty = document.createElement('div');
         empty.className = 'muted';
         empty.textContent = translateKey('home.suggested.empty');
@@ -164,42 +338,49 @@ function renderSuggestedCard() {
         return;
     }
 
-    const title = document.createElement('h3');
-    title.className = 'suggested-title';
-    title.textContent = scenario.title;
+    scenarios.forEach((scenario) => {
+        const entry = document.createElement('div');
+        entry.className = 'suggested-entry';
 
-    const summary = document.createElement('p');
-    summary.className = 'suggested-summary';
-    summary.textContent =
-        scenario.summaryLabel ||
-        scenario.description ||
-        translateKey('home.suggested.fallbackSummary');
+        const title = document.createElement('h3');
+        title.className = 'suggested-title';
+        title.textContent = scenario.title;
 
-    const actions = document.createElement('div');
-    actions.className = 'suggested-actions';
+        const summary = document.createElement('p');
+        summary.className = 'suggested-summary';
+        summary.textContent =
+            scenario.summaryLabel ||
+            scenario.description ||
+            translateKey('home.suggested.fallbackSummary');
 
-    const startLink = document.createElement('a');
-    startLink.className = 'btn btn-primary';
-    startLink.href = '#training';
-    startLink.dataset.viewTarget = 'training';
-    startLink.textContent = translateKey('home.suggested.start');
-    startLink.addEventListener('click', () => {
-        const scenarioId = scenario.id || scenario.code;
-        document.dispatchEvent(
-            new CustomEvent('edupace:start-scenario', {
-                detail: { scenarioId }
-            })
-        );
+        const actions = document.createElement('div');
+        actions.className = 'suggested-actions';
+
+        const startLink = document.createElement('a');
+        startLink.className = 'btn btn-primary btn-small';
+        startLink.href = '#training';
+        startLink.dataset.viewTarget = 'training';
+        startLink.textContent = translateKey('home.suggested.start');
+        startLink.addEventListener('click', () => {
+            const scenarioId = scenario.id || scenario.code;
+            document.dispatchEvent(
+                new CustomEvent('edupace:start-scenario', {
+                    detail: { scenarioId }
+                })
+            );
+        });
+
+        actions.append(startLink);
+        entry.append(title, summary, actions);
+        suggestedCard.appendChild(entry);
     });
 
     const learnMore = document.createElement('button');
     learnMore.type = 'button';
-    learnMore.className = 'btn btn-ghost';
+    learnMore.className = 'btn btn-ghost btn-small';
     learnMore.textContent = translateKey('home.suggested.shuffle');
     learnMore.addEventListener('click', renderSuggestedCard);
-
-    actions.append(startLink, learnMore);
-    suggestedCard.append(title, summary, actions);
+    suggestedCard.appendChild(learnMore);
 }
 
 async function loadScenarios(language = getCurrentLanguage()) {
@@ -219,6 +400,7 @@ async function loadScenarios(language = getCurrentLanguage()) {
         renderRecentSessions();
         summarizeCompletion();
         renderSuggestedCard();
+        renderLeaderboard();
     } catch (error) {
         console.warn('Unable to load dashboard scenarios', error);
     }
@@ -230,11 +412,13 @@ async function initHomeDashboard() {
     renderRecentSessions();
     summarizeCompletion();
     renderSuggestedCard();
+    renderLeaderboard();
 
     window.addEventListener('edupace:session-logs-changed', () => {
         renderRecentSessions();
         summarizeCompletion();
         renderSuggestedCard();
+        renderLeaderboard();
     });
 
     document.addEventListener('edupace:language-changed', (event) => {
