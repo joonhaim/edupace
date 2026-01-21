@@ -1,3 +1,5 @@
+import { getCurrentLanguage, translateKey } from './languageToggle.js';
+
 const ui = {
     connectionStatus: null,
     connectionStatusText: null,
@@ -36,7 +38,10 @@ const serialState = {
     writer: null,
     keepReading: false,
     buffer: '',
-    label: ''
+    label: '',
+    statusId: 'disconnected',
+    unsupported: false,
+    connectButtonKey: 'connection.button.connect'
 };
 
 const LAST_PORT_STORAGE_KEY = 'edupace:last-serial-port';
@@ -97,12 +102,17 @@ function createUnsupportedHint() {
 
     const text = document.createElement('span');
     text.textContent =
+        translateKey('connection.status.unsupportedHint', getCurrentLanguage()) ??
         'This browser does not support connection with the EduPace device. Please use Chrome, Edge, or any other browser that supports the Web Serial API.';
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'hint-toast-close';
-    closeBtn.setAttribute('aria-label', 'Dismiss unsupported browser notice');
+    closeBtn.setAttribute(
+        'aria-label',
+        translateKey('connection.status.unsupportedDismiss', getCurrentLanguage()) ??
+            'Dismiss unsupported browser notice'
+    );
     closeBtn.innerHTML = '&times;';
     closeBtn.addEventListener('click', () => {
         unsupportedHintDismissed = true;
@@ -281,7 +291,8 @@ function renderDeviceList(ports) {
         const connectButton = document.createElement('button');
         connectButton.type = 'button';
         connectButton.className = 'btn btn-small';
-        connectButton.textContent = 'CONNECT';
+        connectButton.textContent = translateKey('connection.button.connect', getCurrentLanguage()) ?? 'CONNECT';
+        connectButton.dataset.connectionAction = 'connect';
         connectButton.addEventListener('click', () => handleDeviceSelection(port, name));
 
         option.append(icon, textColumn, connectButton);
@@ -297,7 +308,10 @@ async function populateDeviceList({ requestAccess = false } = {}) {
         ui.deviceList.innerHTML = '';
         if (ui.deviceListEmpty) {
             ui.deviceListEmpty.hidden = false;
-            ui.deviceListEmpty.textContent = 'This browser does not support serial devices.';
+            ui.deviceListEmpty.dataset.i18nKey = 'connection.status.noSerial';
+            ui.deviceListEmpty.textContent =
+                translateKey('connection.status.noSerial', getCurrentLanguage()) ??
+                'This browser does not support serial devices.';
         }
         return;
     }
@@ -322,7 +336,9 @@ async function populateDeviceList({ requestAccess = false } = {}) {
         if (isElectron && filteredPorts.length === 0) {
             ui.deviceList.innerHTML = '';
             ui.deviceListEmpty.hidden = false;
+            ui.deviceListEmpty.dataset.i18nKey = 'connection.status.noDevices';
             ui.deviceListEmpty.textContent =
+                translateKey('connection.status.noDevices', getCurrentLanguage()) ??
                 'No EduPace devices detected. Connect the console and press Scan to request access.';
             return;
         }
@@ -332,7 +348,9 @@ async function populateDeviceList({ requestAccess = false } = {}) {
         console.error('Unable to list serial ports', error);
         if (ui.deviceListEmpty) {
             ui.deviceListEmpty.hidden = false;
-            ui.deviceListEmpty.textContent = 'Unable to list serial ports.';
+            ui.deviceListEmpty.dataset.i18nKey = 'connection.status.unavailable';
+            ui.deviceListEmpty.textContent =
+                translateKey('connection.status.unavailable', getCurrentLanguage()) ?? 'Unable to list serial ports.';
         }
     }
 }
@@ -352,9 +370,9 @@ async function restoreLastPortConnection() {
             return;
         }
 
-        updateConnectionStatus('Reconnecting...', false);
+        updateConnectionStatus('reconnecting', false);
         if (ui.connectBtn) {
-            ui.connectBtn.textContent = 'Connecting...';
+            setConnectButtonLabel('connection.button.reconnecting');
             ui.connectBtn.disabled = true;
         }
 
@@ -364,7 +382,7 @@ async function restoreLastPortConnection() {
         clearRememberedPort();
     } finally {
         if (!serialState.port && ui.connectBtn) {
-            ui.connectBtn.textContent = 'CONNECT';
+            setConnectButtonLabel('connection.button.connect');
             ui.connectBtn.disabled = false;
         }
     }
@@ -374,7 +392,7 @@ async function handleDeviceSelection(port, label) {
     if (!port) return;
 
     toggleDevicePopover(false);
-    ui.connectBtn.textContent = 'Connecting...';
+    setConnectButtonLabel('connection.button.connecting');
     ui.connectBtn.disabled = true;
 
     try {
@@ -382,7 +400,7 @@ async function handleDeviceSelection(port, label) {
     } finally {
         ui.connectBtn.disabled = false;
         if (!serialState.port) {
-            ui.connectBtn.textContent = 'CONNECT';
+            setConnectButtonLabel('connection.button.connect');
         }
     }
 }
@@ -492,9 +510,10 @@ async function initHardwareIntegration() {
     createUnsupportedHint();
     defaultPaceMode = ui.paceMode?.textContent ?? '--';
     setBasePaceMode(defaultPaceMode);
+    setConnectButtonLabel('connection.button.connect');
 
     if (!supported) {
-        updateConnectionStatus('UNSUPPORTED BROWSER', false, true);
+        updateConnectionStatus('unsupported', false, true);
         if (ui.connectBtn) {
             ui.connectBtn.disabled = true;
         }
@@ -521,11 +540,11 @@ async function initHardwareIntegration() {
             if (event.target.value === 'virtual') {
                 disconnectFromHardware();
                 ui.connectBtn.disabled = true;
-                updateConnectionStatus('VIRTUAL', true);
+                updateConnectionStatus('virtual', true);
                 toggleDevicePopover(false);
             } else {
                 ui.connectBtn.disabled = !supported;
-                updateConnectionStatus(serialState.port ? 'CONNECTED' : 'DISCONNECTED', Boolean(serialState.port));
+                updateConnectionStatus(serialState.port ? 'connected' : 'disconnected', Boolean(serialState.port));
             }
         });
     });
@@ -542,6 +561,10 @@ async function initHardwareIntegration() {
         }
         applyAsyncModeIndicator({ sensitivity, mode, asynchronous, power: isPoweredOn });
         applyParameterDisplay({ ...event.detail, power: isPoweredOn });
+    });
+
+    document.addEventListener('edupace:language-changed', () => {
+        refreshConnectionLanguage();
     });
 
     window.edupaceHardware = {
@@ -585,15 +608,15 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
             disconnectFromHardware();
         });
 
-        updateConnectionStatus(serialState.label ? 'Connected' : 'CONNECTED', true);
-        ui.connectBtn.textContent = 'DISCONNECT';
+        updateConnectionStatus('connected', true);
+        setConnectButtonLabel('connection.button.disconnect');
         ui.connectBtn.disabled = false;
 
         toggleDevicePopover(false);
 
         readLoop();
     } catch (error) {
-        updateConnectionStatus('DISCONNECTED', false);
+        updateConnectionStatus('disconnected', false);
         console.error('Unable to connect to hardware', error);
     }
 }
@@ -623,12 +646,38 @@ async function disconnectFromHardware() {
     clearRememberedPort();
 
 
-    updateConnectionStatus('DISCONNECTED', false);
-    ui.connectBtn.textContent = 'CONNECT';
+    updateConnectionStatus('disconnected', false);
+    setConnectButtonLabel('connection.button.connect');
     ui.connectBtn.disabled = false;
 }
 
-function updateConnectionStatus(text, connected, unsupported = false) {
+function setConnectButtonLabel(key) {
+    serialState.connectButtonKey = key;
+    if (ui.connectBtn) {
+        ui.connectBtn.textContent = translateKey(key, getCurrentLanguage()) ?? ui.connectBtn.textContent;
+    }
+}
+
+function getStatusTranslationKey(statusId) {
+    const map = {
+        connected: 'connection.status.connected',
+        disconnected: 'connection.status.disconnected',
+        connecting: 'connection.status.connecting',
+        reconnecting: 'connection.status.reconnecting',
+        virtual: 'connection.status.virtual',
+        unsupported: 'connection.status.unsupported',
+        unavailable: 'connection.status.unavailable',
+        noDevices: 'connection.status.noDevices',
+        noSerial: 'connection.status.noSerial'
+    };
+    return map[statusId] ?? statusId;
+}
+
+function updateConnectionStatus(statusId, connected, unsupported = false, emitEvent = true) {
+    serialState.statusId = statusId;
+    serialState.unsupported = unsupported;
+    const statusKey = getStatusTranslationKey(statusId);
+    const text = translateKey(statusKey, getCurrentLanguage()) ?? statusKey;
     if (ui.connectionStatusText) {
         ui.connectionStatusText.textContent = text;
     } else {
@@ -649,11 +698,43 @@ function updateConnectionStatus(text, connected, unsupported = false) {
     ui.connectionStatus.classList.toggle('chip-unsupported', unsupported);
     setUnsupportedHintVisible(unsupported);
 
-    window.dispatchEvent(
-        new CustomEvent('edupace-connection', {
-            detail: { status: text, connected, unsupported }
-        })
-    );
+    if (emitEvent) {
+        window.dispatchEvent(
+            new CustomEvent('edupace-connection', {
+                detail: { status: statusId, connected, unsupported }
+            })
+        );
+    }
+}
+
+function refreshConnectionLanguage() {
+    if (ui.deviceListEmpty?.dataset.i18nKey) {
+        const key = ui.deviceListEmpty.dataset.i18nKey;
+        ui.deviceListEmpty.textContent = translateKey(key, getCurrentLanguage()) ?? ui.deviceListEmpty.textContent;
+    }
+
+    updateConnectionStatus(serialState.statusId, Boolean(serialState.port), serialState.unsupported, false);
+    setConnectButtonLabel(serialState.connectButtonKey);
+
+    document.querySelectorAll('[data-connection-action="connect"]').forEach((button) => {
+        button.textContent = translateKey('connection.button.connect', getCurrentLanguage()) ?? button.textContent;
+    });
+
+    if (ui.unsupportedHint) {
+        const hintText = ui.unsupportedHint.querySelector('span');
+        if (hintText) {
+            hintText.textContent =
+                translateKey('connection.status.unsupportedHint', getCurrentLanguage()) ?? hintText.textContent;
+        }
+        if (ui.unsupportedHintClose) {
+            ui.unsupportedHintClose.setAttribute(
+                'aria-label',
+                translateKey('connection.status.unsupportedDismiss', getCurrentLanguage()) ??
+                    ui.unsupportedHintClose.getAttribute('aria-label') ??
+                    ''
+            );
+        }
+    }
 }
 
 async function readLoop() {

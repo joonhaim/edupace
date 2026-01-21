@@ -1,5 +1,6 @@
 import { addSessionLog, initSessionStore } from './sessionStore.js';
 import { openSessionReview } from './sessionReview.js';
+import { translateKey, getCurrentLanguage } from './languageToggle.js';
 
 const sessionElements = {
     startBtn: document.getElementById('startSessionBtn'),
@@ -15,6 +16,7 @@ const sessionElements = {
 const sessionState = {
     selectedScenario: null,
     currentSession: null,
+    statusKey: null,
     timing: {
         startedAtMs: null,
         pausedMs: 0,
@@ -46,6 +48,11 @@ function setStatusText(text) {
     } else if (sessionElements.statusText) {
         sessionElements.statusText.textContent = text;
     }
+}
+
+function setStatusKey(key) {
+    sessionState.statusKey = key;
+    setStatusText(translateKey(key, getCurrentLanguage()) ?? '');
 }
 
 function getContextSnapshot() {
@@ -97,9 +104,12 @@ function updateControls() {
         startBtn.disabled = !hasScenario;
 
         if (label) {
-            if (isRunning) label.textContent = 'Pause';
-            else if (isPaused) label.textContent = 'Resume';
-            else label.textContent = 'Start';
+            const labelKey = isRunning
+                ? 'session.controls.pause'
+                : isPaused
+                    ? 'session.controls.resume'
+                    : 'session.controls.start';
+            label.textContent = translateKey(labelKey, getCurrentLanguage()) ?? label.textContent;
         }
 
         if (icon) {
@@ -192,7 +202,7 @@ function setSelectedScenario(scenario) {
     }
 
     if (!sessionState.currentSession || sessionState.currentSession.status === 'ended') {
-        setStatusText(scenario ? 'Ready to start session.' : 'Select a scenario to begin.');
+        setStatusKey(scenario ? 'session.status.ready' : 'session.status.selectScenario');
     }
 
     updateControls();
@@ -244,7 +254,7 @@ function handleAlarmUpdate(event) {
 
 function handleConnectionChange(event) {
     const { status, connected, unsupported } = event.detail ?? {};
-    const hardwareOnline = Boolean(connected) && status !== 'VIRTUAL' && !unsupported;
+    const hardwareOnline = Boolean(connected) && status !== 'virtual' && !unsupported;
     updateTelemetryContext({
         connection: status ?? telemetryContext.connection,
         hardwareConnected: hardwareOnline
@@ -374,7 +384,7 @@ function startSession() {
 
     createSession();
     startTimer();
-    setStatusText('Session running.');
+    setStatusKey('session.status.running');
     emitSessionStatus('running');
     updateControls();
 }
@@ -400,7 +410,7 @@ function pauseSession() {
         scenarioId: sessionState.currentSession.scenarioId
     });
 
-    setStatusText(isPaused ? 'Session running.' : 'Session paused.');
+    setStatusKey(isPaused ? 'session.status.running' : 'session.status.paused');
     emitSessionStatus(isPaused ? 'running' : 'paused');
     updateControls();
 }
@@ -433,11 +443,11 @@ async function endSession(reason = 'manual') {
         openSessionReview(payload);
     }
 
-    const statusText =
+    const statusKey =
         reason === 'navigation'
-            ? 'Session ended when leaving training.'
-            : 'Session ended.';
-    setStatusText(statusText);
+            ? 'session.status.endedNavigation'
+            : 'session.status.ended';
+    setStatusKey(statusKey);
     updateControls();
 }
 
@@ -487,6 +497,13 @@ function initSessionManager() {
         if (targetView !== 'training' && (status === 'running' || status === 'paused')) {
             endSession('navigation');
         }
+    });
+
+    document.addEventListener('edupace:language-changed', () => {
+        if (sessionState.statusKey) {
+            setStatusKey(sessionState.statusKey);
+        }
+        updateControls();
     });
 }
 
