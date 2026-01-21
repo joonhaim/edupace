@@ -148,6 +148,12 @@ body.simulation-dark .btn-ghost {
     color: #dce2ec;
 }
 
+body.simulation-dark .session-chip.btn-ghost.session-end {
+    background: rgba(248, 113, 113, 0.18);
+    border-color: rgba(248, 113, 113, 0.5);
+    color: #fecaca;
+}
+
 body.simulation-dark.page-home .landing-title,
 body.simulation-dark.page-home .landing-highlights li,
 body.simulation-dark.page-home .landing-meta,
