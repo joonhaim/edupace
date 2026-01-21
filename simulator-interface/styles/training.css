@@ -849,6 +849,8 @@ body.simulation-light .theme-toggle {
     align-items: center;
     justify-content: center;
     height: 1em;
+    align-self: center;
+    transform: translateY(-1px);
 }
 
 .session-meta {
