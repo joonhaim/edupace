@@ -1,6 +1,7 @@
 const ui = {
     connectionStatus: null,
     connectionStatusText: null,
+    connectionDeviceName: null,
     powerStatus: null,
     lockStatus: null,
     connectBtn: null,
@@ -63,6 +64,7 @@ const EDUPACE_PORT_FILTERS = Array.from(EDUPACE_VENDOR_IDS, (vendorId) => ({ ven
 function refreshUiBindings() {
     ui.connectionStatus = document.getElementById('connectionStatus');
     ui.connectionStatusText = document.querySelector('#connectionStatus .status-text');
+    ui.connectionDeviceName = document.getElementById('connectionDeviceName');
     ui.powerStatus = document.getElementById('powerStatus');
     ui.lockStatus = document.getElementById('lockStatus');
     ui.connectBtn = document.getElementById('connectBtn');
@@ -165,10 +167,11 @@ function describeSerialPort(port, index = 0) {
     const info = port.getInfo();
     const serial = info?.serialNumber;
     const isEduPace = isEduPaceDevice(info);
+    const identifier = getDeviceIdentifier(info, serial, index);
 
     let name = 'USB Serial Device';
     if (isEduPace) {
-        name = 'EduPace Console';
+        name = identifier ? `EduPace Device · ${identifier}` : 'EduPace Device';
     } else if (info?.usbVendorId || info?.usbProductId) {
         name = `USB ${formatUsbId(info)}`;
     }
@@ -177,6 +180,16 @@ function describeSerialPort(port, index = 0) {
         name,
         meta: serial ? `Serial: ${serial}` : isEduPace ? `USB ${formatUsbId(info)}` : 'Click to connect to this port'
     };
+}
+
+function getDeviceIdentifier(info, serial, index) {
+    if (serial) {
+        const trimmed = String(serial).replace(/\s+/g, '');
+        return trimmed.length > 4 ? trimmed.slice(-4).toUpperCase() : trimmed.toUpperCase();
+    }
+    const usb = formatUsbId(info);
+    const suffix = usb.split(':')[1] ?? '';
+    return suffix ? suffix.toUpperCase() : `#${index + 1}`;
 }
 
 function rememberLastPort(port) {
@@ -254,6 +267,7 @@ function renderDeviceList(ports) {
             '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="12" rx="2" /><path d="M7 16h10" /><path d="M9 20h6" /><path d="M12 14v6" /></svg>';
 
         const textColumn = document.createElement('div');
+        textColumn.className = 'device-info';
         const title = document.createElement('div');
         title.className = 'device-title';
         title.textContent = name;
@@ -277,6 +291,7 @@ function renderDeviceList(ports) {
 
 async function populateDeviceList({ requestAccess = false } = {}) {
     if (!ui.deviceList) return;
+    const isElectron = /electron/i.test(navigator.userAgent ?? '');
 
     if (!('serial' in navigator)) {
         ui.deviceList.innerHTML = '';
@@ -300,7 +315,19 @@ async function populateDeviceList({ requestAccess = false } = {}) {
     try {
         const ports = await navigator.serial.getPorts();
         const connectedPorts = ports.filter((port) => Boolean(port));
-        renderDeviceList(connectedPorts);
+        const filteredPorts = isElectron
+            ? connectedPorts.filter((port) => isEduPaceDevice(port?.getInfo?.()))
+            : connectedPorts;
+
+        if (isElectron && filteredPorts.length === 0) {
+            ui.deviceList.innerHTML = '';
+            ui.deviceListEmpty.hidden = false;
+            ui.deviceListEmpty.textContent =
+                'No EduPace devices detected. Connect the console and press Scan to request access.';
+            return;
+        }
+
+        renderDeviceList(filteredPorts);
     } catch (error) {
         console.error('Unable to list serial ports', error);
         if (ui.deviceListEmpty) {
@@ -372,19 +399,19 @@ function formatSensitivityValue(value) {
     return Number.isFinite(value) ? value.toFixed(1) : '--';
 }
 
-function applySensitivityDisplay({ sensitivity, power }) {
+function applySensitivityDisplay({ sensitivity, power, asyncMode }) {
     if (!ui.sensitivity) return;
 
     const powered = typeof power === 'boolean' ? power : isPoweredOn;
 
     if (powered) {
-        ui.sensitivity.textContent = formatSensitivityValue(sensitivity);
+        ui.sensitivity.textContent = asyncMode ? 'ASYNC' : formatSensitivityValue(sensitivity);
     } else {
         ui.sensitivity.textContent = '--';
     }
 
     if (ui.sensitivityUnit) {
-        ui.sensitivityUnit.textContent = powered ? 'mV' : '';
+        ui.sensitivityUnit.textContent = powered && !asyncMode ? 'mV' : '';
     }
 }
 
@@ -423,6 +450,7 @@ function applyAsyncModeIndicator({ sensitivity, mode, asynchronous, power }) {
 
 function applyParameterDisplay({ rate, output, sensitivity, power, asynchronous, mode, locked }) {
     const powered = typeof power === 'boolean' ? power : isPoweredOn;
+    const asyncMode = isAsyncMode({ power: powered, sensitivity, asynchronous, mode });
 
     if (ui.rate) {
         ui.rate.textContent = powered && Number.isFinite(rate) ? `${Math.round(rate)}` : '--';
@@ -432,7 +460,7 @@ function applyParameterDisplay({ rate, output, sensitivity, power, asynchronous,
         ui.output.textContent = powered && Number.isFinite(output) ? output.toFixed(1) : '--';
     }
 
-    applySensitivityDisplay({ sensitivity, power: powered });
+    applySensitivityDisplay({ sensitivity, power: powered, asyncMode });
 
     const parametersCard = document.querySelector('.parameters-card');
     const controlGroups = parametersCard?.querySelectorAll('[data-virtual-control]') ?? [];
@@ -557,8 +585,9 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
             disconnectFromHardware();
         });
 
-        updateConnectionStatus(serialState.label ? `Connected: ${serialState.label}` : 'CONNECTED', true);
+        updateConnectionStatus(serialState.label ? 'Connected' : 'CONNECTED', true);
         ui.connectBtn.textContent = 'Disconnect';
+        ui.connectBtn.disabled = false;
 
         toggleDevicePopover(false);
 
@@ -596,6 +625,7 @@ async function disconnectFromHardware() {
 
     updateConnectionStatus('DISCONNECTED', false);
     ui.connectBtn.textContent = 'CONNECT';
+    ui.connectBtn.disabled = false;
 }
 
 function updateConnectionStatus(text, connected, unsupported = false) {
@@ -603,6 +633,16 @@ function updateConnectionStatus(text, connected, unsupported = false) {
         ui.connectionStatusText.textContent = text;
     } else {
         ui.connectionStatus.textContent = text;
+    }
+    if (ui.connectionDeviceName) {
+        const deviceLabel = connected && !unsupported && serialState.label ? serialState.label : '';
+        ui.connectionDeviceName.textContent = deviceLabel;
+        ui.connectionDeviceName.toggleAttribute('hidden', !deviceLabel);
+        if (deviceLabel) {
+            ui.connectionDeviceName.title = deviceLabel;
+        } else {
+            ui.connectionDeviceName.removeAttribute('title');
+        }
     }
     ui.connectionStatus.classList.toggle('chip-connected', connected && !unsupported);
     ui.connectionStatus.classList.toggle('chip-disconnected', !connected && !unsupported);
