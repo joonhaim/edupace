@@ -31,6 +31,9 @@ const defaultLogSettings = {
     timeFormat: '24h'
 };
 
+const LOG_GRAPH_DAYS = 7;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
 const LOG_SETTINGS_KEY = 'edupace-log-settings';
 
 let logDisplaySettings = { ...defaultLogSettings };
@@ -243,6 +246,117 @@ function formatDate(timestamp) {
     }
 
     return `${datePart} ${String(hours).padStart(2, '0')}:${minutes}:${seconds}`;
+}
+
+function formatShortDate(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return translateKey('logs.time.unknown');
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    switch (logDisplaySettings.dateFormat) {
+        case 'MDY':
+            return `${month}/${day}`;
+        case 'YMD':
+            return `${year}-${month}-${day}`;
+        case 'DMY':
+        default:
+            return `${day}/${month}`;
+    }
+}
+
+function getLogGraphSeries(logs) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(today);
+    start.setDate(today.getDate() - (LOG_GRAPH_DAYS - 1));
+
+    const series = Array.from({ length: LOG_GRAPH_DAYS }, (_, index) => {
+        const date = new Date(start);
+        date.setDate(start.getDate() + index);
+        return { date, count: 0 };
+    });
+
+    logs.forEach((log) => {
+        if (!log?.startedAt) return;
+        const logDate = new Date(log.startedAt);
+        if (Number.isNaN(logDate.getTime())) return;
+        logDate.setHours(0, 0, 0, 0);
+        const offset = Math.floor((logDate - start) / DAY_IN_MS);
+        if (offset >= 0 && offset < LOG_GRAPH_DAYS) {
+            series[offset].count += 1;
+        }
+    });
+
+    return series;
+}
+
+function renderLogGraph(logs = getSessionLogs()) {
+    const graph = document.querySelector('[data-log-graph]');
+    if (!graph) return;
+
+    const totalSessions = logs.length;
+    const series = getLogGraphSeries(logs);
+    const maxCount = Math.max(...series.map((entry) => entry.count), 1);
+
+    graph.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.className = 'log-graph-header';
+
+    const total = document.createElement('span');
+    total.className = 'log-graph-total';
+    total.textContent = translateTemplate('logs.graph.total', { count: totalSessions });
+
+    const range = document.createElement('span');
+    range.className = 'log-graph-range';
+    range.textContent = translateKey('logs.graph.range');
+
+    header.append(total, range);
+
+    const bars = document.createElement('div');
+    bars.className = 'log-graph-bars';
+    bars.setAttribute('role', 'img');
+    bars.setAttribute('aria-label', translateKey('logs.graph.aria'));
+
+    series.forEach((entry) => {
+        const bar = document.createElement('div');
+        bar.className = 'log-graph-bar';
+
+        const count = document.createElement('span');
+        count.className = 'log-graph-bar-count';
+        count.textContent = entry.count.toString();
+
+        const track = document.createElement('div');
+        track.className = 'log-graph-bar-track';
+
+        const fill = document.createElement('div');
+        fill.className = 'log-graph-bar-fill';
+        fill.style.setProperty('--bar-height', `${Math.round((entry.count / maxCount) * 100)}%`);
+        track.appendChild(fill);
+
+        const label = document.createElement('span');
+        label.className = 'log-graph-bar-label';
+        label.textContent = formatShortDate(entry.date);
+
+        bar.title = translateTemplate('logs.graph.tooltip', {
+            date: formatShortDate(entry.date),
+            count: entry.count
+        });
+
+        bar.append(count, track, label);
+        bars.appendChild(bar);
+    });
+
+    graph.append(header, bars);
+
+    if (!totalSessions) {
+        const empty = document.createElement('div');
+        empty.className = 'log-graph-empty';
+        empty.textContent = translateKey('logs.graph.empty');
+        graph.appendChild(empty);
+    }
 }
 
 function setSelectedLog(id) {
@@ -582,6 +696,7 @@ function renderLogs() {
 
     list.innerHTML = '';
     const logs = applyFilters(getSessionLogs());
+    renderLogGraph(getSessionLogs());
 
     if (!logs.length) {
         emptyState.style.display = 'block';
