@@ -425,7 +425,7 @@ function initEcgEngine() {
 
     const drawMonitorGridTo = (drawCtx, width, height) => {
         const density = state.settings.gridDensity ?? '2mm';
-        const intensity = Math.max(0, Math.min(1, (state.settings.gridIntensity ?? 55) / 100));
+        const intensity = Math.max(0, Math.min(1, (state.settings.gridIntensity ?? 80) / 100));
         const smallT = density === '1mm' ? SMALL_T : SMALL_T * 2;
         const bigT = smallT * 5;
         const smallA = density === '1mm' ? SMALL_A : SMALL_A * 2;
@@ -487,7 +487,7 @@ function initEcgEngine() {
             drawCtx.strokeStyle = 'rgba(0, 0, 255, 1)';
             drawCtx.lineWidth = 1.5;
         } else {
-            const intensity = Math.max(0, Math.min(1, (state.settings.gridIntensity ?? 55) / 100));
+            const intensity = Math.max(0, Math.min(1, (state.settings.gridIntensity ?? 80) / 100));
             drawCtx.strokeStyle = `rgba(125, 211, 252, ${0.6 * intensity + 0.2})`;
             drawCtx.lineWidth = 1.2;
         }
