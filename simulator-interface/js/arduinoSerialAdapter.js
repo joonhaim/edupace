@@ -167,10 +167,11 @@ function describeSerialPort(port, index = 0) {
     const info = port.getInfo();
     const serial = info?.serialNumber;
     const isEduPace = isEduPaceDevice(info);
+    const identifier = getDeviceIdentifier(info, serial, index);
 
     let name = 'USB Serial Device';
     if (isEduPace) {
-        name = 'EduPace Console';
+        name = identifier ? `EduPace Device · ${identifier}` : 'EduPace Device';
     } else if (info?.usbVendorId || info?.usbProductId) {
         name = `USB ${formatUsbId(info)}`;
     }
@@ -179,6 +180,16 @@ function describeSerialPort(port, index = 0) {
         name,
         meta: serial ? `Serial: ${serial}` : isEduPace ? `USB ${formatUsbId(info)}` : 'Click to connect to this port'
     };
+}
+
+function getDeviceIdentifier(info, serial, index) {
+    if (serial) {
+        const trimmed = String(serial).replace(/\s+/g, '');
+        return trimmed.length > 4 ? trimmed.slice(-4).toUpperCase() : trimmed.toUpperCase();
+    }
+    const usb = formatUsbId(info);
+    const suffix = usb.split(':')[1] ?? '';
+    return suffix ? suffix.toUpperCase() : `#${index + 1}`;
 }
 
 function rememberLastPort(port) {
