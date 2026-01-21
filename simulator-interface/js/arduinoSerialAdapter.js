@@ -281,7 +281,7 @@ function renderDeviceList(ports) {
         const connectButton = document.createElement('button');
         connectButton.type = 'button';
         connectButton.className = 'btn btn-small';
-        connectButton.textContent = 'Connect';
+        connectButton.textContent = 'CONNECT';
         connectButton.addEventListener('click', () => handleDeviceSelection(port, name));
 
         option.append(icon, textColumn, connectButton);
