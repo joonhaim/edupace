@@ -548,12 +548,13 @@ body.simulation-light .theme-toggle {
     padding: 0.35rem;
     display: none;
     gap: 0.35rem;
-    min-width: 540px;
+    min-width: 0;
+    width: max-content;
     z-index: 4;
 }
 
 .scenario-menu-grid {
-    grid-template-columns: repeat(2, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(0, max-content));
     gap: 0.35rem;
 }
 
@@ -565,6 +566,7 @@ body.simulation-light .theme-toggle {
     border: 1px solid rgba(15, 23, 42, 0.06);
     border-radius: 10px;
     background: rgba(247, 249, 254, 0.8);
+    width: max-content;
 }
 
 .scenario-menu-heading {
@@ -861,10 +863,10 @@ body.ecg-fullscreen-active {
 
 .ecg-paused-badge {
     align-self: flex-start;
-    padding: 0.35rem 0.75rem;
-    border-radius: 999px;
-    background: rgba(251, 191, 36, 0.2);
-    border: 1px solid rgba(251, 191, 36, 0.6);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
     color: #fbbf24;
     font-size: 0.75rem;
     font-weight: 700;
@@ -874,10 +876,10 @@ body.ecg-fullscreen-active {
 
 .ecg-caliper-readout {
     align-self: flex-start;
-    padding: 0.3rem 0.75rem;
-    border-radius: 999px;
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(148, 163, 184, 0.6);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
     color: #e2e8f0;
     font-size: 0.75rem;
     font-weight: 600;
