@@ -715,7 +715,7 @@ h1, h2, h3 {
     opacity: 0.86;
   }
   50% {
-    transform: scale(1.07);
+    transform: scale(1.06);
     opacity: 1;
   }
   75% {
@@ -741,8 +741,8 @@ h1, h2, h3 {
   }
   50% {
     box-shadow:
-      0 0 0 1px color-mix(in srgb, currentColor 24%, transparent),
-      0 0 6px 2px color-mix(in srgb, currentColor 44%, transparent);
+      0 0 0 1px color-mix(in srgb, currentColor 23%, transparent),
+      0 0 6px 2px color-mix(in srgb, currentColor 42%, transparent);
   }
   75% {
     box-shadow:
@@ -767,6 +767,6 @@ h1, h2, h3 {
 /* only when live */
 .chip-connected .status-dot{
   animation:
-    dot-breathe 3.4s linear infinite,
-    dot-glow-soft 3.4s linear infinite;
+    dot-breathe 3.2s ease-in-out infinite,
+    dot-glow-soft 3.2s ease-in-out infinite;
 }
