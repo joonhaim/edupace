@@ -23,6 +23,15 @@ const MIN_PEAK_ABSOLUTE = 0.4;
 const MIN_VALID_BPM = 20;
 const MAX_VALID_BPM = 220;
 
+// Alarm thresholds
+const LOW_LIMIT_BPM = 40;
+const HIGH_LIMIT_BPM = 120;
+const EXTREME_LOW_LIMIT_BPM = 30;
+const EXTREME_HIGH_LIMIT_BPM = 160;
+const ALARM_BEAT_COUNT = 3;
+const ASYSTOLE_SECONDS = 4;
+const ALARM_LEVELS = ['normal', 'warning', 'critical'];
+
 // -----------------------------------------------------------------------------
 // Heart rate engine
 // -----------------------------------------------------------------------------
@@ -51,6 +60,18 @@ function createHeartRateEngine(displayElement) {
         loadingPromise: null
     };
 
+    const alarmBanner = document.getElementById('alarmBanner');
+    const alarmText = document.getElementById('alarmText');
+    const defaultAlarmText = alarmText?.textContent ?? '';
+
+    const alarmState = {
+        lowCount: 0,
+        highCount: 0,
+        extremeLowCount: 0,
+        extremeHighCount: 0,
+        lastAlarm: { level: 'normal', text: null }
+    };
+
     let maxWaveAmplitude = 1;
 
     // -----------------------------
@@ -67,6 +88,45 @@ function createHeartRateEngine(displayElement) {
 
     function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
+    }
+
+    function normalizeAlarmLevel(level) {
+        return ALARM_LEVELS.includes(level) ? level : 'normal';
+    }
+
+    function updateAlarmDisplay(alarm) {
+        const level = normalizeAlarmLevel(alarm?.level ?? 'normal');
+        const text = alarm?.text ?? null;
+
+        if (alarmBanner) {
+            ALARM_LEVELS.forEach((alarmLevel) => {
+                alarmBanner.classList.remove(`alarm-${alarmLevel}`);
+            });
+            alarmBanner.classList.add(`alarm-${level}`);
+        }
+
+        if (alarmText) {
+            alarmText.textContent = text ?? defaultAlarmText;
+        }
+
+        window.dispatchEvent(
+            new CustomEvent('edupace-alarm', {
+                detail: { level, text }
+            })
+        );
+    }
+
+    function setActiveAlarm(alarm) {
+        const normalizedAlarm = alarm ?? { level: 'normal', text: null };
+        if (
+            alarmState.lastAlarm.level === normalizedAlarm.level &&
+            alarmState.lastAlarm.text === normalizedAlarm.text
+        ) {
+            return;
+        }
+
+        alarmState.lastAlarm = { ...normalizedAlarm };
+        updateAlarmDisplay(normalizedAlarm);
     }
 
     function getBeepVolume() {
@@ -142,14 +202,16 @@ function createHeartRateEngine(displayElement) {
         player.play().catch(() => {});
     }
 
+    function getDisplayBpm() {
+        if (Number.isFinite(state.bpm)) return state.bpm;
+        if (Number.isFinite(state.lastValidBpm)) return state.lastValidBpm;
+        return null;
+    }
+
     function updateDisplay() {
         if (!displayElement) return;
 
-        const valueToShow = Number.isFinite(state.bpm)
-            ? state.bpm
-            : Number.isFinite(state.lastValidBpm)
-                ? state.lastValidBpm
-                : null;
+        const valueToShow = getDisplayBpm();
 
         displayElement.textContent = Number.isFinite(valueToShow)
             ? valueToShow.toString()
@@ -165,6 +227,11 @@ function createHeartRateEngine(displayElement) {
         state.previousSampleTime = null;
         state.lastSampleTime = null;
         state.bpm = null;
+        alarmState.lowCount = 0;
+        alarmState.highCount = 0;
+        alarmState.extremeLowCount = 0;
+        alarmState.extremeHighCount = 0;
+        setActiveAlarm(null);
         updateDisplay();
     }
 
@@ -259,12 +326,89 @@ function createHeartRateEngine(displayElement) {
         updateDisplay();
     }
 
+    function updateBeatCounts(beatBpm) {
+        if (!Number.isFinite(beatBpm)) return;
+
+        if (beatBpm < EXTREME_LOW_LIMIT_BPM) {
+            alarmState.extremeLowCount += 1;
+            alarmState.lowCount += 1;
+            alarmState.highCount = 0;
+            alarmState.extremeHighCount = 0;
+            return;
+        }
+
+        if (beatBpm < LOW_LIMIT_BPM) {
+            alarmState.lowCount += 1;
+            alarmState.extremeLowCount = 0;
+            alarmState.highCount = 0;
+            alarmState.extremeHighCount = 0;
+            return;
+        }
+
+        if (beatBpm > EXTREME_HIGH_LIMIT_BPM) {
+            alarmState.extremeHighCount += 1;
+            alarmState.highCount += 1;
+            alarmState.lowCount = 0;
+            alarmState.extremeLowCount = 0;
+            return;
+        }
+
+        if (beatBpm > HIGH_LIMIT_BPM) {
+            alarmState.highCount += 1;
+            alarmState.extremeHighCount = 0;
+            alarmState.lowCount = 0;
+            alarmState.extremeLowCount = 0;
+            return;
+        }
+
+        alarmState.lowCount = 0;
+        alarmState.highCount = 0;
+        alarmState.extremeLowCount = 0;
+        alarmState.extremeHighCount = 0;
+    }
+
+    function evaluateAlarm(timeSeconds) {
+        if (
+            Number.isFinite(state.lastPeakTime) &&
+            timeSeconds - state.lastPeakTime >= ASYSTOLE_SECONDS
+        ) {
+            setActiveAlarm({ level: 'critical', text: 'Asystole' });
+            return;
+        }
+
+        if (
+            alarmState.extremeLowCount >= ALARM_BEAT_COUNT ||
+            alarmState.extremeHighCount >= ALARM_BEAT_COUNT
+        ) {
+            const text = alarmState.extremeLowCount >= ALARM_BEAT_COUNT
+                ? 'Extreme Bradycardia'
+                : 'Extreme Tachycardia';
+            setActiveAlarm({ level: 'critical', text });
+            return;
+        }
+
+        if (
+            alarmState.lowCount >= ALARM_BEAT_COUNT ||
+            alarmState.highCount >= ALARM_BEAT_COUNT
+        ) {
+            const text = alarmState.lowCount >= ALARM_BEAT_COUNT
+                ? 'Bradycardia'
+                : 'Tachycardia';
+            setActiveAlarm({ level: 'warning', text });
+            return;
+        }
+
+        setActiveAlarm(null);
+    }
+
     function recordPeak(timeSeconds) {
         state.lastPeakTime = timeSeconds;
         state.peaks.push(timeSeconds);
         purgeOldPeaks(timeSeconds);
         playBeep();
         updateFromPeaks();
+        updateBeatCounts(getDisplayBpm());
+        evaluateAlarm(timeSeconds);
     }
 
     // -----------------------------
@@ -305,6 +449,7 @@ function createHeartRateEngine(displayElement) {
 
         // Periodically clean old peaks
         purgeOldPeaks(timeSeconds);
+        evaluateAlarm(timeSeconds);
     }
 
     // Initial display state
