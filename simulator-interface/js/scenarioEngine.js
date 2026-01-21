@@ -47,6 +47,23 @@ const scenarioState = {
     locked: false
 };
 
+const feedbackState = {
+    bpm: null,
+    lastPeakAgeSeconds: null,
+    lastPaceAt: null,
+    params: {
+        rate: null,
+        output: null,
+        power: null
+    },
+    settings: {
+        intrinsicRate: 60,
+        scenarioIntrinsicRates: {}
+    },
+    ruleFeedbackOverride: null,
+    lastFeedbackText: ''
+};
+
 const CATEGORY_ORDER = ['clinical'];
 
 function normalizeCategory(scenario) {
@@ -179,6 +196,82 @@ function updateAlarm(alarm = null) {
     );
 }
 
+function getScenarioIntrinsicRate(scenarioId) {
+    const scenarioRates = feedbackState.settings.scenarioIntrinsicRates ?? {};
+    const fallbackRate = Number(feedbackState.settings.intrinsicRate ?? 60);
+    const scenarioRate = Number(scenarioRates?.[scenarioId]);
+    return Number.isFinite(scenarioRate) ? scenarioRate : fallbackRate;
+}
+
+function getTargetHeartRate(scenarioId, pacingExpected) {
+    if (pacingExpected && Number.isFinite(feedbackState.params.rate)) {
+        return feedbackState.params.rate;
+    }
+    return getScenarioIntrinsicRate(scenarioId);
+}
+
+function getRecentPaceAgeSeconds() {
+    if (!Number.isFinite(feedbackState.lastPaceAt)) return null;
+    return Math.max(0, (Date.now() - feedbackState.lastPaceAt) / 1000);
+}
+
+function getFeedbackStatus(scenario) {
+    if (!scenario) return 'stable';
+
+    const pacingExpected =
+        feedbackState.params.power !== false &&
+        Number.isFinite(feedbackState.params.rate) &&
+        feedbackState.params.rate > 0;
+
+    const targetHeartRate = getTargetHeartRate(scenario.id, pacingExpected);
+    const bpm = feedbackState.bpm;
+    const hrOk = Number.isFinite(bpm) && Number.isFinite(targetHeartRate) && bpm >= targetHeartRate;
+
+    const targetInterval = targetHeartRate > 0 ? 60 / targetHeartRate : 1;
+    const pauseThreshold = Math.max(2.5, targetInterval * 1.5);
+    const longPauseThreshold = Math.max(4, targetInterval * 2.5);
+    const lastPeakAge = feedbackState.lastPeakAgeSeconds;
+    const pausePresent = Number.isFinite(lastPeakAge) && lastPeakAge > pauseThreshold;
+    const longPause = Number.isFinite(lastPeakAge) && lastPeakAge > longPauseThreshold;
+
+    const paceAgeSeconds = getRecentPaceAgeSeconds();
+    const paceWindow = Math.max(4, targetInterval * 2);
+    const recentPace = Number.isFinite(paceAgeSeconds) && paceAgeSeconds <= paceWindow;
+
+    if (scenario.id === 'NSR') {
+        if (!hrOk || longPause) return 'unstable';
+        if (recentPace) return 'partial';
+        return 'stable';
+    }
+
+    if (!hrOk || longPause) return 'unstable';
+    if (pausePresent || (pacingExpected && !recentPace)) return 'partial';
+    return 'stable';
+}
+
+function getScenarioFeedbackText(scenario, status) {
+    if (scenario?.feedbackStatus?.[status]) {
+        return scenario.feedbackStatus[status];
+    }
+    return scenario?.feedback ?? null;
+}
+
+function refreshFeedbackText() {
+    if (!scenarioState.activeScenario) return;
+
+    if (feedbackState.ruleFeedbackOverride) {
+        updateText('feedbackText', feedbackState.ruleFeedbackOverride);
+        feedbackState.lastFeedbackText = feedbackState.ruleFeedbackOverride ?? '';
+        return;
+    }
+
+    const status = getFeedbackStatus(scenarioState.activeScenario);
+    const nextText = getScenarioFeedbackText(scenarioState.activeScenario, status);
+    if (nextText === feedbackState.lastFeedbackText) return;
+    feedbackState.lastFeedbackText = nextText ?? '';
+    updateText('feedbackText', nextText ?? null);
+}
+
 async function loadScenarios() {
     if (scenarioState.scenarios.length) {
         return scenarioState.scenarios;
@@ -286,10 +379,50 @@ function applyScenarioText(scenario) {
     updateText('scenarioText', scenario.description);
     updateAlarm(scenario.alarm);
     updateText('objectiveText', scenario.objective ?? null);
-    updateText('feedbackText', scenario.feedback ?? null);
+    feedbackState.ruleFeedbackOverride = null;
+    feedbackState.lastFeedbackText = '';
+    refreshFeedbackText();
 }
 
 function applyVitalsOverride(baseScenario, overrides) {
+}
+
+function handleHeartRateUpdate(event) {
+    const bpm = event.detail?.bpm;
+    const lastPeakAgeSeconds = event.detail?.lastPeakAgeSeconds;
+    feedbackState.bpm = Number.isFinite(bpm) ? bpm : null;
+    feedbackState.lastPeakAgeSeconds = Number.isFinite(lastPeakAgeSeconds) ? lastPeakAgeSeconds : null;
+    refreshFeedbackText();
+}
+
+function handleParametersUpdate(event) {
+    const detail = event.detail ?? {};
+    if (Number.isFinite(detail.rate)) feedbackState.params.rate = detail.rate;
+    if (Number.isFinite(detail.output)) feedbackState.params.output = detail.output;
+    if (typeof detail.power === 'boolean') feedbackState.params.power = detail.power;
+    refreshFeedbackText();
+}
+
+function handleEcgSettingsUpdate(event) {
+    const detail = event.detail ?? {};
+    if (Number.isFinite(detail.intrinsicRate)) {
+        feedbackState.settings.intrinsicRate = detail.intrinsicRate;
+    }
+    if (detail.scenarioIntrinsicRates) {
+        feedbackState.settings.scenarioIntrinsicRates = {
+            ...(feedbackState.settings.scenarioIntrinsicRates ?? {}),
+            ...detail.scenarioIntrinsicRates
+        };
+    }
+    refreshFeedbackText();
+}
+
+function handleLedFlash(event) {
+    const detail = event.detail ?? {};
+    if (detail.kind !== 'pace') return;
+    const timestamp = detail.at ? new Date(detail.at).getTime() : Date.now();
+    feedbackState.lastPaceAt = Number.isFinite(timestamp) ? timestamp : Date.now();
+    refreshFeedbackText();
 }
 
 function applyRuleEffects(effects) {
@@ -307,7 +440,9 @@ function applyRuleEffects(effects) {
     }
 
     updateText('objectiveText', effects?.objective ?? currentScenario.objective ?? null);
-    updateText('feedbackText', effects?.feedback ?? currentScenario.feedback ?? null);
+    feedbackState.ruleFeedbackOverride = effects?.feedback ?? null;
+    feedbackState.lastFeedbackText = '';
+    refreshFeedbackText();
 
     if (effects?.waveformId) {
         window.dispatchEvent(
@@ -416,6 +551,11 @@ async function initScenarios() {
     window.addEventListener('edupace-rule-effects', (event) => {
         applyRuleEffects(event.detail?.effects ?? {});
     });
+
+    window.addEventListener('edupace-hr-update', handleHeartRateUpdate);
+    window.addEventListener('edupace-parameters', handleParametersUpdate);
+    window.addEventListener('edupace-ecg-settings', handleEcgSettingsUpdate);
+    window.addEventListener('edupace-led-flash', handleLedFlash);
 
     window.addEventListener('edupace-session-event', (event) => {
         const status = event.detail?.session?.status;
