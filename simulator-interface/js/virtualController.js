@@ -109,10 +109,16 @@ function initVirtualController() {
             display.output.textContent = showValues ? formatValue('output', controllerState.output) : '--';
         }
         if (display.sensitivity) {
-            display.sensitivity.textContent = showValues ? formatValue('sensitivity', controllerState.sensitivity) : '--';
+            const asyncMode = showValues && isAsyncFromSensitivity(controllerState.sensitivity);
+            display.sensitivity.textContent = showValues
+                ? asyncMode
+                    ? 'ASYNC'
+                    : formatValue('sensitivity', controllerState.sensitivity)
+                : '--';
         }
         if (display.sensitivityUnit) {
-            display.sensitivityUnit.textContent = showValues ? 'mV' : '';
+            const asyncMode = showValues && isAsyncFromSensitivity(controllerState.sensitivity);
+            display.sensitivityUnit.textContent = showValues && !asyncMode ? 'mV' : '';
         }
     };
 

@@ -372,19 +372,20 @@ function formatSensitivityValue(value) {
     return Number.isFinite(value) ? value.toFixed(1) : '--';
 }
 
-function applySensitivityDisplay({ sensitivity, power }) {
+function applySensitivityDisplay({ sensitivity, power, mode, asynchronous }) {
     if (!ui.sensitivity) return;
 
     const powered = typeof power === 'boolean' ? power : isPoweredOn;
+    const asyncMode = isAsyncMode({ sensitivity, mode, asynchronous, power: powered });
 
     if (powered) {
-        ui.sensitivity.textContent = formatSensitivityValue(sensitivity);
+        ui.sensitivity.textContent = asyncMode ? 'ASYNC' : formatSensitivityValue(sensitivity);
     } else {
         ui.sensitivity.textContent = '--';
     }
 
     if (ui.sensitivityUnit) {
-        ui.sensitivityUnit.textContent = powered ? 'mV' : '';
+        ui.sensitivityUnit.textContent = powered && !asyncMode ? 'mV' : '';
     }
 }
 
@@ -432,7 +433,7 @@ function applyParameterDisplay({ rate, output, sensitivity, power, asynchronous,
         ui.output.textContent = powered && Number.isFinite(output) ? output.toFixed(1) : '--';
     }
 
-    applySensitivityDisplay({ sensitivity, power: powered });
+    applySensitivityDisplay({ sensitivity, power: powered, mode, asynchronous });
 
     const parametersCard = document.querySelector('.parameters-card');
     const controlGroups = parametersCard?.querySelectorAll('[data-virtual-control]') ?? [];
@@ -559,6 +560,7 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
 
         updateConnectionStatus(serialState.label ? `Connected: ${serialState.label}` : 'CONNECTED', true);
         ui.connectBtn.textContent = 'Disconnect';
+        ui.connectBtn.disabled = false;
 
         toggleDevicePopover(false);
 
