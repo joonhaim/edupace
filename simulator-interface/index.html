@@ -687,9 +687,16 @@
                                 <option value="newest" data-i18n-key="logs.filters.newest">Newest first</option>
                                 <option value="oldest" data-i18n-key="logs.filters.oldest">Oldest first</option>
                                 <option value="duration" data-i18n-key="logs.filters.duration">Longest duration</option>
-                                <option value="events" data-i18n-key="logs.filters.events">Most events</option>
                             </select>
                         </label>
+                        <div class="logs-bulk" data-log-bulk hidden>
+                            <span class="logs-bulk-count" data-log-bulk-count>0 selected</span>
+                            <div class="logs-bulk-actions">
+                                <button class="btn btn-ghost btn-small" type="button" data-log-select-all data-i18n-key="logs.actions.selectAll">Select all</button>
+                                <button class="btn btn-ghost btn-small" type="button" data-log-clear-selection data-i18n-key="logs.actions.clearSelection">Clear</button>
+                                <button class="btn btn-ghost btn-small danger" type="button" data-log-delete-selected data-i18n-key="logs.actions.deleteSelected">Delete selected</button>
+                            </div>
+                        </div>
                     </div>
 
                     <section class="logs-leaderboard" aria-live="polite">
@@ -1297,6 +1304,19 @@
                                                                         Refresh from disk
                                                                     </button>
                                                                 </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="setting-row">
+                                                            <div class="setting-copy">
+                                                                <div class="setting-title" data-i18n-key="settings.logReset.title">Clear session logs</div>
+                                                                <p class="setting-hint" data-i18n-key="settings.logReset.hint">
+                                                                    Delete all saved session logs and operator names.
+                                                                </p>
+                                                            </div>
+                                                            <div class="setting-field">
+                                                                <button class="btn btn-ghost btn-small danger" type="button" data-log-reset data-i18n-key="settings.logReset.action">
+                                                                    Delete logs
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>

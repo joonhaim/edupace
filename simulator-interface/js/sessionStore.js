@@ -151,6 +151,47 @@ function deleteSessionLog(id) {
     return persistPromise ?? nextLogs;
 }
 
+function deleteSessionLogs(ids = []) {
+    const idSet = new Set(ids);
+    const nextLogs = logCache.filter((entry) => !idSet.has(entry.id));
+    logCache = nextLogs;
+    saveLocalBackup(logCache);
+    const persistPromise = writeToDisk(logCache);
+    dispatchLogChange();
+    return persistPromise ?? nextLogs;
+}
+
+function normalizeOperatorName(name) {
+    return name?.trim().toLowerCase() ?? '';
+}
+
+function deleteSessionLogsByOperator(operatorName) {
+    const normalized = normalizeOperatorName(operatorName);
+    if (!normalized) return [];
+    const deletedIds = [];
+    const nextLogs = logCache.filter((entry) => {
+        const entryName = normalizeOperatorName(entry.metadata?.operator);
+        if (entryName && entryName === normalized) {
+            deletedIds.push(entry.id);
+            return false;
+        }
+        return true;
+    });
+    logCache = nextLogs;
+    saveLocalBackup(logCache);
+    writeToDisk(logCache);
+    dispatchLogChange();
+    return deletedIds;
+}
+
+function resetSessionLogs() {
+    logCache = [];
+    saveLocalBackup(logCache);
+    const persistPromise = writeToDisk(logCache);
+    dispatchLogChange();
+    return persistPromise ?? logCache;
+}
+
 function updateSessionLogMetadata(id, metadata = {}) {
     const index = logCache.findIndex((entry) => entry.id === id);
     if (index === -1) return null;
@@ -298,10 +339,13 @@ export {
     addSessionLog,
     chooseLogStoragePath,
     deleteSessionLog,
+    deleteSessionLogs,
+    deleteSessionLogsByOperator,
     getSessionLogById,
     getSessionLogs,
     getLogStoragePath,
     initSessionStore,
+    resetSessionLogs,
     openLogStoragePath,
     serializeSessionToCsv,
     syncFromDisk,
