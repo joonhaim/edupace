@@ -44,6 +44,7 @@ function createHeartRateEngine(displayElement) {
         previousSlope: null,
         previousSampleTime: null,
         lastSampleTime: null,
+        lastDispatchTime: -Infinity,
 
         bpm: null,             // current computed BPM (this window)
         lastValidBpm: null      // last non-null, in-range BPM
@@ -216,6 +217,27 @@ function createHeartRateEngine(displayElement) {
         displayElement.textContent = Number.isFinite(valueToShow)
             ? valueToShow.toString()
             : '--';
+    }
+
+    function dispatchHeartRateUpdate(timeSeconds, force = false) {
+        if (!Number.isFinite(timeSeconds)) return;
+        if (!force && timeSeconds - state.lastDispatchTime < 0.25) return;
+
+        state.lastDispatchTime = timeSeconds;
+        const lastPeakTime = Number.isFinite(state.lastPeakTime) ? state.lastPeakTime : null;
+        const lastPeakAgeSeconds = Number.isFinite(lastPeakTime)
+            ? Math.max(0, timeSeconds - lastPeakTime)
+            : null;
+
+        window.dispatchEvent(
+            new CustomEvent('edupace-hr-update', {
+                detail: {
+                    bpm: getDisplayBpm(),
+                    lastPeakTime,
+                    lastPeakAgeSeconds
+                }
+            })
+        );
     }
 
     function reset() {
@@ -409,6 +431,7 @@ function createHeartRateEngine(displayElement) {
         updateFromPeaks();
         updateBeatCounts(getDisplayBpm());
         evaluateAlarm(timeSeconds);
+        dispatchHeartRateUpdate(timeSeconds, true);
     }
 
     // -----------------------------
@@ -450,6 +473,7 @@ function createHeartRateEngine(displayElement) {
         // Periodically clean old peaks
         purgeOldPeaks(timeSeconds);
         evaluateAlarm(timeSeconds);
+        dispatchHeartRateUpdate(timeSeconds);
     }
 
     // Initial display state

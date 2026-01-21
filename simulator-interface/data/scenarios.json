@@ -3,6 +3,13 @@
         "id": "NSR",
         "title": "Normal Sinus Rhythm",
         "description": "Stable intrinsic rhythm with normal conduction.",
+        "objective": "Maintain patient stability without unnecessary pacing.",
+        "feedback": "1️⃣ Normal Sinus Rhythm\n✅ Patient stable — intrinsic rhythm adequate, no pacing needed\n⚠️ Unnecessary pacing detected — reduce pacing rate or output\n❌ Patient destabilized — pacing interfering with intrinsic rhythm",
+        "feedbackStatus": {
+            "stable": "1️⃣ Normal Sinus Rhythm\n✅ Patient stable — intrinsic rhythm adequate, no pacing needed",
+            "partial": "1️⃣ Normal Sinus Rhythm\n⚠️ Unnecessary pacing detected — reduce pacing rate or output",
+            "unstable": "1️⃣ Normal Sinus Rhythm\n❌ Patient destabilized — pacing interfering with intrinsic rhythm"
+        },
         "summaryLabel": "Normal Sinus Rhythm",
         "category": "clinical"
     },
@@ -10,6 +17,13 @@
         "id": "AV3",
         "title": "Third-degree AV block",
         "description": "Complete AV block with a ventricular escape rhythm.",
+        "objective": "Stabilize the patient by establishing effective ventricular pacing.",
+        "feedback": "2️⃣ Third-degree AV Block\n✅ Patient stabilized — effective ventricular pacing established\n⚠️ Partial stabilization — check capture or pacing rate\n❌ Patient unstable — inadequate ventricular pacing",
+        "feedbackStatus": {
+            "stable": "2️⃣ Third-degree AV Block\n✅ Patient stabilized — effective ventricular pacing established",
+            "partial": "2️⃣ Third-degree AV Block\n⚠️ Partial stabilization — check capture or pacing rate",
+            "unstable": "2️⃣ Third-degree AV Block\n❌ Patient unstable — inadequate ventricular pacing"
+        },
         "summaryLabel": "Third-degree AV block",
         "category": "clinical"
     },
@@ -17,6 +31,13 @@
         "id": "Mobitz2",
         "title": "Second-degree AV block (Mobitz II)",
         "description": "Intermittent dropped ventricular beats with fixed PR intervals.",
+        "objective": "Prevent instability by pacing during intermittent conduction failure.",
+        "feedback": "3️⃣ Second-degree AV Block (Mobitz II)\n✅ Patient stabilized — pacing prevents dropped beats\n⚠️ Intermittent instability — pauses still present\n❌ Patient unstable — pacing insufficient to prevent pauses",
+        "feedbackStatus": {
+            "stable": "3️⃣ Second-degree AV Block (Mobitz II)\n✅ Patient stabilized — pacing prevents dropped beats",
+            "partial": "3️⃣ Second-degree AV Block (Mobitz II)\n⚠️ Intermittent instability — pauses still present",
+            "unstable": "3️⃣ Second-degree AV Block (Mobitz II)\n❌ Patient unstable — pacing insufficient to prevent pauses"
+        },
         "summaryLabel": "Second-degree AV block (Mobitz II)",
         "category": "clinical"
     },
@@ -24,6 +45,13 @@
         "id": "SlowConduction",
         "title": "Slow Conduction",
         "description": "Delayed ventricular conduction with prolonged intervals.",
+        "objective": "Maintain adequate cardiac output despite delayed ventricular conduction.",
+        "feedback": "4️⃣ Slow Conduction\n✅ Patient stabilized — pacing compensates for delayed conduction\n⚠️ Suboptimal support — capture inconsistent\n❌ Patient unstable — delayed conduction not adequately managed",
+        "feedbackStatus": {
+            "stable": "4️⃣ Slow Conduction\n✅ Patient stabilized — pacing compensates for delayed conduction",
+            "partial": "4️⃣ Slow Conduction\n⚠️ Suboptimal support — capture inconsistent",
+            "unstable": "4️⃣ Slow Conduction\n❌ Patient unstable — delayed conduction not adequately managed"
+        },
         "summaryLabel": "Slow Conduction",
         "category": "clinical"
     }

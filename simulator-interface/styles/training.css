@@ -1520,6 +1520,7 @@ body.ecg-fullscreen-active {
     margin: 0.35rem 0 0;
     font-size: 0.98rem;
     line-height: 1.6;
+    white-space: pre-line;
 }
 
 .intrinsic-settings-card {
