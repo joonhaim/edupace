@@ -141,8 +141,16 @@
 
 .device-popover-footer {
     display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.device-popover-actions {
+    display: flex;
     gap: 0.5rem;
     justify-content: flex-end;
+    width: 100%;
 }
 
 .device-popover-hint {
@@ -171,6 +179,37 @@
     inset: 0;
     background: transparent;
     z-index: 20;
+}
+
+body.device-picker-window .app-shell {
+    min-height: 100vh;
+}
+
+body.device-picker-window .sidebar-header,
+body.device-picker-window .sidebar-nav,
+body.device-picker-window .view-stack {
+    display: none;
+}
+
+body.device-picker-window .sidebar-footer {
+    width: 100%;
+    padding: 1.5rem;
+}
+
+body.device-picker-window .connection-card {
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+body.device-picker-window .device-popover {
+    position: static;
+    display: flex;
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+body.device-picker-window .device-popover-overlay {
+    display: none;
 }
 
 .session-review-modal {

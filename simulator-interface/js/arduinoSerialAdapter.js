@@ -41,6 +41,7 @@ const serialState = {
 };
 
 const LAST_PORT_STORAGE_KEY = 'edupace:last-serial-port';
+const DEVICE_PICKER_QUERY_KEY = 'devicePicker';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -57,11 +58,13 @@ let isPoweredOn = false;
 let unsupportedHintDismissed = false;
 let hasInitialized = false;
 let deviceListEmptyDefaultMessage = 'No devices found.';
+let devicePickerWindow = null;
 const resettableParameterKeys = Object.keys(parameterState);
 // Include common USB-serial bridge vendors used on Arduino-compatible boards.
 const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03, 0x1a86, 0x10c4, 0x0403, 0x067b]);
 const EDUPACE_PRODUCT_IDS = new Set([0x0266, 0x0366, 0x0066]);
 const EDUPACE_PORT_FILTERS = Array.from(EDUPACE_VENDOR_IDS, (vendorId) => ({ vendorId }));
+const isDevicePickerWindow = new URLSearchParams(window.location.search).has(DEVICE_PICKER_QUERY_KEY);
 
 function refreshUiBindings() {
     ui.connectionStatus = document.getElementById('connectionStatus');
@@ -146,6 +149,33 @@ function toggleDevicePopover(visible) {
     if (shouldShow) {
         populateDeviceList();
     }
+}
+
+function isElectronApp() {
+    return /electron/i.test(navigator.userAgent ?? '');
+}
+
+function openDevicePickerWindow() {
+    if (isDevicePickerWindow) {
+        toggleDevicePopover(true);
+        return;
+    }
+
+    if (devicePickerWindow && !devicePickerWindow.closed) {
+        devicePickerWindow.focus();
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set(DEVICE_PICKER_QUERY_KEY, '1');
+    devicePickerWindow = window.open(url.toString(), 'edupace-device-picker', 'popup=yes,width=420,height=640');
+
+    if (!devicePickerWindow) {
+        toggleDevicePopover(true);
+        return;
+    }
+
+    devicePickerWindow.focus();
 }
 
 function isEduPaceDevice(info) {
@@ -318,7 +348,11 @@ function handleNoMatchingSerialFilters() {
         'No matching EduPace devices found. Use "Show all serial devices" to expand the filter.',
         { showAllAction: true }
     );
-    toggleDevicePopover(true);
+    if (isElectronApp()) {
+        openDevicePickerWindow();
+    } else {
+        toggleDevicePopover(true);
+    }
 }
 
 async function requestSerialPort({ requestAll = false } = {}) {
@@ -427,6 +461,13 @@ async function restoreLastPortConnection() {
 
 async function handleDeviceSelection(port, label) {
     if (!port) return;
+
+    if (isDevicePickerWindow && window.opener?.edupaceHardware?.connectToHardware) {
+        window.opener.edupaceHardware.connectToHardware(port, label);
+        window.opener.focus?.();
+        window.close();
+        return;
+    }
 
     toggleDevicePopover(false);
     ui.connectBtn.textContent = 'Connecting...';
@@ -562,7 +603,11 @@ async function initHardwareIntegration() {
         if (serialState.port) {
             disconnectFromHardware();
         } else {
-            toggleDevicePopover(true);
+            if (isElectronApp()) {
+                openDevicePickerWindow();
+            } else {
+                toggleDevicePopover(true);
+            }
         }
     });
 
@@ -609,6 +654,11 @@ async function initHardwareIntegration() {
         triggerSenseFlash,
         sendLedCommand
     };
+
+    if (isDevicePickerWindow) {
+        document.body.classList.add('device-picker-window');
+        toggleDevicePopover(true);
+    }
 }
 
 function resetParameters() {
@@ -651,6 +701,11 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
         ui.connectBtn.disabled = false;
 
         toggleDevicePopover(false);
+
+        if (devicePickerWindow && !devicePickerWindow.closed) {
+            devicePickerWindow.close();
+            devicePickerWindow = null;
+        }
 
         readLoop();
     } catch (error) {
