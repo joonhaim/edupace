@@ -804,12 +804,6 @@ body.simulation-light .theme-toggle {
     transform: none;
 }
 
-.session-chip.session-end {
-    border-color: rgba(31, 75, 153, 0.28);
-    color: var(--primary);
-    background: rgba(31, 75, 153, 0.08);
-}
-
 .session-chip.btn-primary {
     background: linear-gradient(120deg, #1f4b99, #255da9);
     color: #f8fafc;
@@ -821,6 +815,12 @@ body.simulation-light .theme-toggle {
     background: rgba(31, 75, 153, 0.08);
     color: var(--primary);
     border-color: rgba(31, 75, 153, 0.24);
+}
+
+.session-chip.btn-ghost.session-end {
+    background: rgba(220, 38, 38, 0.12);
+    border-color: rgba(220, 38, 38, 0.35);
+    color: #b42318;
 }
 
 .session-chip:hover:not(:disabled) {
