@@ -166,6 +166,8 @@ function renderLeaderboard() {
     logs.forEach((log) => {
         const scenarioKey = getScenarioKey(log);
         if (!scenarioKey) return;
+        const operatorName = normalizeOperator(log.metadata?.operator);
+        if (!operatorName) return;
         if (!scenarioMap.has(scenarioKey)) {
             scenarioMap.set(scenarioKey, {
                 title: log.scenarioTitle || translateKey('logs.unknownScenario'),
@@ -175,11 +177,10 @@ function renderLeaderboard() {
         }
         const scenario = scenarioMap.get(scenarioKey);
         scenario.latestAt = log.endedAt || log.startedAt || scenario.latestAt;
-        const operatorName = normalizeOperator(log.metadata?.operator);
-        const operatorKey = operatorName ? operatorName.toLowerCase() : '__anonymous__';
+        const operatorKey = operatorName.toLowerCase();
         if (!scenario.entries.has(operatorKey)) {
             scenario.entries.set(operatorKey, {
-                name: operatorName || translateKey('home.leaderboard.anonymous'),
+                name: operatorName,
                 count: 0,
                 bestTime: null
             });
@@ -211,6 +212,25 @@ function renderLeaderboard() {
         showLeaderboardPanel(0);
         startLeaderboardRotation();
     }
+}
+
+function pickSuggestedScenarios(count = 2) {
+    const completedIds = new Set(
+        getSessionLogs()
+            .filter((log) => log.status === 'ended' && (log.scenarioId || log.scenarioCode))
+            .map((log) => log.scenarioId || log.scenarioCode)
+    );
+
+    const unplayed = clinicalScenarios.filter((scenario) => {
+        const code = scenario.id || scenario.code;
+        return code && !completedIds.has(code);
+    });
+
+    const pool = unplayed.length ? unplayed : clinicalScenarios;
+    if (!pool.length) return [];
+
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
 }
 
 function renderRecentSessions() {
@@ -305,31 +325,12 @@ function summarizeCompletion() {
     }
 }
 
-function pickRandomScenario() {
-    const completedIds = new Set(
-        getSessionLogs()
-            .filter((log) => log.status === 'ended' && (log.scenarioId || log.scenarioCode))
-            .map((log) => log.scenarioId || log.scenarioCode)
-    );
-
-    const unplayed = clinicalScenarios.filter((scenario) => {
-        const code = scenario.id || scenario.code;
-        return code && !completedIds.has(code);
-    });
-
-    const pool = unplayed.length ? unplayed : clinicalScenarios;
-    if (!pool.length) return null;
-
-    const randomIndex = Math.floor(Math.random() * pool.length);
-    return pool[randomIndex];
-}
-
 function renderSuggestedCard() {
     if (!suggestedCard) return;
     suggestedCard.innerHTML = '';
 
-    const scenario = pickRandomScenario();
-    if (!scenario) {
+    const scenarios = pickSuggestedScenarios(2);
+    if (!scenarios.length) {
         const empty = document.createElement('div');
         empty.className = 'muted';
         empty.textContent = translateKey('home.suggested.empty');
@@ -337,42 +338,49 @@ function renderSuggestedCard() {
         return;
     }
 
-    const title = document.createElement('h3');
-    title.className = 'suggested-title';
-    title.textContent = scenario.title;
+    scenarios.forEach((scenario) => {
+        const entry = document.createElement('div');
+        entry.className = 'suggested-entry';
 
-    const summary = document.createElement('p');
-    summary.className = 'suggested-summary';
-    summary.textContent =
-        scenario.summaryLabel ||
-        scenario.description ||
-        translateKey('home.suggested.fallbackSummary');
+        const title = document.createElement('h3');
+        title.className = 'suggested-title';
+        title.textContent = scenario.title;
 
-    const actions = document.createElement('div');
-    actions.className = 'suggested-actions';
+        const summary = document.createElement('p');
+        summary.className = 'suggested-summary';
+        summary.textContent =
+            scenario.summaryLabel ||
+            scenario.description ||
+            translateKey('home.suggested.fallbackSummary');
 
-    const startLink = document.createElement('a');
-    startLink.className = 'btn btn-primary';
-    startLink.href = '#training';
-    startLink.dataset.viewTarget = 'training';
-    startLink.textContent = translateKey('home.suggested.start');
-    startLink.addEventListener('click', () => {
-        const scenarioId = scenario.id || scenario.code;
-        document.dispatchEvent(
-            new CustomEvent('edupace:start-scenario', {
-                detail: { scenarioId }
-            })
-        );
+        const actions = document.createElement('div');
+        actions.className = 'suggested-actions';
+
+        const startLink = document.createElement('a');
+        startLink.className = 'btn btn-primary btn-small';
+        startLink.href = '#training';
+        startLink.dataset.viewTarget = 'training';
+        startLink.textContent = translateKey('home.suggested.start');
+        startLink.addEventListener('click', () => {
+            const scenarioId = scenario.id || scenario.code;
+            document.dispatchEvent(
+                new CustomEvent('edupace:start-scenario', {
+                    detail: { scenarioId }
+                })
+            );
+        });
+
+        actions.append(startLink);
+        entry.append(title, summary, actions);
+        suggestedCard.appendChild(entry);
     });
 
     const learnMore = document.createElement('button');
     learnMore.type = 'button';
-    learnMore.className = 'btn btn-ghost';
+    learnMore.className = 'btn btn-ghost btn-small';
     learnMore.textContent = translateKey('home.suggested.shuffle');
     learnMore.addEventListener('click', renderSuggestedCard);
-
-    actions.append(startLink, learnMore);
-    suggestedCard.append(title, summary, actions);
+    suggestedCard.appendChild(learnMore);
 }
 
 async function loadScenarios(language = getCurrentLanguage()) {

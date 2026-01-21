@@ -253,10 +253,11 @@ function renderLeaderboard(activeLog) {
     const grouped = new Map();
     logs.forEach((log) => {
         const operatorName = normalizeOperator(log.metadata?.operator);
-        const key = operatorName ? operatorName.toLowerCase() : '__anonymous__';
+        if (!operatorName) return;
+        const key = operatorName.toLowerCase();
         if (!grouped.has(key)) {
             grouped.set(key, {
-                name: operatorName || translateKey('logs.leaderboard.anonymous'),
+                name: operatorName,
                 count: 0,
                 bestTime: null
             });
@@ -276,6 +277,14 @@ function renderLeaderboard(activeLog) {
         if (a.count !== b.count) return b.count - a.count;
         return a.name.localeCompare(b.name);
     });
+
+    if (!rows.length) {
+        const empty = document.createElement('div');
+        empty.className = 'leaderboard-empty';
+        empty.textContent = translateKey('logs.leaderboard.empty');
+        leaderboardElements.table.appendChild(empty);
+        return;
+    }
 
     const head = document.createElement('div');
     head.className = 'leaderboard-row leaderboard-head';

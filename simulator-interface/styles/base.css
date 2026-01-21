@@ -591,6 +591,7 @@ h1, h2, h3 {
 
 .dash-card--leaderboard {
     grid-area: leaderboard;
+    min-height: 320px;
 }
 
 .dash-card--suggested {

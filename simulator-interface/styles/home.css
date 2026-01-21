@@ -349,6 +349,15 @@
     background: var(--surface-2);
 }
 
+.suggested-entry {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.8rem 0.9rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(148, 163, 184, 0.08);
+}
+
 .suggested-title {
     margin: 0;
     font-weight: 800;
@@ -377,15 +386,15 @@
 
 .leaderboard-carousel {
     position: relative;
-    min-height: 150px;
+    min-height: 220px;
 }
 
 .leaderboard-panel {
     position: absolute;
     inset: 0;
     opacity: 0;
-    transform: translateY(6px);
-    transition: opacity 0.35s ease, transform 0.35s ease;
+    transform: translateY(14px) scale(0.98);
+    transition: opacity 0.55s ease, transform 0.55s ease;
     display: grid;
     gap: 0.8rem;
     pointer-events: none;
