@@ -10,6 +10,7 @@ const leaderboardEmpty = document.querySelector('[data-leaderboard-empty]');
 const progressFill = document.querySelector('[data-progress-fill]');
 const progressCount = document.querySelector('[data-progress-count]');
 const progressHint = document.querySelector('[data-progress-hint]');
+const progressOperatorSelect = document.querySelector('[data-progress-operator]');
 
 const suggestedCard = document.querySelector('[data-suggested-card]');
 const suggestRefreshBtn = document.querySelector('[data-suggest-refresh]');
@@ -20,6 +21,8 @@ let clinicalScenarios = [];
 let leaderboardRotationTimer = null;
 let leaderboardPanels = [];
 let leaderboardIndex = 0;
+let selectedOperatorKey = null;
+const stabilizationScenarioIds = ['Mobitz2', 'AV3', 'SlowConduction'];
 
 function translateTemplate(key, replacements = {}) {
     let text = translateKey(key) || key;
@@ -45,12 +48,24 @@ function formatDuration(seconds) {
     return remaining ? `${minutes}m ${remaining}s` : `${minutes}m`;
 }
 
-function getScenarioKey(log) {
-    return log?.scenarioId || log?.scenarioCode || log?.scenarioTitle || '';
-}
-
 function normalizeOperator(name) {
     return name?.trim() ?? '';
+}
+
+function getOperatorDisplayName(rawName, fallbackKey = 'home.leaderboard.anonymous') {
+    return rawName || translateKey(fallbackKey);
+}
+
+function getOperatorEntries(logs) {
+    const map = new Map();
+    logs.forEach((log) => {
+        const name = getOperatorDisplayName(normalizeOperator(log.metadata?.operator), 'home.progress.anonymous');
+        const key = name.toLowerCase();
+        if (!map.has(key)) {
+            map.set(key, { key, name });
+        }
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function stopLeaderboardRotation() {
@@ -96,16 +111,87 @@ function buildTotalSessionsPanel(totalCount) {
     return panel;
 }
 
-function buildScenarioPanel(scenarioTitle, entries) {
+function buildPodiumPanel(entries) {
     const panel = document.createElement('div');
     panel.className = 'leaderboard-panel';
 
     const heading = document.createElement('div');
     heading.className = 'leaderboard-panel-heading';
-    heading.textContent = translateTemplate('home.leaderboard.scenarioTitle', { scenario: scenarioTitle });
+    heading.textContent = translateKey('home.leaderboard.podiumTitle');
+
+    const podium = document.createElement('div');
+    podium.className = 'leaderboard-podium';
+
+    const positions = [
+        { rank: 2, className: 'podium-place podium-place--second', entry: entries[1] },
+        { rank: 1, className: 'podium-place podium-place--first', entry: entries[0] },
+        { rank: 3, className: 'podium-place podium-place--third', entry: entries[2] }
+    ];
+
+    positions.forEach(({ rank, className, entry }) => {
+        const place = document.createElement('div');
+        place.className = className;
+
+        const rankBadge = document.createElement('div');
+        rankBadge.className = 'podium-rank';
+        rankBadge.textContent = String(rank);
+
+        const name = document.createElement('div');
+        name.className = 'podium-name';
+        name.textContent = entry?.name ?? '—';
+
+        const sessions = document.createElement('div');
+        sessions.className = 'podium-sessions';
+        sessions.textContent = entry
+            ? translateTemplate('home.leaderboard.sessions', { count: entry.count })
+            : translateKey('home.leaderboard.noEntries');
+
+        if (!entry) {
+            place.classList.add('is-empty');
+        }
+
+        place.append(rankBadge, name, sessions);
+        podium.appendChild(place);
+    });
+
+    panel.append(heading, podium);
+    return panel;
+}
+
+function buildScenarioStabilizationPanel(logs, scenarioId) {
+    const panel = document.createElement('div');
+    panel.className = 'leaderboard-panel';
+
+    const heading = document.createElement('div');
+    heading.className = 'leaderboard-panel-heading';
+    const scenario = localizedScenarios.find((entry) => (entry.id || entry.code) === scenarioId);
+    const scenarioTitle = scenario?.title || scenarioId;
+    heading.textContent = `${translateKey('home.leaderboard.stabilizationTitle')}: ${scenarioTitle}`;
 
     const list = document.createElement('div');
     list.className = 'leaderboard-list';
+
+    const operatorMap = new Map();
+    logs.forEach((log) => {
+        if (log.status !== 'ended') return;
+        if (log.stabilized !== true) return;
+        if ((log.scenarioId || log.scenarioCode) !== scenarioId) return;
+        if (!Number.isFinite(log.stabilizationSeconds)) return;
+
+        const rawName = normalizeOperator(log.metadata?.operator);
+        if (!rawName) return;
+        const key = rawName.toLowerCase();
+        if (!operatorMap.has(key)) {
+            operatorMap.set(key, { name: rawName, bestTime: log.stabilizationSeconds });
+            return;
+        }
+        const entry = operatorMap.get(key);
+        entry.bestTime = Math.min(entry.bestTime, log.stabilizationSeconds);
+    });
+
+    const entries = Array.from(operatorMap.values())
+        .sort((a, b) => a.bestTime - b.bestTime)
+        .slice(0, 3);
 
     if (!entries.length) {
         const empty = document.createElement('div');
@@ -125,9 +211,7 @@ function buildScenarioPanel(scenarioTitle, entries) {
             name.className = 'home-leaderboard-name';
             const nameText = document.createElement('span');
             nameText.textContent = entry.name;
-            const nameMeta = document.createElement('small');
-            nameMeta.textContent = translateTemplate('home.leaderboard.sessions', { count: entry.count });
-            name.append(nameText, nameMeta);
+            name.appendChild(nameText);
 
             const time = document.createElement('div');
             time.className = 'home-leaderboard-time';
@@ -162,50 +246,34 @@ function renderLeaderboard() {
     leaderboardPanels.push(totalPanel);
     leaderboardCarousel.appendChild(totalPanel);
 
-    const scenarioMap = new Map();
+    const operatorMap = new Map();
     logs.forEach((log) => {
-        const scenarioKey = getScenarioKey(log);
-        if (!scenarioKey) return;
-        const operatorName = normalizeOperator(log.metadata?.operator);
-        if (!operatorName) return;
-        if (!scenarioMap.has(scenarioKey)) {
-            scenarioMap.set(scenarioKey, {
-                title: log.scenarioTitle || translateKey('logs.unknownScenario'),
-                latestAt: log.endedAt || log.startedAt || '',
-                entries: new Map()
+        const rawName = normalizeOperator(log.metadata?.operator);
+        if (!rawName) return;
+        const name = rawName;
+        const key = name.toLowerCase();
+        if (!operatorMap.has(key)) {
+            operatorMap.set(key, {
+                name,
+                count: 0
             });
         }
-        const scenario = scenarioMap.get(scenarioKey);
-        scenario.latestAt = log.endedAt || log.startedAt || scenario.latestAt;
-        const operatorKey = operatorName.toLowerCase();
-        if (!scenario.entries.has(operatorKey)) {
-            scenario.entries.set(operatorKey, {
-                name: operatorName,
-                count: 0,
-                bestTime: null
-            });
-        }
-        const entry = scenario.entries.get(operatorKey);
+        const entry = operatorMap.get(key);
         entry.count += 1;
-        if (log.stabilized === true && Number.isFinite(log.stabilizationSeconds)) {
-            const currentBest = entry.bestTime ?? Number.POSITIVE_INFINITY;
-            entry.bestTime = Math.min(currentBest, log.stabilizationSeconds);
-        }
     });
 
-    const scenarios = Array.from(scenarioMap.values())
-        .sort((a, b) => new Date(b.latestAt) - new Date(a.latestAt))
-        .slice(0, 5);
+    const topOperators = Array.from(operatorMap.values())
+        .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+        .slice(0, 3);
 
-    scenarios.forEach((scenario) => {
-        const entries = Array.from(scenario.entries.values())
-            .filter((entry) => Number.isFinite(entry.bestTime))
-            .sort((a, b) => a.bestTime - b.bestTime)
-            .slice(0, 3);
+    const podiumPanel = buildPodiumPanel(topOperators);
+    leaderboardPanels.push(podiumPanel);
+    leaderboardCarousel.appendChild(podiumPanel);
 
-        const panel = buildScenarioPanel(scenario.title, entries);
-        leaderboardPanels.push(panel);
-        leaderboardCarousel.appendChild(panel);
+    stabilizationScenarioIds.forEach((scenarioId) => {
+        const stabilizationPanel = buildScenarioStabilizationPanel(logs, scenarioId);
+        leaderboardPanels.push(stabilizationPanel);
+        leaderboardCarousel.appendChild(stabilizationPanel);
     });
 
     if (leaderboardPanels.length) {
@@ -285,11 +353,18 @@ function renderRecentSessions() {
 
 function summarizeCompletion() {
     const totalScenarios = localizedScenarios.filter((scenario) => !scenario.comingSoon).length;
-    const completedIds = new Set(
-        getSessionLogs()
-            .filter((log) => log.status === 'ended' && (log.scenarioId || log.scenarioCode))
-            .map((log) => log.scenarioId || log.scenarioCode)
-    );
+    const completedIds = new Set();
+    const logs = getSessionLogs().filter((log) => log.status === 'ended' && log.stabilized === true);
+
+    logs.forEach((log) => {
+        const operatorName = getOperatorDisplayName(normalizeOperator(log.metadata?.operator), 'home.progress.anonymous');
+        const operatorKey = operatorName.toLowerCase();
+        if (selectedOperatorKey && operatorKey !== selectedOperatorKey) return;
+        const scenarioKey = log.scenarioId || log.scenarioCode;
+        if (scenarioKey) {
+            completedIds.add(scenarioKey);
+        }
+    });
 
     const completed = localizedScenarios.filter((scenario) => {
         const code = scenario.id || scenario.code;
@@ -323,6 +398,41 @@ function summarizeCompletion() {
             progressHint.textContent = translateTemplate('home.progress.remaining', { remaining });
         }
     }
+}
+
+function renderProgressOperatorSelect() {
+    if (!progressOperatorSelect) return;
+
+    const logs = getSessionLogs().filter((log) => log.status === 'ended');
+    const operators = getOperatorEntries(logs);
+
+    progressOperatorSelect.innerHTML = '';
+
+    if (!operators.length) {
+        const option = document.createElement('option');
+        option.textContent = translateKey('home.progress.noOperators');
+        option.value = '';
+        progressOperatorSelect.appendChild(option);
+        progressOperatorSelect.disabled = true;
+        selectedOperatorKey = null;
+        return;
+    }
+
+    progressOperatorSelect.disabled = false;
+
+    operators.forEach((operator) => {
+        const option = document.createElement('option');
+        option.value = operator.key;
+        option.textContent = operator.name;
+        progressOperatorSelect.appendChild(option);
+    });
+
+    if (!selectedOperatorKey || !operators.some((operator) => operator.key === selectedOperatorKey)) {
+        const randomIndex = Math.floor(Math.random() * operators.length);
+        selectedOperatorKey = operators[randomIndex]?.key ?? operators[0].key;
+    }
+
+    progressOperatorSelect.value = selectedOperatorKey;
 }
 
 function renderSuggestedCard() {
@@ -398,6 +508,7 @@ async function loadScenarios(language = getCurrentLanguage()) {
         );
 
         renderRecentSessions();
+        renderProgressOperatorSelect();
         summarizeCompletion();
         renderSuggestedCard();
         renderLeaderboard();
@@ -410,12 +521,14 @@ async function initHomeDashboard() {
     await initSessionStore();
     await loadScenarios();
     renderRecentSessions();
+    renderProgressOperatorSelect();
     summarizeCompletion();
     renderSuggestedCard();
     renderLeaderboard();
 
     window.addEventListener('edupace:session-logs-changed', () => {
         renderRecentSessions();
+        renderProgressOperatorSelect();
         summarizeCompletion();
         renderSuggestedCard();
         renderLeaderboard();
@@ -427,6 +540,10 @@ async function initHomeDashboard() {
     });
 
     suggestRefreshBtn?.addEventListener('click', renderSuggestedCard);
+    progressOperatorSelect?.addEventListener('change', (event) => {
+        selectedOperatorKey = event.target.value;
+        summarizeCompletion();
+    });
 }
 
 if (document.readyState === 'loading') {
