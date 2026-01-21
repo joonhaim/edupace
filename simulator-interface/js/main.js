@@ -6,6 +6,7 @@ import { initVirtualController } from './virtualController.js';
 import { initSettingsPanel } from './settingsPanel.js';
 import { initSessionManager } from './sessionManager.js';
 import { initIntrinsicControls } from './intrinsicControls.js';
+import { initSessionReview } from './sessionReview.js';
 
 initHardwareIntegration();
 initSessionManager();
@@ -15,3 +16,4 @@ initEcgEngine();
 initVirtualController();
 initSettingsPanel();
 initIntrinsicControls();
+initSessionReview();

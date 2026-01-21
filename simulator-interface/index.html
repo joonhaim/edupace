@@ -367,6 +367,9 @@
                                         <span class="ecg-paused-badge" hidden>Paused</span>
                                         <span class="ecg-caliper-readout" id="caliperReadout" hidden>-- ms · -- ppm</span>
                                     </div>
+                                    <div class="ecg-idle-hint" data-i18n-key="training.telemetry.idle">
+                                        Press Start to begin ECG
+                                    </div>
                                     <div class="calibration-inline" aria-live="polite" hidden>
                                         <span class="calibration-label" data-i18n-key="training.telemetry.calibration">Calibration</span>
                                         <span class="calibration-value">10 mm/mV · 25 mm/s · 6 s window</span>
@@ -1353,6 +1356,52 @@
 
   </div>
 </div>
+
+        <div
+          id="sessionReviewModal"
+          class="session-review-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sessionReviewTitle"
+          aria-hidden="true"
+        >
+          <div class="session-review-card">
+            <div class="session-review-header">
+              <div>
+                <p class="eyebrow" data-i18n-key="review.eyebrow">Session review</p>
+                <h3 id="sessionReviewTitle" data-i18n-key="review.title">Session review</h3>
+                <p id="sessionReviewScenario" class="session-review-subtitle"></p>
+              </div>
+              <button id="sessionReviewClose" class="icon-button" type="button" aria-label="Close session review">
+                ×
+              </button>
+            </div>
+            <div class="session-review-body">
+              <div id="sessionReviewStatus" class="session-review-status"></div>
+              <div class="session-review-metrics">
+                <div class="session-review-metric">
+                  <span class="metric-label" data-i18n-key="review.stabilizedLabel">Stabilized</span>
+                  <span id="sessionReviewStabilizedValue" class="metric-value">—</span>
+                </div>
+                <div class="session-review-metric" id="sessionReviewTimeRow">
+                  <span class="metric-label" data-i18n-key="review.timeLabel">Time to stabilize</span>
+                  <span id="sessionReviewTimeValue" class="metric-value">—</span>
+                </div>
+              </div>
+            </div>
+            <div class="session-review-actions">
+              <button
+                id="sessionReviewDone"
+                type="button"
+                class="btn btn-primary"
+                data-i18n-key="review.close"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="sessionReviewOverlay" class="session-review-overlay" hidden></div>
 
   <script type="module" src="js/homeScenarios.js"></script>
   <script type="module" src="js/homeDashboard.js" defer></script>
