@@ -530,27 +530,6 @@
     font-weight: 600;
 }
 
-.leaderboard-stats-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem;
-    padding: 0.65rem 0.8rem;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: var(--surface-2);
-    font-weight: 700;
-}
-
-.leaderboard-stats-row span {
-    color: var(--deep-navy);
-}
-
-.leaderboard-stats-row small {
-    color: var(--muted);
-    font-weight: 600;
-}
-
 .home-leaderboard-row {
     display: grid;
     grid-template-columns: auto 1fr auto;

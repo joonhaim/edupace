@@ -158,44 +158,69 @@ function buildPodiumPanel(entries) {
     return panel;
 }
 
-function buildStabilizationPanel(logs) {
+function buildScenarioStabilizationPanel(logs, scenarioId) {
     const panel = document.createElement('div');
     panel.className = 'leaderboard-panel';
 
     const heading = document.createElement('div');
     heading.className = 'leaderboard-panel-heading';
-    heading.textContent = translateKey('home.leaderboard.stabilizationTitle');
+    const scenario = localizedScenarios.find((entry) => (entry.id || entry.code) === scenarioId);
+    const scenarioTitle = scenario?.title || scenarioId;
+    heading.textContent = `${translateKey('home.leaderboard.stabilizationTitle')}: ${scenarioTitle}`;
 
     const list = document.createElement('div');
     list.className = 'leaderboard-list';
 
-    stabilizationScenarioIds.forEach((scenarioId) => {
-        const scenario = localizedScenarios.find((entry) => (entry.id || entry.code) === scenarioId);
-        const scenarioTitle = scenario?.title || scenarioId;
-        const bestTime = logs
-            .filter(
-                (log) =>
-                    log.status === 'ended' &&
-                    log.stabilized === true &&
-                    (log.scenarioId || log.scenarioCode) === scenarioId &&
-                    Number.isFinite(log.stabilizationSeconds)
-            )
-            .reduce((best, log) => Math.min(best, log.stabilizationSeconds), Number.POSITIVE_INFINITY);
+    const operatorMap = new Map();
+    logs.forEach((log) => {
+        if (log.status !== 'ended') return;
+        if (log.stabilized !== true) return;
+        if ((log.scenarioId || log.scenarioCode) !== scenarioId) return;
+        if (!Number.isFinite(log.stabilizationSeconds)) return;
 
-        const row = document.createElement('div');
-        row.className = 'leaderboard-stats-row';
-
-        const name = document.createElement('span');
-        name.textContent = scenarioTitle;
-
-        const time = document.createElement('small');
-        time.textContent = Number.isFinite(bestTime)
-            ? formatDuration(bestTime)
-            : translateKey('home.leaderboard.noTime');
-
-        row.append(name, time);
-        list.appendChild(row);
+        const rawName = normalizeOperator(log.metadata?.operator);
+        if (!rawName) return;
+        const key = rawName.toLowerCase();
+        if (!operatorMap.has(key)) {
+            operatorMap.set(key, { name: rawName, bestTime: log.stabilizationSeconds });
+            return;
+        }
+        const entry = operatorMap.get(key);
+        entry.bestTime = Math.min(entry.bestTime, log.stabilizationSeconds);
     });
+
+    const entries = Array.from(operatorMap.values())
+        .sort((a, b) => a.bestTime - b.bestTime)
+        .slice(0, 3);
+
+    if (!entries.length) {
+        const empty = document.createElement('div');
+        empty.className = 'leaderboard-empty';
+        empty.textContent = translateKey('home.leaderboard.noTime');
+        list.appendChild(empty);
+    } else {
+        entries.forEach((entry, index) => {
+            const row = document.createElement('div');
+            row.className = 'home-leaderboard-row';
+
+            const rank = document.createElement('div');
+            rank.className = 'home-leaderboard-rank';
+            rank.textContent = String(index + 1);
+
+            const name = document.createElement('div');
+            name.className = 'home-leaderboard-name';
+            const nameText = document.createElement('span');
+            nameText.textContent = entry.name;
+            name.appendChild(nameText);
+
+            const time = document.createElement('div');
+            time.className = 'home-leaderboard-time';
+            time.textContent = formatDuration(entry.bestTime);
+
+            row.append(rank, name, time);
+            list.appendChild(row);
+        });
+    }
 
     panel.append(heading, list);
     return panel;
@@ -245,9 +270,11 @@ function renderLeaderboard() {
     leaderboardPanels.push(podiumPanel);
     leaderboardCarousel.appendChild(podiumPanel);
 
-    const stabilizationPanel = buildStabilizationPanel(logs);
-    leaderboardPanels.push(stabilizationPanel);
-    leaderboardCarousel.appendChild(stabilizationPanel);
+    stabilizationScenarioIds.forEach((scenarioId) => {
+        const stabilizationPanel = buildScenarioStabilizationPanel(logs, scenarioId);
+        leaderboardPanels.push(stabilizationPanel);
+        leaderboardCarousel.appendChild(stabilizationPanel);
+    });
 
     if (leaderboardPanels.length) {
         showLeaderboardPanel(0);
