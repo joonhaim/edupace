@@ -244,6 +244,11 @@ function getFeedbackStatus(scenario) {
         return 'stable';
     }
 
+    if (!pacingExpected) {
+        if (!hrOk || longPause) return 'unstable';
+        return 'partial';
+    }
+
     if (!hrOk || longPause) return 'unstable';
     if (pausePresent || (pacingExpected && !recentPace)) return 'partial';
     return 'stable';
