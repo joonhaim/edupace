@@ -4,6 +4,8 @@ import { getSessionLogs, initSessionStore } from './sessionStore.js';
 
 const recentList = document.querySelector('[data-recent-list]');
 const recentEmpty = document.querySelector('[data-recent-empty]');
+const leaderboardList = document.querySelector('[data-leaderboard-list]');
+const leaderboardEmpty = document.querySelector('[data-leaderboard-empty]');
 
 const progressFill = document.querySelector('[data-progress-fill]');
 const progressCount = document.querySelector('[data-progress-count]');
@@ -38,6 +40,74 @@ function formatDuration(seconds) {
     const minutes = Math.floor(seconds / 60);
     const remaining = seconds % 60;
     return remaining ? `${minutes}m ${remaining}s` : `${minutes}m`;
+}
+
+function renderLeaderboard() {
+    if (!leaderboardList || !leaderboardEmpty) return;
+
+    leaderboardList.innerHTML = '';
+    const logs = getSessionLogs().filter((log) => log.status === 'ended');
+
+    if (!logs.length) {
+        leaderboardEmpty.hidden = false;
+        return;
+    }
+
+    const grouped = new Map();
+    logs.forEach((log) => {
+        const operatorName = log.metadata?.operator?.trim();
+        const key = operatorName ? operatorName.toLowerCase() : '__anonymous__';
+        if (!grouped.has(key)) {
+            grouped.set(key, {
+                name: operatorName || translateKey('home.leaderboard.anonymous'),
+                count: 0,
+                bestTime: null
+            });
+        }
+        const entry = grouped.get(key);
+        entry.count += 1;
+        if (log.stabilized === true && Number.isFinite(log.stabilizationSeconds)) {
+            const currentBest = entry.bestTime ?? Number.POSITIVE_INFINITY;
+            entry.bestTime = Math.min(currentBest, log.stabilizationSeconds);
+        }
+    });
+
+    const rows = Array.from(grouped.values()).sort((a, b) => {
+        const aTime = a.bestTime ?? Number.POSITIVE_INFINITY;
+        const bTime = b.bestTime ?? Number.POSITIVE_INFINITY;
+        if (aTime !== bTime) return aTime - bTime;
+        if (a.count !== b.count) return b.count - a.count;
+        return a.name.localeCompare(b.name);
+    });
+
+    const displayRows = rows.slice(0, 3);
+    leaderboardEmpty.hidden = displayRows.length > 0;
+
+    displayRows.forEach((entry, index) => {
+        const row = document.createElement('div');
+        row.className = 'home-leaderboard-row';
+
+        const rank = document.createElement('div');
+        rank.className = 'home-leaderboard-rank';
+        rank.textContent = String(index + 1);
+
+        const name = document.createElement('div');
+        name.className = 'home-leaderboard-name';
+        const nameText = document.createElement('span');
+        nameText.textContent = entry.name;
+        const nameMeta = document.createElement('small');
+        nameMeta.textContent = translateTemplate('home.leaderboard.sessions', { count: entry.count });
+        name.append(nameText, nameMeta);
+
+        const time = document.createElement('div');
+        time.className = 'home-leaderboard-time';
+        time.textContent = entry.bestTime === null
+            ? translateKey('home.leaderboard.noTime')
+            : formatDuration(entry.bestTime);
+
+        row.append(rank, name, time);
+        leaderboardList.appendChild(row);
+    });
 }
 
 function renderRecentSessions() {
@@ -219,6 +289,7 @@ async function loadScenarios(language = getCurrentLanguage()) {
         renderRecentSessions();
         summarizeCompletion();
         renderSuggestedCard();
+        renderLeaderboard();
     } catch (error) {
         console.warn('Unable to load dashboard scenarios', error);
     }
@@ -230,11 +301,13 @@ async function initHomeDashboard() {
     renderRecentSessions();
     summarizeCompletion();
     renderSuggestedCard();
+    renderLeaderboard();
 
     window.addEventListener('edupace:session-logs-changed', () => {
         renderRecentSessions();
         summarizeCompletion();
         renderSuggestedCard();
+        renderLeaderboard();
     });
 
     document.addEventListener('edupace:language-changed', (event) => {

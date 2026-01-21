@@ -375,3 +375,50 @@
     font-weight: 700;
 }
 
+.leaderboard-list {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.home-leaderboard-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.65rem 0.8rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    font-weight: 600;
+}
+
+.home-leaderboard-rank {
+    width: 26px;
+    height: 26px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--deep-navy);
+    font-weight: 800;
+}
+
+.home-leaderboard-name {
+    display: grid;
+    gap: 0.15rem;
+}
+
+.home-leaderboard-name span {
+    font-weight: 800;
+    color: var(--deep-navy);
+}
+
+.home-leaderboard-name small {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.home-leaderboard-time {
+    font-weight: 800;
+    color: var(--deep-navy);
+}

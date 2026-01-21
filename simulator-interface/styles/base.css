@@ -534,6 +534,7 @@ h1, h2, h3 {
     grid-template-areas:
         "start browse"
         "recent browse"
+        "leaderboard suggested"
         "progress suggested"
         "resources resources";
     align-items: stretch;
@@ -586,6 +587,10 @@ h1, h2, h3 {
 
 .dash-card--progress {
     grid-area: progress;
+}
+
+.dash-card--leaderboard {
+    grid-area: leaderboard;
 }
 
 .dash-card--suggested {
