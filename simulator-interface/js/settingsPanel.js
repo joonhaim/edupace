@@ -1,7 +1,7 @@
 const defaultSettings = {
     gridlines: false,
     gridDensity: '2mm',
-    gridIntensity: 55,
+    gridIntensity: 80,
     ecgBackground: 'monitor',
     traceColor: 'green',
     traceThickness: 'normal',
@@ -11,10 +11,6 @@ const defaultSettings = {
     leadLabelColor: 'green',
     labelSize: 'large',
     sensitivityGuide: false,
-    pacingSpikeLabel: false,
-    paceColor: 'amber',
-    intrinsicBeatLabels: false,
-    senseColor: 'amber',
     intervalRulers: true,
     soundVolume: 70,
     qrsBeep: 'on',
@@ -177,10 +173,6 @@ function initSettingsPanel() {
     bindRadios(settingsCard, 'leadLabelColor', 'leadLabelColor');
     bindRadios(settingsCard, 'labelSize', 'labelSize');
     bindToggle(settingsCard, 'sensitivityGuideToggle', 'sensitivityGuide');
-    bindToggle(settingsCard, 'pacingLabelToggle', 'pacingSpikeLabel');
-    bindRadios(settingsCard, 'paceColor', 'paceColor');
-    bindToggle(settingsCard, 'intrinsicLabelToggle', 'intrinsicBeatLabels');
-    bindRadios(settingsCard, 'senseColor', 'senseColor');
     bindToggle(settingsCard, 'intervalRulersToggle', 'intervalRulers');
 
     bindRadios(settingsCard, 'qrsBeep', 'qrsBeep');
