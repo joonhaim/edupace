@@ -41,7 +41,8 @@ let logDisplaySettings = { ...defaultLogSettings };
 let logLocationElements = { display: null, openBtn: null, hint: null, refreshBtn: null };
 const leaderboardElements = {
     scenarioLabel: document.getElementById('logsLeaderboardScenario'),
-    table: document.getElementById('logsLeaderboardTable')
+    table: document.getElementById('logsLeaderboardTable'),
+    podium: document.getElementById('logsLeaderboardPodium')
 };
 const bulkElements = {
     wrapper: document.querySelector('[data-log-bulk]'),
@@ -308,7 +309,7 @@ async function deleteOperatorLogs(operatorName) {
 }
 
 function renderLeaderboard(activeLog) {
-    if (!leaderboardElements.table || !leaderboardElements.scenarioLabel) return;
+    if (!leaderboardElements.table || !leaderboardElements.scenarioLabel || !leaderboardElements.podium) return;
 
     const scenarioKey = getScenarioKey(activeLog);
     const scenarioTitle = activeLog?.scenarioTitle ?? translateKey('logs.unknownScenario');
@@ -317,12 +318,14 @@ function renderLeaderboard(activeLog) {
         : translateKey('logs.leaderboard.noScenario');
 
     leaderboardElements.table.innerHTML = '';
+    leaderboardElements.podium.innerHTML = '';
 
     if (!scenarioKey) {
         const empty = document.createElement('div');
         empty.className = 'leaderboard-empty';
         empty.textContent = translateKey('logs.leaderboard.empty');
         leaderboardElements.table.appendChild(empty);
+        leaderboardElements.podium.appendChild(empty.cloneNode(true));
         return;
     }
 
@@ -334,6 +337,7 @@ function renderLeaderboard(activeLog) {
         empty.className = 'leaderboard-empty';
         empty.textContent = translateKey('logs.leaderboard.empty');
         leaderboardElements.table.appendChild(empty);
+        leaderboardElements.podium.appendChild(empty.cloneNode(true));
         return;
     }
 
@@ -370,6 +374,7 @@ function renderLeaderboard(activeLog) {
         empty.className = 'leaderboard-empty';
         empty.textContent = translateKey('logs.leaderboard.empty');
         leaderboardElements.table.appendChild(empty);
+        leaderboardElements.podium.appendChild(empty.cloneNode(true));
         return;
     }
 
@@ -379,8 +384,6 @@ function renderLeaderboard(activeLog) {
         <span>${translateKey('logs.leaderboard.rank')}</span>
         <span>${translateKey('logs.leaderboard.name')}</span>
         <span>${translateKey('logs.leaderboard.bestTime')}</span>
-        <span>${translateKey('logs.leaderboard.sessionCount')}</span>
-        <span class="sr-only">${translateKey('logs.leaderboard.actions')}</span>
     `;
     leaderboardElements.table.appendChild(head);
 
@@ -402,21 +405,40 @@ function renderLeaderboard(activeLog) {
             ? translateKey('logs.leaderboard.noTime')
             : formatDuration(entry.bestTime);
 
-        const count = document.createElement('span');
-        count.className = 'leaderboard-stat';
-        count.textContent = translateTemplate('logs.leaderboard.sessions', { count: entry.count });
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.type = 'button';
-        deleteBtn.className = 'btn btn-ghost btn-small danger leaderboard-delete';
-        deleteBtn.textContent = translateKey('logs.actions.deleteOperator');
-        deleteBtn.addEventListener('click', (event) => {
-            event.stopPropagation();
-            deleteOperatorLogs(entry.name);
-        });
-
-        row.append(rank, name, time, count, deleteBtn);
+        row.append(rank, name, time);
         leaderboardElements.table.appendChild(row);
+    });
+
+    const podiumPositions = [
+        { rank: 2, className: 'podium-place podium-place--second', entry: rows[1] },
+        { rank: 1, className: 'podium-place podium-place--first', entry: rows[0] },
+        { rank: 3, className: 'podium-place podium-place--third', entry: rows[2] }
+    ];
+
+    podiumPositions.forEach(({ rank, className, entry }) => {
+        const place = document.createElement('div');
+        place.className = className;
+
+        const rankBadge = document.createElement('div');
+        rankBadge.className = 'podium-rank';
+        rankBadge.textContent = String(rank);
+
+        const name = document.createElement('div');
+        name.className = 'podium-name';
+        name.textContent = entry?.name ?? '—';
+
+        const time = document.createElement('div');
+        time.className = 'podium-sessions';
+        time.textContent = entry?.bestTime === null || entry?.bestTime === undefined
+            ? translateKey('logs.leaderboard.noTime')
+            : formatDuration(entry.bestTime);
+
+        if (!entry) {
+            place.classList.add('is-empty');
+        }
+
+        place.append(rankBadge, name, time);
+        leaderboardElements.podium.appendChild(place);
     });
 }
 
@@ -445,17 +467,16 @@ function formatDate(timestamp) {
 
     let hours = date.getHours();
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
     let suffix = '';
 
     if (logDisplaySettings.timeFormat === '12h') {
         suffix = hours >= 12 ? 'pm' : 'am';
         hours = hours % 12 || 12;
         const displayHours = String(hours).padStart(2, '0');
-        return `${datePart} ${displayHours}:${minutes}:${seconds} ${suffix}`;
+        return `${datePart} ${displayHours}:${minutes} ${suffix}`;
     }
 
-    return `${datePart} ${String(hours).padStart(2, '0')}:${minutes}:${seconds}`;
+    return `${datePart} ${String(hours).padStart(2, '0')}:${minutes}`;
 }
 
 function setSelectedLog(id) {
@@ -640,7 +661,6 @@ function renderDetail(log) {
             : '—';
 
     const summaryItems = [
-        { label: translateKey('logs.detail.sessionId'), value: log.id },
         { label: translateKey('logs.detail.started'), value: formatDate(log.startedAt) },
         { label: translateKey('logs.detail.duration'), value: formatDuration(log.durationSeconds) },
         { label: translateKey('logs.detail.stabilized'), value: stabilizedValue },
@@ -826,6 +846,19 @@ function renderDetail(log) {
         primaryActions.append(editBtn, reviewBtn);
         exportActions.append(downloadJson, downloadCsv);
         dangerActions.append(deleteBtn);
+
+        const operatorName = normalizeOperator(log.metadata?.operator);
+        if (operatorName) {
+            const deleteOperatorBtn = document.createElement('button');
+            deleteOperatorBtn.type = 'button';
+            deleteOperatorBtn.className = 'btn btn-ghost btn-small danger';
+            deleteOperatorBtn.textContent = translateKey('logs.actions.deleteOperator');
+            deleteOperatorBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                deleteOperatorLogs(operatorName);
+            });
+            dangerActions.append(deleteOperatorBtn);
+        }
         actions.append(primaryActions, exportActions, dangerActions);
     }
 

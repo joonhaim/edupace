@@ -451,12 +451,15 @@ body.simulation-dark.page-logs .log-empty {
     color: #e3e9f4;
 }
 
-body.simulation-dark.page-logs .logs-bulk {
-    background: rgba(15, 22, 36, 0.7);
+body.simulation-dark.page-logs .log-list-actions,
+body.simulation-dark.page-logs .leaderboard-podium-panel {
+    background: #0f1624;
     border-color: #1c2738;
+    box-shadow: none;
 }
 
-body.simulation-dark.page-logs .logs-bulk-count {
+body.simulation-dark.page-logs .log-list-count,
+body.simulation-dark.page-logs .leaderboard-podium-title {
     color: #e3e9f4;
 }
 
