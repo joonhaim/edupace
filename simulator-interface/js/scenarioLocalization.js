@@ -9,17 +9,22 @@ const SCENARIO_TRANSLATIONS = {
     AV3: {
         title: 'Derdegraads AV-blok',
         description: 'Compleet AV-blok met ventriculair escape-ritme.',
-        summaryLabel: 'Compleet hartblok'
+        summaryLabel: 'Derdegraads AV-blok'
     },
     Mobitz2: {
-        title: 'Mobitz II',
+        title: 'Tweedegrads AV-blok (Mobitz II)',
         description: 'Intermitterend uitvallende ventriculaire slagen met vaste PR-interval.',
-        summaryLabel: 'Mobitz II-blok'
+        summaryLabel: 'Tweedegrads AV-blok'
+    },
+    SSS: {
+        title: 'Sick Sinus Syndrome',
+        description: 'Sinusknoopdisfunctie met pauzes en wisselende rates.',
+        summaryLabel: 'Sick sinus syndrome'
     },
     SlowConduction: {
-        title: 'Vertraagde geleiding',
+        title: 'Trage geleiding',
         description: 'Vertraagde ventriculaire geleiding met verlengde intervallen.',
-        summaryLabel: 'Vertraagde geleiding'
+        summaryLabel: 'Trage geleiding'
     }
 };
 

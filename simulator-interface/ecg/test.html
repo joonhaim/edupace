@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ECG Paper + Monitor Write-Sweep (NSR + 3rd-degree AV block)</title>
+  <title>ECG Paper + Monitor Write-Sweep (Normal Sinus Rhythm + Third-degree AV block)</title>
   <style>
     :root{
       --bg:#0b0b0b; --panel:#141414; --text:#eaeaea; --muted:#a7a7a7; --border:#2a2a2a;
@@ -90,10 +90,11 @@
           <div class="field wide">
             <label for="scenario">Scenario</label>
             <select id="scenario">
-              <option value="NSR" selected>NSR</option>
-              <option value="3rdDegHB">3rd-degree AV block</option>
-              <option value="Mobitz2">Mobitz II</option>
-              <option value="SlowConduction">Slow conduction</option>
+              <option value="NSR" selected>Normal Sinus Rhythm</option>
+              <option value="AV3">Third-degree AV block</option>
+              <option value="Mobitz2">Second-degree AV block (Mobitz II)</option>
+              <option value="SSS">Sick Sinus Syndrome</option>
+              <option value="SlowConduction">Slow Conduction</option>
             </select>
           </div>
 
@@ -467,7 +468,7 @@
       const asynchronous = (elAsync.value === "true");
       const scenario = elScenario.value;
 
-      if (scenario === "NSR") {
+      if (scenario === "NSR" || scenario === "SSS") {
         return stitchBeats({
           patientHR, sensitivity, rate, output, asynchronous,
           iterations
@@ -479,6 +480,9 @@
       }
       if (scenario === "SlowConduction") {
         return slowConduction({ patientHR, sensitivity, rate, output, asynchronous, iterations });
+      }
+      if (scenario === "AV3") {
+        return thirdDegHeartBlock({ iterations, sensitivity, output, rate, patientHR, asynchronous });
       }
       return thirdDegHeartBlock({ iterations, sensitivity, output, rate, patientHR, asynchronous });
     }

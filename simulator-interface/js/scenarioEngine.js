@@ -47,13 +47,6 @@ const scenarioState = {
     locked: false
 };
 
-const CATEGORY_ORDER = ['module', 'clinical'];
-
-function normalizeCategory(scenario) {
-    const category = typeof scenario?.category === 'string' ? scenario.category.toLowerCase() : 'module';
-    return category || 'module';
-}
-
 function findScenarioIndex(identifier) {
     if (!identifier) return -1;
     const normalizedId = identifier.trim().toLowerCase();
@@ -63,17 +56,6 @@ function findScenarioIndex(identifier) {
         const codeMatch = scenario.code?.toLowerCase() === normalizedId;
         return idMatch || codeMatch;
     });
-}
-
-function getCategoryLabel(category) {
-    if (category === 'module') return translateKey('training.menu.module');
-    if (category === 'clinical') return translateKey('training.menu.clinical');
-    return translateKey('training.menu.trainingModes');
-}
-
-function getCategoryClasses(category) {
-    const base = 'scenario-menu-section';
-    return `${base} ${base}-${category}`.trim();
 }
 
 
@@ -222,61 +204,24 @@ function renderScenarioMenu(menu, scenarios) {
         return;
     }
 
-    const grouped = new Map();
-
     scenarios.forEach((scenario, index) => {
-        const category = normalizeCategory(scenario);
-        if (!grouped.has(category)) {
-            grouped.set(category, []);
-        }
-        grouped.get(category).push({ scenario, index });
-    });
-
-    const orderedCategories = [
-        ...CATEGORY_ORDER,
-        ...Array.from(grouped.keys()).filter((category) => !CATEGORY_ORDER.includes(category))
-    ];
-
-    orderedCategories.forEach((category) => {
-        const items = grouped.get(category) ?? [];
-        const section = document.createElement('div');
-        section.className = getCategoryClasses(category);
-
-        const heading = document.createElement('div');
-        heading.className = 'scenario-menu-heading';
-        heading.textContent = getCategoryLabel(category);
-        section.appendChild(heading);
-
-        if (!items.length) {
-            const empty = document.createElement('div');
-            empty.className = 'scenario-option scenario-option-empty';
-            empty.textContent = translateKey('training.menu.empty');
-            empty.setAttribute('aria-disabled', 'true');
-            empty.tabIndex = -1;
-            section.appendChild(empty);
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'scenario-option';
+        option.dataset.index = String(index);
+        option.role = 'option';
+        option.textContent = scenario.title;
+        if (scenario.comingSoon) {
+            option.disabled = true;
+            option.title = translateKey('training.menu.comingSoon');
         }
 
-        items.forEach(({ scenario, index }) => {
-            const option = document.createElement('button');
-            option.type = 'button';
-            option.className = 'scenario-option';
-            option.dataset.index = String(index);
-            option.role = 'option';
-            option.textContent = scenario.title;
-            if (scenario.comingSoon) {
-                option.disabled = true;
-                option.title = translateKey('training.menu.comingSoon');
-            }
-
-            option.addEventListener('click', () => {
-                startScenario(index);
-                toggleMenu(false);
-            });
-
-            section.appendChild(option);
+        option.addEventListener('click', () => {
+            startScenario(index);
+            toggleMenu(false);
         });
 
-        list.appendChild(section);
+        list.appendChild(option);
     });
 
     menu.appendChild(list);

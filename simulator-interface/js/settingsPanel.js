@@ -23,6 +23,7 @@ const defaultSettings = {
         NSR: 60,
         AV3: 60,
         Mobitz2: 60,
+        SSS: 60,
         SlowConduction: 60
     },
     intrinsicRate: 60,

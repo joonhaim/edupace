@@ -214,14 +214,9 @@
                 <h2 style="margin-bottom: 0;" data-i18n-key="home.scenarios.title">Browse</h2>
               </div>
 
-              <div class="segmented" role="tablist" aria-label="Scenario category">
-                <button class="seg" type="button" data-scenario-category="module" aria-selected="false" data-i18n-key="home.scenarios.module">Module</button>
-                <button class="seg active" type="button" data-scenario-category="clinical" aria-selected="true" data-i18n-key="home.scenarios.clinical">Clinical</button>
-              </div>
             </div>
 
-            <div class="scenario-list" data-scenario-list="module" hidden></div>
-            <div class="scenario-list" data-scenario-list="clinical"></div>
+            <div class="scenario-list" data-scenario-list="all"></div>
 
             <p class="muted dash-hint" data-i18n-key="home.scenarios.hint">
               Selecting a scenario opens the training workspace with that case loaded.
@@ -320,7 +315,7 @@
                             </div>
                             <div id="scenarioMenu" class="scenario-menu" role="listbox" aria-label="Available scenarios"></div>
                             <p id="scenarioText" class="scenario-text" data-i18n-key="training.scenario.hint">
-                                Pick a module or clinical case to begin training.
+                                Pick a scenario to begin training.
                             </p>
                         </div>
                         <div class="session-actions" aria-label="Session controls">
@@ -336,7 +331,7 @@
                             </div>
                             <div class="session-meta">
                                 <p id="sessionStatusText" class="session-status" aria-live="polite">
-                                    <span id="sessionStatusLabel" data-i18n-key="training.scenario.status">Select a module or clinical case to begin.</span>
+                                    <span id="sessionStatusLabel" data-i18n-key="training.scenario.status">Select a scenario to begin.</span>
                                     <span id="sessionTimerDisplay" class="session-timer-inline"></span>
                                 </p>
                             </div>
@@ -741,7 +736,7 @@
                     <p class="instruction-step" data-i18n-key="instructions.steps.scenario.step">Scenario</p>
                     <h3 data-i18n-key="instructions.steps.scenario.title">Select a scenario</h3>
                     <p data-i18n-key="instructions.steps.scenario.body">
-                      Pick a training case from the scenario dropdown (e.g. symptomatic bradycardia, undersensing, oversensing) and read the summary banner.
+                      Pick a training case from the scenario dropdown (Normal Sinus Rhythm or Third-degree AV block) and read the summary banner.
                     </p>
                   </div>
                 </li>
@@ -1220,7 +1215,7 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.intrinsicScenario.av3.title">3rd Degree AV Block</div>
+                                                                <div class="setting-title" data-i18n-key="settings.intrinsicScenario.av3.title">Third-degree AV block</div>
                                                                 <p class="setting-hint" data-i18n-key="settings.intrinsicScenario.hint">Set baseline intrinsic bpm for this scenario.</p>
                                                             </div>
                                                             <div class="setting-field">
@@ -1239,10 +1234,10 @@
 
                                                         <div class="setting-row">
                                                             <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.intrinsicScenario.mobitz2.title">Mobitz II</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicScenario.hint">Set baseline intrinsic bpm for this scenario.</p>
-                                                            </div>
-                                                            <div class="setting-field">
+                                                                <div class="setting-title" data-i18n-key="settings.intrinsicScenario.mobitz2.title">Second-degree AV block (Mobitz II)</div>
+                                                            <p class="setting-hint" data-i18n-key="settings.intrinsicScenario.hint">Set baseline intrinsic bpm for this scenario.</p>
+                                                        </div>
+                                                        <div class="setting-field">
                                                                 <label class="setting-label" for="intrinsicRateMobitz2" data-i18n-key="settings.intrinsicScenario.rateLabel">Intrinsic rate (bpm)</label>
                                                                 <input
                                                                     type="number"
@@ -1253,14 +1248,33 @@
                                                                     step="1"
                                                                     data-intrinsic-rate="Mobitz2"
                                                                 />
-                                                            </div>
                                                         </div>
+                                                    </div>
 
-                                                        <div class="setting-row">
-                                                            <div class="setting-copy">
-                                                                <div class="setting-title" data-i18n-key="settings.intrinsicScenario.slowConduction.title">Slow Conduction</div>
-                                                                <p class="setting-hint" data-i18n-key="settings.intrinsicScenario.hint">Set baseline intrinsic bpm for this scenario.</p>
-                                                            </div>
+                                                    <div class="setting-row">
+                                                        <div class="setting-copy">
+                                                            <div class="setting-title" data-i18n-key="settings.intrinsicScenario.sss.title">Sick Sinus Syndrome</div>
+                                                            <p class="setting-hint" data-i18n-key="settings.intrinsicScenario.hint">Set baseline intrinsic bpm for this scenario.</p>
+                                                        </div>
+                                                        <div class="setting-field">
+                                                            <label class="setting-label" for="intrinsicRateSSS" data-i18n-key="settings.intrinsicScenario.rateLabel">Intrinsic rate (bpm)</label>
+                                                            <input
+                                                                type="number"
+                                                                class="setting-select"
+                                                                id="intrinsicRateSSS"
+                                                                min="30"
+                                                                max="120"
+                                                                step="1"
+                                                                data-intrinsic-rate="SSS"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="setting-row">
+                                                        <div class="setting-copy">
+                                                            <div class="setting-title" data-i18n-key="settings.intrinsicScenario.slowConduction.title">Slow Conduction</div>
+                                                            <p class="setting-hint" data-i18n-key="settings.intrinsicScenario.hint">Set baseline intrinsic bpm for this scenario.</p>
+                                                        </div>
                                                             <div class="setting-field">
                                                                 <label class="setting-label" for="intrinsicRateSlowConduction" data-i18n-key="settings.intrinsicScenario.rateLabel">Intrinsic rate (bpm)</label>
                                                                 <input

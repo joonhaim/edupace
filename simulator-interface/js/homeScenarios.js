@@ -1,45 +1,13 @@
 import { getCurrentLanguage, translateKey } from './languageToggle.js';
 import { localizeScenarioList } from './scenarioLocalization.js';
 
-const scenarioLists = {
-    module: document.querySelector('[data-scenario-list="module"]'),
-    clinical: document.querySelector('[data-scenario-list="clinical"]')
-};
-
-let scenarioCategoryToggles = [];
+const scenarioList = document.querySelector('[data-scenario-list]');
 
 let baseScenarios = [];
 let localizedScenarios = [];
 let searchTerm = '';
-let activeCategory = 'clinical';
-
 function hasTargets() {
-    return Object.values(scenarioLists).some(Boolean);
-}
-
-function setScenarioCategory(category = 'clinical') {
-    activeCategory = category;
-    Object.entries(scenarioLists).forEach(([key, target]) => {
-        if (!target) return;
-        const isActive = key === category;
-        target.hidden = !isActive;
-    });
-
-    scenarioCategoryToggles.forEach((button) => {
-        const isActive = button.dataset.scenarioCategory === category;
-        button.classList.toggle('active', isActive);
-        button.setAttribute('aria-selected', String(isActive));
-    });
-}
-
-function bindScenarioToggles() {
-    scenarioCategoryToggles = Array.from(document.querySelectorAll('[data-scenario-category]'));
-    scenarioCategoryToggles.forEach((toggle) => {
-        toggle.addEventListener('click', () => {
-            setScenarioCategory(toggle.dataset.scenarioCategory);
-            applyScenarioFilters();
-        });
-    });
+    return Boolean(scenarioList);
 }
 
 function bindScenarioSearch() {
@@ -86,42 +54,19 @@ function createEmptyState(target) {
     target.appendChild(empty);
 }
 
-function renderScenarioLists(scenarios, { categoryFilter = null } = {}) {
-    const totalItems = scenarios.length;
-    const grouped = scenarios.reduce(
-        (acc, scenario) => {
-            const category = (scenario.category ?? 'module').toLowerCase();
-            if (!acc[category]) acc[category] = [];
-            acc[category].push(scenario);
-            return acc;
-        },
-        { module: [], clinical: [] }
-    );
+function renderScenarioList(scenarios) {
+    if (!scenarioList) return;
+    scenarioList.innerHTML = '';
+    const shouldShowEmptyState = !scenarios.length && (!searchTerm.trim() || scenarios.length === 0);
 
-    Object.entries(scenarioLists).forEach(([category, target]) => {
-        if (!target) return;
+    if (shouldShowEmptyState) {
+        createEmptyState(scenarioList);
+        return;
+    }
 
-        const isFilteredOut = categoryFilter && category !== categoryFilter;
-        target.hidden = Boolean(isFilteredOut);
-        if (isFilteredOut) {
-            target.innerHTML = '';
-            return;
-        }
-
-        const items = grouped[category] ?? [];
-        target.innerHTML = '';
-
-        const shouldShowEmptyState = !items.length && (!searchTerm.trim() || totalItems === 0);
-
-        if (shouldShowEmptyState) {
-            createEmptyState(target);
-            return;
-        }
-
-        items.forEach((scenario) => {
-            const link = createScenarioLink(scenario);
-            target.appendChild(link);
-        });
+    scenarios.forEach((scenario) => {
+        const link = createScenarioLink(scenario);
+        scenarioList.appendChild(link);
     });
 }
 
@@ -138,39 +83,15 @@ function filterScenarios(term = '', scenarios = localizedScenarios) {
     });
 }
 
-function updateCategoryVisibility() {
-    const isSearching = Boolean(searchTerm.trim());
-
-    scenarioCategoryToggles.forEach((toggle) => {
-        toggle.disabled = isSearching;
-        toggle.setAttribute('aria-disabled', String(isSearching));
-        toggle.classList.toggle('is-disabled', isSearching);
-    });
-
-    if (isSearching) {
-        Object.values(scenarioLists).forEach((target) => {
-            if (!target) return;
-            target.hidden = false;
-        });
-        return;
-    }
-
-    setScenarioCategory(activeCategory);
-}
-
 function applyScenarioFilters() {
     const filtered = filterScenarios(searchTerm, localizedScenarios);
-    const categoryFilter = searchTerm.trim() ? null : activeCategory;
-    renderScenarioLists(filtered, { categoryFilter });
-    updateCategoryVisibility();
+    renderScenarioList(filtered);
 }
 
 async function initHomeScenarios() {
     if (!hasTargets()) return;
 
-    bindScenarioToggles();
     bindScenarioSearch();
-    setScenarioCategory('clinical');
 
     try {
         const response = await fetch('data/scenarios.json', { cache: 'no-store' });
@@ -180,14 +101,13 @@ async function initHomeScenarios() {
         localizedScenarios = localizeScenarioList(Array.isArray(baseScenarios) ? baseScenarios : [], getCurrentLanguage());
         applyScenarioFilters();
     } catch (error) {
-        Object.values(scenarioLists).forEach((target) => {
-            if (!target) return;
-            target.innerHTML = '';
+        if (scenarioList) {
+            scenarioList.innerHTML = '';
             const warning = document.createElement('div');
             warning.className = 'scenario-link-empty';
             warning.textContent = translateKey('home.scenarios.error');
-            target.appendChild(warning);
-        });
+            scenarioList.appendChild(warning);
+        }
         // eslint-disable-next-line no-console
         console.error(error);
     }
