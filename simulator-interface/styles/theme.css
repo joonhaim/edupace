@@ -320,6 +320,8 @@ body.simulation-dark .scenario-name {
 
 body.simulation-dark .scenario-pill {
     color: #8fb9ef;
+    background: rgba(79, 127, 196, 0.16);
+    border-color: rgba(143, 185, 239, 0.32);
 }
 
 body.simulation-dark .brand {
