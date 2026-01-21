@@ -586,7 +586,7 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
         });
 
         updateConnectionStatus(serialState.label ? 'Connected' : 'CONNECTED', true);
-        ui.connectBtn.textContent = 'Disconnect';
+        ui.connectBtn.textContent = 'DISCONNECT';
         ui.connectBtn.disabled = false;
 
         toggleDevicePopover(false);
