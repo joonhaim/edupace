@@ -628,6 +628,10 @@ async function disconnectFromHardware() {
     ui.connectBtn.disabled = false;
 }
 
+async function handleSerialDisconnect() {
+    await disconnectFromHardware();
+}
+
 function updateConnectionStatus(text, connected, unsupported = false) {
     if (ui.connectionStatusText) {
         ui.connectionStatusText.textContent = text;
@@ -666,6 +670,7 @@ async function readLoop() {
             const { value, done } = await serialState.reader.read();
 
             if (done || !value) {
+                await handleSerialDisconnect();
                 break;
             }
 
