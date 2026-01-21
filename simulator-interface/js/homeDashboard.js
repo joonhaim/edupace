@@ -22,6 +22,7 @@ let leaderboardRotationTimer = null;
 let leaderboardPanels = [];
 let leaderboardIndex = 0;
 let selectedOperatorKey = null;
+const stabilizationScenarioIds = ['Mobitz2', 'AV3', 'SlowConduction'];
 
 function translateTemplate(key, replacements = {}) {
     let text = translateKey(key) || key;
@@ -157,6 +158,49 @@ function buildPodiumPanel(entries) {
     return panel;
 }
 
+function buildStabilizationPanel(logs) {
+    const panel = document.createElement('div');
+    panel.className = 'leaderboard-panel';
+
+    const heading = document.createElement('div');
+    heading.className = 'leaderboard-panel-heading';
+    heading.textContent = translateKey('home.leaderboard.stabilizationTitle');
+
+    const list = document.createElement('div');
+    list.className = 'leaderboard-list';
+
+    stabilizationScenarioIds.forEach((scenarioId) => {
+        const scenario = localizedScenarios.find((entry) => (entry.id || entry.code) === scenarioId);
+        const scenarioTitle = scenario?.title || scenarioId;
+        const bestTime = logs
+            .filter(
+                (log) =>
+                    log.status === 'ended' &&
+                    log.stabilized === true &&
+                    (log.scenarioId || log.scenarioCode) === scenarioId &&
+                    Number.isFinite(log.stabilizationSeconds)
+            )
+            .reduce((best, log) => Math.min(best, log.stabilizationSeconds), Number.POSITIVE_INFINITY);
+
+        const row = document.createElement('div');
+        row.className = 'leaderboard-stats-row';
+
+        const name = document.createElement('span');
+        name.textContent = scenarioTitle;
+
+        const time = document.createElement('small');
+        time.textContent = Number.isFinite(bestTime)
+            ? formatDuration(bestTime)
+            : translateKey('home.leaderboard.noTime');
+
+        row.append(name, time);
+        list.appendChild(row);
+    });
+
+    panel.append(heading, list);
+    return panel;
+}
+
 function renderLeaderboard() {
     if (!leaderboardCarousel || !leaderboardEmpty) return;
 
@@ -198,6 +242,10 @@ function renderLeaderboard() {
     const podiumPanel = buildPodiumPanel(topOperators);
     leaderboardPanels.push(podiumPanel);
     leaderboardCarousel.appendChild(podiumPanel);
+
+    const stabilizationPanel = buildStabilizationPanel(logs);
+    leaderboardPanels.push(stabilizationPanel);
+    leaderboardCarousel.appendChild(stabilizationPanel);
 
     if (leaderboardPanels.length) {
         showLeaderboardPanel(0);
