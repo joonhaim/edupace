@@ -232,7 +232,10 @@ function serializeSessionToCsv(session) {
         'status',
         'startedAt',
         'endedAt',
-        'durationSeconds'
+        'durationSeconds',
+        'stabilized',
+        'stabilizationSeconds',
+        'stabilityStatus'
     ];
 
     const rows = (session.events ?? []).map((event, index) => {
@@ -264,7 +267,10 @@ function serializeSessionToCsv(session) {
             session.status,
             session.startedAt,
             session.endedAt,
-            session.durationSeconds
+            session.durationSeconds,
+            session.stabilized ?? '',
+            session.stabilizationSeconds ?? '',
+            session.stabilityStatus ?? ''
         ];
     });
 
@@ -279,6 +285,9 @@ function serializeSessionToCsv(session) {
         rows[0][23] = session.startedAt;
         rows[0][24] = session.endedAt;
         rows[0][25] = session.durationSeconds;
+        rows[0][26] = session.stabilized ?? '';
+        rows[0][27] = session.stabilizationSeconds ?? '';
+        rows[0][28] = session.stabilityStatus ?? '';
     }
 
     const csv = [headers, ...rows].map((line) => line.map(escapeCsvValue).join(',')).join('\n');

@@ -1,4 +1,5 @@
 import { addSessionLog, initSessionStore } from './sessionStore.js';
+import { openSessionReview } from './sessionReview.js';
 
 const sessionElements = {
     startBtn: document.getElementById('startSessionBtn'),
@@ -31,6 +32,7 @@ const telemetryContext = {
     sensitivity: null,
     power: null,
     locked: null,
+    stabilityStatus: null,
     alarm: { level: 'normal', text: null },
     controlMode: 'hardware',
     connection: 'disconnected',
@@ -69,6 +71,14 @@ function logEvent(type, details = {}) {
     window.dispatchEvent(
         new CustomEvent('edupace-session-event', {
             detail: { event, session: sessionState.currentSession }
+        })
+    );
+}
+
+function emitSessionStatus(status) {
+    window.dispatchEvent(
+        new CustomEvent('edupace-session-status', {
+            detail: { status, session: sessionState.currentSession }
         })
     );
 }
@@ -270,6 +280,26 @@ function handleLedFlash(event) {
     }
 }
 
+function handleStabilityUpdate(event) {
+    const status = event.detail?.status ?? null;
+    if (!status) return;
+    updateTelemetryContext({ stabilityStatus: status });
+
+    if (!sessionState.currentSession || sessionState.currentSession.status !== 'running') {
+        return;
+    }
+
+    sessionState.currentSession.stabilityStatus = status;
+
+    if (status === 'stable' && !sessionState.currentSession.stabilized) {
+        sessionState.currentSession.stabilized = true;
+        sessionState.currentSession.stabilizationSeconds = Math.max(0, Math.round(getElapsedMs() / 1000));
+        sessionState.currentSession.stabilizedAt = new Date().toISOString();
+    }
+
+    logEvent('stability-update', { status });
+}
+
 function handleTelemetryPause(event) {
     const paused = Boolean(event.detail?.paused);
     if (!sessionState.currentSession) return;
@@ -307,6 +337,7 @@ function createSession() {
     sessionState.timing.pausedMs = 0;
     sessionState.timing.pausedSince = null;
     updateTelemetryContext({ controlMode: getControlMode() });
+    updateTelemetryContext({ stabilityStatus: null });
 
     sessionState.currentSession = {
         id: `session-${Date.now()}`,
@@ -315,6 +346,10 @@ function createSession() {
         status: 'running',
         startedAt: now.toISOString(),
         endedAt: null,
+        stabilityStatus: null,
+        stabilized: false,
+        stabilizationSeconds: null,
+        stabilizedAt: null,
         events: [],
         metadata: {
             operator: '',
@@ -340,6 +375,7 @@ function startSession() {
     createSession();
     startTimer();
     setStatusText('Session running.');
+    emitSessionStatus('running');
     updateControls();
 }
 
@@ -365,6 +401,7 @@ function pauseSession() {
     });
 
     setStatusText(isPaused ? 'Session running.' : 'Session paused.');
+    emitSessionStatus(isPaused ? 'running' : 'paused');
     updateControls();
 }
 
@@ -388,9 +425,13 @@ async function endSession(reason = 'manual') {
         scenarioId: sessionState.currentSession.scenarioId,
         reason
     });
+    emitSessionStatus('ended');
 
     const payload = buildLogPayload();
     await addSessionLog(payload);
+    if (reason === 'manual') {
+        openSessionReview(payload);
+    }
 
     const statusText =
         reason === 'navigation'
@@ -422,6 +463,7 @@ function initSessionManager() {
     updateControls();
     updateTelemetryContext({ controlMode: getControlMode() });
     updateTimerDisplay();
+    emitSessionStatus('idle');
 
     window.addEventListener('edupace-scenario-change', (event) => {
         setSelectedScenario(event.detail ?? null);
@@ -432,6 +474,7 @@ function initSessionManager() {
     window.addEventListener('edupace-alarm', handleAlarmUpdate);
     window.addEventListener('edupace-connection', handleConnectionChange);
     window.addEventListener('edupace-led-flash', handleLedFlash);
+    window.addEventListener('edupace-stability-change', handleStabilityUpdate);
     window.addEventListener('edupace-telemetry-pause', handleTelemetryPause);
 
     Array.from(sessionElements.controlModeRadios ?? []).forEach((radio) => {

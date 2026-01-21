@@ -20,10 +20,10 @@ const defaultSettings = {
     qrsBeep: 'on',
     autoLockKnobs: '60',
     scenarioIntrinsicRates: {
-        NSR: 60,
-        AV3: 60,
-        Mobitz2: 60,
-        SlowConduction: 60
+        NSR: 75,
+        AV3: 35,
+        Mobitz2: 35,
+        SlowConduction: 70
     },
     intrinsicRate: 60,
     intrinsicRegularity: 'regular',

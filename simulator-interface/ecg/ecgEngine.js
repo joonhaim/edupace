@@ -120,7 +120,8 @@ function initEcgEngine() {
         // monitor init/visual refresh flags
         monitorInitialized: false,
         monitorNeedsVisualRefresh: true, // build background/buffer at least once
-        lastVisualKey: ''
+        lastVisualKey: '',
+        sessionActive: false
     };
 
     const getAsyncMode = () => {
@@ -180,10 +181,10 @@ function initEcgEngine() {
         }
     };
 
-    const setPaused = (paused) => {
+    const setPaused = (paused, options = {}) => {
         state.paused = Boolean(paused);
         if (pausedBadge) {
-            pausedBadge.toggleAttribute('hidden', !state.paused);
+            pausedBadge.toggleAttribute('hidden', !state.paused || !state.sessionActive);
         }
         if (caliperReadout) {
             caliperReadout.toggleAttribute('hidden', true);
@@ -200,11 +201,37 @@ function initEcgEngine() {
             state.calipers.dragging = false;
             state.calipers.dragMoved = false;
         }
-        window.dispatchEvent(
-            new CustomEvent('edupace-telemetry-pause', {
-                detail: { paused: state.paused }
-            })
-        );
+        if (!options.silent) {
+            window.dispatchEvent(
+                new CustomEvent('edupace-telemetry-pause', {
+                    detail: { paused: state.paused }
+                })
+            );
+        }
+    };
+
+    const setSessionActive = (active) => {
+        state.sessionActive = Boolean(active);
+        if (frame) {
+            frame.classList.toggle('is-idle', !state.sessionActive);
+        }
+        if (!state.sessionActive) {
+            setPaused(true, { silent: true });
+            hrEngine.reset();
+            hrEngine.setSuspended(true);
+            state.playbackTime = 0;
+            state.lastTimestamp = null;
+            resetSweepAndBlankScreen();
+        } else {
+            hrEngine.setSuspended(false);
+            setPaused(false, { silent: true });
+            state.lastTimestamp = null;
+        }
+
+        if (pauseToggle) {
+            pauseToggle.toggleAttribute('disabled', !state.sessionActive);
+            pauseToggle.setAttribute('aria-disabled', String(!state.sessionActive));
+        }
     };
 
     const setCalibrationVisible = (visible) => {
@@ -926,6 +953,7 @@ function initEcgEngine() {
     fixFrameSize();
     resizeCanvas();
     refreshStrips();
+    setSessionActive(false);
     requestAnimationFrame(render);
 
     window.addEventListener('resize', () => {
@@ -933,6 +961,7 @@ function initEcgEngine() {
     });
 
     canvas.addEventListener('click', () => {
+        if (!state.sessionActive) return;
         if (suppressClick) {
             suppressClick = false;
             return;
@@ -942,11 +971,12 @@ function initEcgEngine() {
 
     pauseToggle?.addEventListener('click', (event) => {
         event.stopPropagation();
+        if (!state.sessionActive) return;
         setPaused(!state.paused);
     });
 
     canvas.addEventListener('pointerdown', (event) => {
-        if (!state.paused || !state.settings.intervalRulers) return;
+        if (!state.sessionActive || !state.paused || !state.settings.intervalRulers) return;
         const rect = canvas.getBoundingClientRect();
         const x = event.clientX - rect.left;
         state.calipers.active = false;
@@ -959,7 +989,7 @@ function initEcgEngine() {
     });
 
     canvas.addEventListener('pointermove', (event) => {
-        if (!state.calipers.dragging) return;
+        if (!state.sessionActive || !state.calipers.dragging) return;
         const rect = canvas.getBoundingClientRect();
         const nextX = event.clientX - rect.left;
         if (Math.abs(nextX - state.calipers.startX) > 2) {
@@ -971,7 +1001,7 @@ function initEcgEngine() {
     });
 
     canvas.addEventListener('pointerup', (event) => {
-        if (!state.calipers.dragging) return;
+        if (!state.sessionActive || !state.calipers.dragging) return;
         state.calipers.dragging = false;
         suppressClick = state.calipers.dragMoved;
         if (!state.calipers.dragMoved) {
@@ -982,7 +1012,7 @@ function initEcgEngine() {
     });
 
     canvas.addEventListener('pointercancel', (event) => {
-        if (!state.calipers.dragging) return;
+        if (!state.sessionActive || !state.calipers.dragging) return;
         state.calipers.dragging = false;
         state.calipers.active = false;
         state.calipers.dragMoved = false;
@@ -1014,6 +1044,20 @@ function initEcgEngine() {
     window.addEventListener('edupace-scenario-change', (event) => {
         state.scenarioId = event.detail?.id ?? 'NSR';
         state.needsRegenerate = true;
+    });
+
+    window.addEventListener('edupace-session-status', (event) => {
+        const status = event.detail?.status ?? 'idle';
+        if (status === 'running') {
+            setSessionActive(true);
+            return;
+        }
+        if (status === 'paused') {
+            setSessionActive(true);
+            setPaused(true, { silent: true });
+            return;
+        }
+        setSessionActive(false);
     });
 
     calibrationToggle?.addEventListener('click', () => {

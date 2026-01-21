@@ -10,6 +10,7 @@ import {
     updateSessionLogMetadata
 } from './sessionStore.js';
 import { translateKey } from './languageToggle.js';
+import { openSessionReview } from './sessionReview.js';
 
 const filterState = {
     search: '',
@@ -391,10 +392,22 @@ function renderDetail(log) {
     const summary = document.createElement('div');
     summary.className = 'detail-summary';
 
+    const stabilizedValue =
+        typeof log.stabilized === 'boolean'
+            ? translateKey(log.stabilized ? 'logs.detail.stabilizedYes' : 'logs.detail.stabilizedNo')
+            : '—';
+
+    const stabilizationTime =
+        log.stabilized === true && Number.isFinite(log.stabilizationSeconds)
+            ? formatDuration(log.stabilizationSeconds)
+            : '—';
+
     const summaryItems = [
         { label: translateKey('logs.detail.sessionId'), value: log.id },
         { label: translateKey('logs.detail.started'), value: formatDate(log.startedAt) },
         { label: translateKey('logs.detail.duration'), value: formatDuration(log.durationSeconds) },
+        { label: translateKey('logs.detail.stabilized'), value: stabilizedValue },
+        { label: translateKey('logs.detail.stabilizationTime'), value: stabilizationTime },
         {
             label: translateKey('logs.detail.events'),
             value: translateTemplate('logs.events.count', { count: log.events?.length ?? 0 })
@@ -559,6 +572,15 @@ function renderDetail(log) {
             enterEditMode(log);
         });
 
+        const reviewBtn = document.createElement('button');
+        reviewBtn.type = 'button';
+        reviewBtn.className = 'btn btn-ghost btn-small';
+        reviewBtn.textContent = translateKey('logs.actions.review');
+        reviewBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            openSessionReview(log);
+        });
+
         const primaryActions = document.createElement('div');
         primaryActions.className = 'detail-actions-group';
         const exportActions = document.createElement('div');
@@ -566,7 +588,7 @@ function renderDetail(log) {
         const dangerActions = document.createElement('div');
         dangerActions.className = 'detail-actions-group';
 
-        primaryActions.append(editBtn);
+        primaryActions.append(editBtn, reviewBtn);
         exportActions.append(downloadJson, downloadCsv);
         dangerActions.append(deleteBtn);
         actions.append(primaryActions, exportActions, dangerActions);

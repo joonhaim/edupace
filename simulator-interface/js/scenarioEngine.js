@@ -61,7 +61,8 @@ const feedbackState = {
         scenarioIntrinsicRates: {}
     },
     ruleFeedbackOverride: null,
-    lastFeedbackText: ''
+    lastFeedbackText: '',
+    lastStabilityStatus: null
 };
 
 const CATEGORY_ORDER = ['clinical'];
@@ -264,13 +265,25 @@ function getScenarioFeedbackText(scenario, status) {
 function refreshFeedbackText() {
     if (!scenarioState.activeScenario) return;
 
+    const status = getFeedbackStatus(scenarioState.activeScenario);
+    if (status !== feedbackState.lastStabilityStatus) {
+        feedbackState.lastStabilityStatus = status;
+        window.dispatchEvent(
+            new CustomEvent('edupace-stability-change', {
+                detail: {
+                    status,
+                    scenarioId: scenarioState.activeScenario.id ?? null,
+                    at: new Date().toISOString()
+                }
+            })
+        );
+    }
+
     if (feedbackState.ruleFeedbackOverride) {
         updateText('feedbackText', feedbackState.ruleFeedbackOverride);
         feedbackState.lastFeedbackText = feedbackState.ruleFeedbackOverride ?? '';
         return;
     }
-
-    const status = getFeedbackStatus(scenarioState.activeScenario);
     const nextText = getScenarioFeedbackText(scenarioState.activeScenario, status);
     if (nextText === feedbackState.lastFeedbackText) return;
     feedbackState.lastFeedbackText = nextText ?? '';
@@ -386,6 +399,7 @@ function applyScenarioText(scenario) {
     updateText('objectiveText', scenario.objective ?? null);
     feedbackState.ruleFeedbackOverride = null;
     feedbackState.lastFeedbackText = '';
+    feedbackState.lastStabilityStatus = null;
     refreshFeedbackText();
 }
 
@@ -566,6 +580,12 @@ async function initScenarios() {
         const status = event.detail?.session?.status;
         const shouldLock = status === 'running' || status === 'paused';
         setScenarioLock(shouldLock);
+    });
+
+    window.addEventListener('edupace-session-status', (event) => {
+        if (event.detail?.status !== 'running') return;
+        feedbackState.lastStabilityStatus = null;
+        refreshFeedbackText();
     });
 
     const params = new URLSearchParams(window.location.search);
