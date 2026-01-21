@@ -2,44 +2,14 @@ import { getCurrentLanguage, translateKey } from './languageToggle.js';
 import { localizeScenarioList } from './scenarioLocalization.js';
 
 const scenarioLists = {
-    module: document.querySelector('[data-scenario-list="module"]'),
     clinical: document.querySelector('[data-scenario-list="clinical"]')
 };
-
-let scenarioCategoryToggles = [];
 
 let baseScenarios = [];
 let localizedScenarios = [];
 let searchTerm = '';
-let activeCategory = 'clinical';
-
 function hasTargets() {
     return Object.values(scenarioLists).some(Boolean);
-}
-
-function setScenarioCategory(category = 'clinical') {
-    activeCategory = category;
-    Object.entries(scenarioLists).forEach(([key, target]) => {
-        if (!target) return;
-        const isActive = key === category;
-        target.hidden = !isActive;
-    });
-
-    scenarioCategoryToggles.forEach((button) => {
-        const isActive = button.dataset.scenarioCategory === category;
-        button.classList.toggle('active', isActive);
-        button.setAttribute('aria-selected', String(isActive));
-    });
-}
-
-function bindScenarioToggles() {
-    scenarioCategoryToggles = Array.from(document.querySelectorAll('[data-scenario-category]'));
-    scenarioCategoryToggles.forEach((toggle) => {
-        toggle.addEventListener('click', () => {
-            setScenarioCategory(toggle.dataset.scenarioCategory);
-            applyScenarioFilters();
-        });
-    });
 }
 
 function bindScenarioSearch() {
@@ -86,42 +56,22 @@ function createEmptyState(target) {
     target.appendChild(empty);
 }
 
-function renderScenarioLists(scenarios, { categoryFilter = null } = {}) {
-    const totalItems = scenarios.length;
-    const grouped = scenarios.reduce(
-        (acc, scenario) => {
-            const category = (scenario.category ?? 'module').toLowerCase();
-            if (!acc[category]) acc[category] = [];
-            acc[category].push(scenario);
-            return acc;
-        },
-        { module: [], clinical: [] }
-    );
+function renderScenarioLists(scenarios) {
+    const target = scenarioLists.clinical;
+    if (!target) return;
 
-    Object.entries(scenarioLists).forEach(([category, target]) => {
-        if (!target) return;
+    target.innerHTML = '';
 
-        const isFilteredOut = categoryFilter && category !== categoryFilter;
-        target.hidden = Boolean(isFilteredOut);
-        if (isFilteredOut) {
-            target.innerHTML = '';
-            return;
-        }
+    const shouldShowEmptyState = !scenarios.length && (!searchTerm.trim() || scenarios.length === 0);
 
-        const items = grouped[category] ?? [];
-        target.innerHTML = '';
+    if (shouldShowEmptyState) {
+        createEmptyState(target);
+        return;
+    }
 
-        const shouldShowEmptyState = !items.length && (!searchTerm.trim() || totalItems === 0);
-
-        if (shouldShowEmptyState) {
-            createEmptyState(target);
-            return;
-        }
-
-        items.forEach((scenario) => {
-            const link = createScenarioLink(scenario);
-            target.appendChild(link);
-        });
+    scenarios.forEach((scenario) => {
+        const link = createScenarioLink(scenario);
+        target.appendChild(link);
     });
 }
 
@@ -138,39 +88,15 @@ function filterScenarios(term = '', scenarios = localizedScenarios) {
     });
 }
 
-function updateCategoryVisibility() {
-    const isSearching = Boolean(searchTerm.trim());
-
-    scenarioCategoryToggles.forEach((toggle) => {
-        toggle.disabled = isSearching;
-        toggle.setAttribute('aria-disabled', String(isSearching));
-        toggle.classList.toggle('is-disabled', isSearching);
-    });
-
-    if (isSearching) {
-        Object.values(scenarioLists).forEach((target) => {
-            if (!target) return;
-            target.hidden = false;
-        });
-        return;
-    }
-
-    setScenarioCategory(activeCategory);
-}
-
 function applyScenarioFilters() {
     const filtered = filterScenarios(searchTerm, localizedScenarios);
-    const categoryFilter = searchTerm.trim() ? null : activeCategory;
-    renderScenarioLists(filtered, { categoryFilter });
-    updateCategoryVisibility();
+    renderScenarioLists(filtered);
 }
 
 async function initHomeScenarios() {
     if (!hasTargets()) return;
 
-    bindScenarioToggles();
     bindScenarioSearch();
-    setScenarioCategory('clinical');
 
     try {
         const response = await fetch('data/scenarios.json', { cache: 'no-store' });
