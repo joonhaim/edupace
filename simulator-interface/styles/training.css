@@ -1885,17 +1885,19 @@ body.ecg-fullscreen-active {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    justify-content: flex-end;
 }
 
 .settings-window .btn {
-    padding: 0.45rem 0.85rem;
-    font-size: 0.9rem;
-    letter-spacing: 0.02em;
+    height: 32px;
+    padding: 0 0.75rem;
+    font-size: 0.88rem;
+    letter-spacing: 0.01em;
     text-transform: none;
     font-weight: 700;
-    border-radius: 10px;
+    border-radius: 9px;
     box-shadow: none;
-    min-width: 140px;
+    width: 120px;
     justify-content: center;
 }
 
@@ -2120,7 +2122,6 @@ body.ecg-fullscreen-active {
 }
 
 .setting-actions-inline .btn {
-    min-width: 140px;
     justify-content: center;
 }
 
