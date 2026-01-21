@@ -202,14 +202,16 @@ function createHeartRateEngine(displayElement) {
         player.play().catch(() => {});
     }
 
+    function getDisplayBpm() {
+        if (Number.isFinite(state.bpm)) return state.bpm;
+        if (Number.isFinite(state.lastValidBpm)) return state.lastValidBpm;
+        return null;
+    }
+
     function updateDisplay() {
         if (!displayElement) return;
 
-        const valueToShow = Number.isFinite(state.bpm)
-            ? state.bpm
-            : Number.isFinite(state.lastValidBpm)
-                ? state.lastValidBpm
-                : null;
+        const valueToShow = getDisplayBpm();
 
         displayElement.textContent = Number.isFinite(valueToShow)
             ? valueToShow.toString()
@@ -400,18 +402,12 @@ function createHeartRateEngine(displayElement) {
     }
 
     function recordPeak(timeSeconds) {
-        if (Number.isFinite(state.lastPeakTime)) {
-            const interval = timeSeconds - state.lastPeakTime;
-            if (interval > 0) {
-                const beatBpm = 60 / interval;
-                updateBeatCounts(beatBpm);
-            }
-        }
         state.lastPeakTime = timeSeconds;
         state.peaks.push(timeSeconds);
         purgeOldPeaks(timeSeconds);
         playBeep();
         updateFromPeaks();
+        updateBeatCounts(getDisplayBpm());
         evaluateAlarm(timeSeconds);
     }
 
