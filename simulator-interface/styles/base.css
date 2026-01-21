@@ -715,7 +715,7 @@ h1, h2, h3 {
     opacity: 0.86;
   }
   50% {
-    transform: scale(1.06);
+    transform: scale(1.09);
     opacity: 1;
   }
   75% {
