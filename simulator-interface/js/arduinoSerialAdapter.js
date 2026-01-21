@@ -281,7 +281,7 @@ function renderDeviceList(ports) {
         const connectButton = document.createElement('button');
         connectButton.type = 'button';
         connectButton.className = 'btn btn-small';
-        connectButton.textContent = 'Connect';
+        connectButton.textContent = 'CONNECT';
         connectButton.addEventListener('click', () => handleDeviceSelection(port, name));
 
         option.append(icon, textColumn, connectButton);
@@ -586,7 +586,7 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
         });
 
         updateConnectionStatus(serialState.label ? 'Connected' : 'CONNECTED', true);
-        ui.connectBtn.textContent = 'Disconnect';
+        ui.connectBtn.textContent = 'DISCONNECT';
         ui.connectBtn.disabled = false;
 
         toggleDevicePopover(false);

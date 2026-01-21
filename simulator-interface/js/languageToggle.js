@@ -18,7 +18,7 @@ const TRANSLATIONS = {
         'connection.help': 'Plug in EduPace to pair via USB.',
         'connection.status': 'Device',
         'connection.disconnected': 'Disconnected',
-        'connection.button': 'Connect',
+        'connection.button': 'CONNECT',
         'connection.devices': 'Devices',
         'connection.choose': 'Select device',
         'connection.subtitle': 'USB devices nearby',
