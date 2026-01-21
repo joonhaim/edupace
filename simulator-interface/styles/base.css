@@ -544,8 +544,8 @@ h1, h2, h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-areas:
         "start browse"
-        "recent browse"
-        "leaderboard suggested"
+        "leaderboard browse"
+        "recent suggested"
         "progress suggested"
         "resources resources";
     align-items: stretch;
