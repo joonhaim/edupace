@@ -223,7 +223,9 @@ function renderLeaderboard() {
 
     const operatorMap = new Map();
     logs.forEach((log) => {
-        const name = getOperatorDisplayName(normalizeOperator(log.metadata?.operator), 'home.leaderboard.anonymous');
+        const rawName = normalizeOperator(log.metadata?.operator);
+        if (!rawName) return;
+        const name = rawName;
         const key = name.toLowerCase();
         if (!operatorMap.has(key)) {
             operatorMap.set(key, {

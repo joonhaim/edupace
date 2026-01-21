@@ -468,7 +468,7 @@
 .podium-place {
     display: grid;
     gap: 0.35rem;
-    align-content: end;
+    align-content: start;
     justify-items: center;
     padding: 0.65rem 0.5rem 0.9rem;
     border-radius: 14px;
