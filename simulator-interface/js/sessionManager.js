@@ -435,8 +435,8 @@ async function endSession(reason = 'manual') {
 
     const statusText =
         reason === 'navigation'
-            ? 'Session ended when leaving training. View the log in the Logs tab.'
-            : 'Session ended. View the log in the Logs tab.';
+            ? 'Session ended when leaving training.'
+            : 'Session ended.';
     setStatusText(statusText);
     updateControls();
 }
