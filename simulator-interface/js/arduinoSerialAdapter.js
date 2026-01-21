@@ -23,6 +23,7 @@ const ui = {
     deviceListEmpty: null,
     refreshDevicesBtn: null,
     requestDeviceBtn: null,
+    requestAllDevicesBtn: null,
     unsupportedHint: null,
     unsupportedHintClose: null
 };
@@ -55,6 +56,7 @@ const parameterState = {
 let isPoweredOn = false;
 let unsupportedHintDismissed = false;
 let hasInitialized = false;
+let deviceListEmptyDefaultMessage = 'No devices found.';
 const resettableParameterKeys = Object.keys(parameterState);
 // Include common USB-serial bridge vendors used on Arduino-compatible boards.
 const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03, 0x1a86, 0x10c4, 0x0403, 0x067b]);
@@ -86,6 +88,12 @@ function refreshUiBindings() {
     ui.deviceListEmpty = document.getElementById('deviceListEmpty');
     ui.refreshDevicesBtn = document.getElementById('refreshDevicesBtn');
     ui.requestDeviceBtn = document.getElementById('requestDeviceBtn');
+    ui.requestAllDevicesBtn = document.getElementById('requestAllDevicesBtn');
+
+    if (ui.deviceListEmpty) {
+        const defaultNode = ui.deviceListEmpty.querySelector('[data-i18n-key]') ?? ui.deviceListEmpty;
+        deviceListEmptyDefaultMessage = defaultNode.textContent?.trim() || deviceListEmptyDefaultMessage;
+    }
 }
 
 function createUnsupportedHint() {
@@ -243,11 +251,13 @@ function renderDeviceList(ports) {
     const list = Array.isArray(ports) ? ports : [];
 
     if (list.length === 0) {
-        ui.deviceListEmpty.hidden = false;
+        setDeviceListEmptyMessage(deviceListEmptyDefaultMessage);
+        setShowAllDevicesActionVisible(false);
         return;
     }
 
     ui.deviceListEmpty.hidden = true;
+    setShowAllDevicesActionVisible(false);
 
     const sorted = [...list].sort((a, b) => {
         const aIsEdu = isEduPaceDevice(a?.getInfo?.());
@@ -289,9 +299,45 @@ function renderDeviceList(ports) {
     });
 }
 
-async function populateDeviceList({ requestAccess = false } = {}) {
+function setShowAllDevicesActionVisible(visible) {
+    if (!ui.requestAllDevicesBtn) return;
+    ui.requestAllDevicesBtn.hidden = !visible;
+}
+
+function setDeviceListEmptyMessage(message, { showAllAction = false } = {}) {
+    if (ui.deviceListEmpty) {
+        ui.deviceListEmpty.hidden = false;
+        const messageNode = ui.deviceListEmpty.querySelector('[data-i18n-key]') ?? ui.deviceListEmpty;
+        messageNode.textContent = message;
+    }
+    setShowAllDevicesActionVisible(showAllAction);
+}
+
+function handleNoMatchingSerialFilters() {
+    setDeviceListEmptyMessage(
+        'No matching EduPace devices found. Use "Show all serial devices" to expand the filter.',
+        { showAllAction: true }
+    );
+    toggleDevicePopover(true);
+}
+
+async function requestSerialPort({ requestAll = false } = {}) {
+    try {
+        return await navigator.serial.requestPort(requestAll ? {} : { filters: EDUPACE_PORT_FILTERS });
+    } catch (error) {
+        if (error?.name === 'NotFoundError' && !requestAll) {
+            handleNoMatchingSerialFilters();
+            return null;
+        }
+        throw error;
+    }
+}
+
+async function populateDeviceList({ requestAccess = false, requestAll = false } = {}) {
     if (!ui.deviceList) return;
     const isElectron = /electron/i.test(navigator.userAgent ?? '');
+    let shouldPromptAll = false;
+    setShowAllDevicesActionVisible(false);
 
     if (!('serial' in navigator)) {
         ui.deviceList.innerHTML = '';
@@ -304,9 +350,11 @@ async function populateDeviceList({ requestAccess = false } = {}) {
 
     if (requestAccess) {
         try {
-            await navigator.serial.requestPort({ filters: EDUPACE_PORT_FILTERS });
+            await navigator.serial.requestPort(requestAll ? {} : { filters: EDUPACE_PORT_FILTERS });
         } catch (error) {
-            if (error?.name !== 'NotFoundError') {
+            if (error?.name === 'NotFoundError' && !requestAll) {
+                shouldPromptAll = true;
+            } else {
                 console.error('Unable to request serial device', error);
             }
         }
@@ -321,9 +369,17 @@ async function populateDeviceList({ requestAccess = false } = {}) {
 
         if (isElectron && filteredPorts.length === 0) {
             ui.deviceList.innerHTML = '';
-            ui.deviceListEmpty.hidden = false;
-            ui.deviceListEmpty.textContent =
-                'No EduPace devices detected. Connect the console and press Scan to request access.';
+            setDeviceListEmptyMessage(
+                'No EduPace devices detected. Connect the console and press Scan to request access.'
+            );
+            return;
+        }
+
+        if (filteredPorts.length === 0 && shouldPromptAll) {
+            setDeviceListEmptyMessage(
+                'No matching EduPace devices found. Use "Show all serial devices" to expand the filter.',
+                { showAllAction: true }
+            );
             return;
         }
 
@@ -331,8 +387,7 @@ async function populateDeviceList({ requestAccess = false } = {}) {
     } catch (error) {
         console.error('Unable to list serial ports', error);
         if (ui.deviceListEmpty) {
-            ui.deviceListEmpty.hidden = false;
-            ui.deviceListEmpty.textContent = 'Unable to list serial ports.';
+            setDeviceListEmptyMessage('Unable to list serial ports.');
         }
     }
 }
@@ -515,6 +570,9 @@ async function initHardwareIntegration() {
     ui.deviceOverlay?.addEventListener('click', () => toggleDevicePopover(false));
     ui.refreshDevicesBtn?.addEventListener('click', () => populateDeviceList());
     ui.requestDeviceBtn?.addEventListener('click', () => populateDeviceList({ requestAccess: true }));
+    ui.requestAllDevicesBtn?.addEventListener('click', () =>
+        populateDeviceList({ requestAccess: true, requestAll: true })
+    );
 
     ui.inputModeRadios.forEach((radio) => {
         radio.addEventListener('change', (event) => {
@@ -569,7 +627,10 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
     }
 
     try {
-        const port = selectedPort ?? (await navigator.serial.requestPort({ filters: EDUPACE_PORT_FILTERS }));
+        const port = selectedPort ?? (await requestSerialPort());
+        if (!port) {
+            return;
+        }
         await port.open({ baudRate: 115200 });
 
         serialState.port = port;
