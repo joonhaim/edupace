@@ -22,8 +22,7 @@ const defaultSettings = {
         SlowConduction: 70
     },
     intrinsicRate: 60,
-    intrinsicRegularity: 'regular',
-    actionLog: true
+    intrinsicRegularity: 'regular'
 };
 
 let currentSettings = { ...defaultSettings };
@@ -182,7 +181,6 @@ function initSettingsPanel() {
     bindScenarioIntrinsicRates(settingsCard);
     bindSlider(settingsCard, 'intrinsicRate', 'intrinsicRate');
     bindRadios(settingsCard, 'intrinsicRegularity', 'intrinsicRegularity');
-    bindToggle(settingsCard, 'actionLogToggle', 'actionLog');
 
     const resetBtn = settingsCard.querySelector('[data-settings-reset]');
     if (resetBtn) {
