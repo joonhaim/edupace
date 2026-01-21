@@ -54,6 +54,7 @@
     box-shadow: 0 12px 28px rgba(12, 26, 45, 0.05);
     display: grid;
     gap: 0.8rem;
+    height: 360px;
 }
 
 .leaderboard-grid {
@@ -61,6 +62,7 @@
     grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
     gap: 1rem;
     align-items: stretch;
+    height: 100%;
 }
 
 .leaderboard-header {
