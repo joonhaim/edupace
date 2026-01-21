@@ -213,7 +213,7 @@ async function loadScenarios(language = getCurrentLanguage()) {
 
         localizedScenarios = localizeScenarioList(baseScenarios, language);
         clinicalScenarios = localizedScenarios.filter(
-            (scenario) => (scenario.category ?? 'module').toLowerCase() === 'clinical' && !scenario.comingSoon
+            (scenario) => (scenario.category ?? 'clinical').toLowerCase() === 'clinical' && !scenario.comingSoon
         );
 
         renderRecentSessions();

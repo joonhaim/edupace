@@ -3,28 +3,28 @@
         "id": "NSR",
         "title": "Normal Sinus Rhythm",
         "description": "Stable intrinsic rhythm with normal conduction.",
-        "summaryLabel": "Normal sinus rhythm",
+        "summaryLabel": "Normal Sinus Rhythm",
         "category": "clinical"
     },
     {
         "id": "AV3",
-        "title": "3rd Degree AV Block",
+        "title": "Third-degree AV block",
         "description": "Complete AV block with a ventricular escape rhythm.",
-        "summaryLabel": "Complete heart block",
+        "summaryLabel": "Third-degree AV block",
         "category": "clinical"
     },
     {
         "id": "Mobitz2",
-        "title": "Mobitz II",
+        "title": "Second-degree AV block (Mobitz II)",
         "description": "Intermittent dropped ventricular beats with fixed PR intervals.",
-        "summaryLabel": "Mobitz II block",
+        "summaryLabel": "Second-degree AV block (Mobitz II)",
         "category": "clinical"
     },
     {
         "id": "SlowConduction",
         "title": "Slow Conduction",
         "description": "Delayed ventricular conduction with prolonged intervals.",
-        "summaryLabel": "Slow conduction",
+        "summaryLabel": "Slow Conduction",
         "category": "clinical"
     }
 ]

@@ -47,11 +47,11 @@ const scenarioState = {
     locked: false
 };
 
-const CATEGORY_ORDER = ['module', 'clinical'];
+const CATEGORY_ORDER = ['clinical'];
 
 function normalizeCategory(scenario) {
-    const category = typeof scenario?.category === 'string' ? scenario.category.toLowerCase() : 'module';
-    return category || 'module';
+    const category = typeof scenario?.category === 'string' ? scenario.category.toLowerCase() : 'clinical';
+    return category || 'clinical';
 }
 
 function findScenarioIndex(identifier) {
@@ -66,7 +66,6 @@ function findScenarioIndex(identifier) {
 }
 
 function getCategoryLabel(category) {
-    if (category === 'module') return translateKey('training.menu.module');
     if (category === 'clinical') return translateKey('training.menu.clinical');
     return translateKey('training.menu.trainingModes');
 }
