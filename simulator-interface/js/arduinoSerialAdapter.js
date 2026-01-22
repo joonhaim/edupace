@@ -547,6 +547,11 @@ async function initHardwareIntegration() {
     }
 
     populateDeviceList();
+    if (supported && navigator.serial?.addEventListener) {
+        navigator.serial.addEventListener('connect', () => {
+            scheduleAutoReconnect();
+        });
+    }
     await restoreLastPortConnection();
 
     ui.connectBtn?.addEventListener('click', () => {
