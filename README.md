@@ -12,13 +12,6 @@ Developed within the TU Delft Minor Biomedical Engineering in collaboration with
 [**EduPace Project Report**](docs/report.pdf)
 
 ---
-## Project Motivation & Problem Statement
-
-Temporary external pacemakers such as the Medtronic 53401 are used only a few times per year in most clinical departments, which means nurses have limited opportunity to maintain routine proficiency. In emergencies such as symptomatic bradycardia or complete heart block, correct configuration must be performed quickly and safely, yet existing training materials do not provide realistic hands-on practice.
-Earlier EduPace prototypes and traditional teaching tools lacked clinical realism. ECG rhythms were static, variations such as PVCs and PACs were missing, and errors like undersensing, oversensing, or loss of capture could not be demonstrated. Clinical feedback also highlighted the need for realistic QRS morphology, threshold behaviour, and auditory or visual alarms.
-EduPace addresses this gap by providing a safe and interactive simulator that replicates the Medtronic 53401 interface and generates physiologically accurate ECG responses. It allows nurses to practise pacing, sensing, and troubleshooting scenarios without risk to patients, which improves confidence and preparedness in rare but high-stakes situations.
-
----
 
 ## Installation & Setup
 ### **Requirements**
