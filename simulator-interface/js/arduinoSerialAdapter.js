@@ -60,6 +60,10 @@ const resettableParameterKeys = Object.keys(parameterState);
 const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03, 0x1a86, 0x10c4, 0x0403, 0x067b]);
 const EDUPACE_PRODUCT_IDS = new Set([0x0266, 0x0366, 0x0066]);
 const EDUPACE_PORT_FILTERS = Array.from(EDUPACE_VENDOR_IDS, (vendorId) => ({ vendorId }));
+const RECONNECT_DELAY_MS = 800;
+const MAX_RECONNECT_ATTEMPTS = 6;
+let reconnectTimer = null;
+let reconnectAttempts = 0;
 
 function refreshUiBindings() {
     ui.connectionStatus = document.getElementById('connectionStatus');
@@ -337,7 +341,7 @@ async function populateDeviceList({ requestAccess = false } = {}) {
     }
 }
 
-async function restoreLastPortConnection() {
+async function restoreLastPortConnection({ preserveOnMissing = false } = {}) {
     if (!('serial' in navigator)) return;
 
     const saved = getRememberedPortInfo();
@@ -348,7 +352,9 @@ async function restoreLastPortConnection() {
         const matchingPort = ports.find((port) => portsMatchSavedInfo(port, saved));
 
         if (!matchingPort) {
-            clearRememberedPort();
+            if (!preserveOnMissing) {
+                clearRememberedPort();
+            }
             return;
         }
 
@@ -368,6 +374,46 @@ async function restoreLastPortConnection() {
             ui.connectBtn.disabled = false;
         }
     }
+}
+
+function resetReconnectState() {
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+    reconnectAttempts = 0;
+}
+
+function isVirtualModeSelected() {
+    const selected = Array.from(ui.inputModeRadios ?? []).find((radio) => radio.checked);
+    return selected?.value === 'virtual';
+}
+
+function scheduleAutoReconnect() {
+    if (!('serial' in navigator)) return;
+    if (serialState.port) return;
+    if (reconnectTimer) return;
+    if (isVirtualModeSelected()) return;
+    if (!getRememberedPortInfo()) return;
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) return;
+
+    const attemptReconnect = async () => {
+        if (serialState.port) {
+            resetReconnectState();
+            return;
+        }
+
+        reconnectAttempts += 1;
+        await restoreLastPortConnection({ preserveOnMissing: true });
+
+        if (!serialState.port && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            reconnectTimer = setTimeout(attemptReconnect, RECONNECT_DELAY_MS);
+        } else {
+            reconnectTimer = null;
+        }
+    };
+
+    reconnectTimer = setTimeout(attemptReconnect, RECONNECT_DELAY_MS);
 }
 
 async function handleDeviceSelection(port, label) {
@@ -580,9 +626,10 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
         serialState.label = labelOverride || describeSerialPort(port).name;
 
         rememberLastPort(port);
+        resetReconnectState();
 
         port.addEventListener('disconnect', () => {
-            disconnectFromHardware();
+            handleSerialDisconnect();
         });
 
         updateConnectionStatus(serialState.label ? 'Connected' : 'CONNECTED', true);
@@ -598,7 +645,10 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
     }
 }
 
-async function disconnectFromHardware() {
+async function disconnectFromHardware({ preserveRememberedPort = false, stopReconnect = true } = {}) {
+    if (stopReconnect) {
+        resetReconnectState();
+    }
     serialState.keepReading = false;
 
     if (serialState.reader) {
@@ -620,7 +670,9 @@ async function disconnectFromHardware() {
     serialState.buffer = '';
     serialState.label = '';
     resetParameters();
-    clearRememberedPort();
+    if (!preserveRememberedPort) {
+        clearRememberedPort();
+    }
 
 
     updateConnectionStatus('DISCONNECTED', false);
@@ -629,7 +681,8 @@ async function disconnectFromHardware() {
 }
 
 async function handleSerialDisconnect() {
-    await disconnectFromHardware();
+    await disconnectFromHardware({ preserveRememberedPort: true, stopReconnect: false });
+    scheduleAutoReconnect();
 }
 
 function updateConnectionStatus(text, connected, unsupported = false) {
