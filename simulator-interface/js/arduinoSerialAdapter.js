@@ -669,9 +669,13 @@ async function readLoop() {
         while (serialState.keepReading) {
             const { value, done } = await serialState.reader.read();
 
-            if (done || !value) {
+            if (done) {
                 await handleSerialDisconnect();
                 break;
+            }
+
+            if (!value) {
+                continue;
             }
 
             const decoded = decoder.decode(value);
