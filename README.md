@@ -23,9 +23,9 @@ Developed within the TU Delft Minor Biomedical Engineering in collaboration with
 ### **Setup**
 1. Clone this repository  
 2. Upload `hardware/EduPace2025.ino` to the GIGA  
-3. Open the EduPace UI in your browser  
-4. Connect via WebSerial  
-5. Begin a training scenario  
+3. Open the EduPace UI in your browser or download the installer from Releases.
+4. Connect the EduPace device to the computer with a USB cable.  
+5. Begin a training scenario
 
 ---
 ## Repository Structure
