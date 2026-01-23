@@ -13,8 +13,6 @@
     PACE=<value>, OUTPUT=<value>, SENSE=<value>
     POWER_ON
     POWER_OFF
-    LOCK_ON
-    LOCK_OFF
   ------------------------------------------------------------
   USER INTERACTION
   ------------------------------------------------------------
@@ -133,4 +131,5 @@ void loop() {
   lv_timer_handler();
   delay(5);
 }
+
 

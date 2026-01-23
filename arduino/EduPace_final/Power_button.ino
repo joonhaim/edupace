@@ -35,7 +35,6 @@ void turnPowerOn() {
   lv_obj_set_style_text_color(lv_obj_get_child(power_btn,0), lv_color_hex(0x00FF00), LV_PART_MAIN);
 
   Serial.println("POWER_ON");
-  Serial.println("LOCK_OFF");
 }
 
 void turnPowerOff() {
@@ -50,7 +49,6 @@ void turnPowerOff() {
   lv_label_set_text(bottom_number, "--");
 
   Serial.println("POWER_OFF");
-  Serial.println("LOCK_OFF");
 }
 
 static bool pressed_flag = false;  
