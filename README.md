@@ -51,7 +51,7 @@ Developed within the TU Delft Minor Biomedical Engineering in collaboration with
 │   ├── icons/
 │   ├── main.js
 │   └── preload.js
-└── simulator-interface/       # Browser-based pacing & ECG simulator
+└── simulator-interface/       # ECG simulator & WebApp Interface
     ├── assets/
     ├── data/
     ├── ecg/
