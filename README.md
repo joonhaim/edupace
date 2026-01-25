@@ -36,6 +36,7 @@ Developed within the TU Delft Minor Biomedical Engineering in collaboration with
 ├── README.md
 ├── package.json               # Electron wrapper metadata and scripts
 ├── package-lock.json
+├── cad/                       # Mechanical CAD design files and exports
 ├── arduino/                   # Firmware and hardware assets
 │   ├── README.md
 │   ├── digital.c
