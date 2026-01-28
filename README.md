@@ -13,7 +13,7 @@ Developed within the TU Delft Minor Biomedical Engineering in collaboration with
 
 ---
 
-[**EduPace User Manual**](simulator-interface/assets/pdf/EduPace%20User%20Manual.pdf)
+[**EduPace User Manual**](simulator-interface/assets/pdf/EduPace_User_Manual_EN.pdf)
 
 ## Installation & Setup
 ### **Requirements**
