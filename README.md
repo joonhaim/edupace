@@ -13,9 +13,9 @@ Developed within the TU Delft Minor Biomedical Engineering in collaboration with
 
 ---
 
+## Installation & Setup
 [**EduPace User Manual**](simulator-interface/assets/pdf/EduPace_User_Manual_EN.pdf)
 
-## Installation & Setup
 ### **Requirements**
 - Arduino GIGA R1 WiFi
 - Arduino GIGA Display Shield
