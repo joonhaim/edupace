@@ -9,7 +9,7 @@ EduPace is an educational simulator that trains nurses and students to configure
 
 Developed within the TU Delft Minor Biomedical Engineering in collaboration with the Reinier de Graaf Hospital (Delft, Netherlands).
 
-[**EduPace Project Report**](docs/report.pdf) 
+[**EduPace Project Report**](report.pdf) 
 
 ---
 
