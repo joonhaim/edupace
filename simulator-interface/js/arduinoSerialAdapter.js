@@ -55,6 +55,7 @@ const parameterState = {
 let isPoweredOn = false;
 let unsupportedHintDismissed = false;
 let hasInitialized = false;
+let reconnectTimer = null;
 const resettableParameterKeys = Object.keys(parameterState);
 // Include common USB-serial bridge vendors used on Arduino-compatible boards.
 const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03, 0x1a86, 0x10c4, 0x0403, 0x067b]);
@@ -211,6 +212,31 @@ function rememberLastPort(port) {
 
 function clearRememberedPort() {
     localStorage.removeItem(LAST_PORT_STORAGE_KEY);
+}
+
+function clearReconnectTimer() {
+    if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+}
+
+function isHardwareModeSelected() {
+    const selected = Array.from(ui.inputModeRadios ?? []).find((radio) => radio.checked);
+    return (selected?.value ?? 'hardware') !== 'virtual';
+}
+
+function scheduleReconnectAttempt() {
+    clearReconnectTimer();
+
+    if (!isHardwareModeSelected()) {
+        return;
+    }
+
+    reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null;
+        restoreLastPortConnection();
+    }, 1000);
 }
 
 function getRememberedPortInfo() {
@@ -598,7 +624,8 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
     }
 }
 
-async function disconnectFromHardware() {
+async function disconnectFromHardware({ clearRememberedPort = true, shouldReconnect = false } = {}) {
+    clearReconnectTimer();
     serialState.keepReading = false;
 
     if (serialState.reader) {
@@ -620,16 +647,22 @@ async function disconnectFromHardware() {
     serialState.buffer = '';
     serialState.label = '';
     resetParameters();
-    clearRememberedPort();
+    if (clearRememberedPort) {
+        clearRememberedPort();
+    }
 
 
     updateConnectionStatus('DISCONNECTED', false);
     ui.connectBtn.textContent = 'CONNECT';
     ui.connectBtn.disabled = false;
+
+    if (shouldReconnect) {
+        scheduleReconnectAttempt();
+    }
 }
 
 async function handleSerialDisconnect() {
-    await disconnectFromHardware();
+    await disconnectFromHardware({ clearRememberedPort: false, shouldReconnect: true });
 }
 
 function updateConnectionStatus(text, connected, unsupported = false) {
