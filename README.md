@@ -109,6 +109,11 @@ Paul Verschuren, Reinier de Graaf Hospital
 - Expand number of clinical cases
 
 ---
+## AI Assistance
+
+Generative AI tools, including Codex, were used for selected non-critical development tasks. All important design choices, simulator behaviour, and final validation remained the responsibility of the project team.
+
+---
 ## Disclaimer
 
 EduPace is **for educational use only** and **not a medical device**.
