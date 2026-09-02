@@ -280,9 +280,10 @@ function initEcgEngine() {
 
     const resizeCanvas = () => {
         if (!frame) return;
-        const rect = frame.getBoundingClientRect();
-        const width = Math.max(1, Math.floor(rect.width));
-        const height = Math.max(1, Math.floor(rect.height));
+        // The canvas is absolutely positioned, so its bitmap follows the frame
+        // without contributing its own dimensions back into the frame's layout.
+        const width = Math.max(1, Math.floor(frame.clientWidth));
+        const height = Math.max(1, Math.floor(frame.clientHeight));
         if (width === state.lastCanvasSize.width && height === state.lastCanvasSize.height) {
             return;
         }
@@ -290,8 +291,6 @@ function initEcgEngine() {
         const D = dpr();
         canvas.width = Math.floor(width * D);
         canvas.height = Math.floor(height * D);
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
         ctx.setTransform(D, 0, 0, D, 0, 0);
 
         resizeMonitorOffscreenPreserveReveal();
