@@ -1,6 +1,7 @@
 import { createEcgSimulation } from './ecgSimulation.js';
+import { getTimelineSliceGeometry } from './ecgRenderGeometry.js';
 import { createHeartRateEngine } from '../js/heartRateEngine.js';
-import { defaultSettings } from '../js/settingsPanel.js';
+import { applySettingsPatch, defaultSettings } from '../js/settingsPanel.js';
 
 const ASYNC_SENSITIVITY_THRESHOLD = 20;
 const DEFAULT_PARAMS = {
@@ -50,6 +51,7 @@ function initEcgEngine() {
     const pausedBadge = frame?.querySelector('.ecg-paused-badge');
     const caliperReadout = frame?.querySelector('#caliperReadout');
     const calibrationToggle = frame?.querySelector('.calibration-toggle');
+    const sensitivityGuideToggle = frame?.querySelector('.sensitivity-guide-toggle');
     const audioToggle = frame?.querySelector('.ecg-audio-toggle');
     const pauseToggle = frame?.querySelector('.pause-toggle');
     const fullscreenToggle = frame?.querySelector('.fullscreen-toggle');
@@ -159,6 +161,20 @@ function initEcgEngine() {
             calibrationValue.textContent = `${VIEW_SEC} s window · 10 mm/mV · 25 mm/s`;
         }
 
+        if (sensitivityGuideToggle) {
+            const guideVisible = Boolean(state.settings.sensitivityGuide);
+            sensitivityGuideToggle.classList.toggle('is-active', guideVisible);
+            sensitivityGuideToggle.setAttribute('aria-pressed', String(guideVisible));
+            sensitivityGuideToggle.setAttribute(
+                'aria-label',
+                guideVisible ? 'Hide sensitivity guide' : 'Show sensitivity guide'
+            );
+            sensitivityGuideToggle.setAttribute(
+                'title',
+                guideVisible ? 'Hide sensitivity guide' : 'Show sensitivity guide'
+            );
+        }
+
         const hrColor = TRACE_COLORS[state.settings.hrColor] ?? TRACE_COLORS.green;
         const leadLabelColor = TRACE_COLORS[state.settings.leadLabelColor] ?? TRACE_COLORS.green;
         const colorHost = shell ?? frame ?? overlay;
@@ -244,11 +260,13 @@ function initEcgEngine() {
     const setCalibrationVisible = (visible) => {
         if (calibrationInline) {
             calibrationInline.toggleAttribute('hidden', !visible);
+            calibrationInline.classList.toggle('is-visible', visible);
         }
         if (calibrationToggle) {
             calibrationToggle.classList.toggle('is-active', visible);
             calibrationToggle.setAttribute('aria-pressed', String(visible));
             calibrationToggle.setAttribute('aria-label', visible ? 'Hide calibration details' : 'Show calibration details');
+            calibrationToggle.setAttribute('title', visible ? 'Hide calibration details' : 'Show calibration details');
         }
     };
 
@@ -482,17 +500,31 @@ function initEcgEngine() {
         );
     };
 
-    const drawTimelineSlice = (x0, x1, startTime, endTime) => {
+    const drawTimelineSlice = (x0, x1, startTime, endTime, joinFromPrevious = false) => {
         const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
         const h = canvas.clientHeight || state.lastCanvasSize.height || 1;
-        if (x1 <= x0 || endTime <= startTime) return;
+        const geometry = getTimelineSliceGeometry({
+            x0,
+            x1,
+            startTime,
+            endTime,
+            width: w,
+            joinFromPrevious
+        });
+        if (!geometry) return;
 
-        const startCol = Math.max(0, Math.floor(x0));
-        const endCol = Math.min(w, Math.ceil(x1));
+        const {
+            paintX0,
+            paintStartTime,
+            secondsPerPixel,
+            startCol,
+            endCol,
+            anchorCol
+        } = geometry;
         copyBackgroundSlice(startCol, endCol);
 
         const { traceColor, traceWeight } = getTraceStyle();
-        const timeAtX = (x) => startTime + ((x - x0) / (x1 - x0)) * (endTime - startTime);
+        const timeAtX = (x) => paintStartTime + (x - paintX0) * secondsPerPixel;
 
         monitorScreenCtx.save();
         monitorScreenCtx.beginPath();
@@ -505,8 +537,16 @@ function initEcgEngine() {
         monitorScreenCtx.lineCap = 'round';
 
         let started = false;
+        if (anchorCol !== null) {
+            const anchorStart = timeAtX(anchorCol);
+            const anchorEnd = timeAtX(anchorCol + 1);
+            const anchorValue = simulation.sampleRange(anchorStart, anchorEnd);
+            const anchorY = h - ((anchorValue - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
+            monitorScreenCtx.moveTo(anchorCol, anchorY);
+            started = true;
+        }
         for (let col = startCol; col <= endCol; col += 1) {
-            const sampleStart = timeAtX(Math.max(x0, col));
+            const sampleStart = timeAtX(Math.max(paintX0, col));
             const sampleEnd = timeAtX(Math.min(x1, col + 1));
             const value = simulation.sampleRange(sampleStart, Math.max(sampleStart, sampleEnd));
             const y = h - ((value - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
@@ -591,7 +631,7 @@ function initEcgEngine() {
             const x1 = segmentEnd === nextBoundary
                 ? w
                 : ((segmentEnd % VIEW_SEC) / VIEW_SEC) * w;
-            drawTimelineSlice(x0, x1, cursor, segmentEnd);
+            drawTimelineSlice(x0, x1, cursor, segmentEnd, x0 > 0);
             cursor = segmentEnd;
         }
 
@@ -831,8 +871,11 @@ function initEcgEngine() {
 
     calibrationToggle?.addEventListener('click', () => {
         if (!calibrationInline) return;
-        const isHidden = calibrationInline.hasAttribute('hidden');
-        setCalibrationVisible(isHidden);
+        setCalibrationVisible(!calibrationInline.classList.contains('is-visible'));
+    });
+
+    sensitivityGuideToggle?.addEventListener('click', () => {
+        applySettingsPatch({ sensitivityGuide: !state.settings.sensitivityGuide });
     });
 
     audioToggle?.addEventListener('click', () => {
