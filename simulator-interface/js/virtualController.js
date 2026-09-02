@@ -141,8 +141,8 @@ function initVirtualController() {
         }
     };
 
-    const refreshDisplay = () => {
-        updateTiles();
+    const refreshDisplay = ({ updateParameterTiles = isVirtualMode() } = {}) => {
+        if (updateParameterTiles) updateTiles();
         setActionVisualState(actionButtons.power, controllerState.power, controllerState.power ? 'On' : 'Off');
         setActionVisualState(
             actionButtons.lock,
@@ -406,7 +406,9 @@ function initVirtualController() {
         if (virtualMode) {
             broadcastParameters();
         } else {
-            refreshDisplay();
+            // Hardware values belong to the serial adapter. Do not overwrite
+            // them with stale virtual-controller values when changing modes.
+            refreshDisplay({ updateParameterTiles: false });
         }
     };
 

@@ -50,6 +50,15 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Native controls otherwise use browser-specific text sizes. */
+button,
+input,
+select,
+textarea {
+    font: inherit;
+    color: inherit;
+}
+
 /* ===== Buttons (native / compact) ===== */
 
 .btn{

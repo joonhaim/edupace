@@ -3,9 +3,21 @@ const fs = require('fs');
 const path = require('path');
 
 const LOG_FILE_NAME = 'session-logs.json';
+const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03, 0x1a86, 0x10c4, 0x0403, 0x067b]);
 
 let mainWindow = null;
 let aboutWindow = null;
+let ipcHandlersRegistered = false;
+
+function isLocalAppOrigin(origin = '') {
+  return origin === 'file://' || origin.startsWith('file:///');
+}
+
+function isEduPaceSerialDevice(device) {
+  if (!device || device.vendorId === undefined) return false;
+  const vendorId = Number.parseInt(String(device.vendorId), 10);
+  return Number.isFinite(vendorId) && EDUPACE_VENDOR_IDS.has(vendorId);
+}
 
 function normalizeAppName() {
   app.setName('EduPace');
@@ -70,50 +82,64 @@ function createMainWindow() {
   // --------- Web Serial integration (Arduino / hardware console) ---------
   const ses = mainWindow.webContents.session;
 
-  ses.setPermissionCheckHandler((_, permission) => {
-    return permission === 'serial';
+  ses.setPermissionCheckHandler((_, permission, requestingOrigin, details) => {
+    const origin = details?.securityOrigin || details?.requestingUrl || requestingOrigin;
+    return permission === 'serial' && isLocalAppOrigin(origin);
   });
 
-  ses.setPermissionRequestHandler((_, permission, callback) => {
-    callback(permission === 'serial');
+  ses.setDevicePermissionHandler(({ deviceType, origin, device }) => {
+    return deviceType === 'serial' && isLocalAppOrigin(origin) && isEduPaceSerialDevice(device);
   });
 
-  ses.setDevicePermissionHandler(({ deviceType }) => {
-    return deviceType === 'serial';
+  // Electron has no built-in serial picker. The renderer supplies the EduPace
+  // USB filters, so finish the request with a compatible device.
+  const handleSerialPortSelection = (event, portList, _, callback) => {
+    event.preventDefault();
+    const selectedPort = portList.find(isEduPaceSerialDevice);
+    callback(selectedPort?.portId ?? '');
+  };
+  ses.on('select-serial-port', handleSerialPortSelection);
+
+  mainWindow.once('closed', () => {
+    ses.removeListener('select-serial-port', handleSerialPortSelection);
   });
 
-  ipcMain.handle('edupace:get-default-log-dir', (_, preferredPath) => {
-    return resolveLogDirectory(preferredPath);
-  });
+  if (!ipcHandlersRegistered) {
+    ipcHandlersRegistered = true;
 
-  ipcMain.handle('edupace:pick-log-dir', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ['openDirectory', 'createDirectory'],
-      title: 'Choose a folder for EduPace session logs'
+    ipcMain.handle('edupace:get-default-log-dir', (_, preferredPath) => {
+      return resolveLogDirectory(preferredPath);
     });
 
-    if (result.canceled || !result.filePaths?.length) {
-      return null;
-    }
+    ipcMain.handle('edupace:pick-log-dir', async () => {
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory', 'createDirectory'],
+        title: 'Choose a folder for EduPace session logs'
+      });
 
-    return resolveLogDirectory(result.filePaths[0]);
-  });
+      if (result.canceled || !result.filePaths?.length) {
+        return null;
+      }
 
-  ipcMain.handle('edupace:read-logs', async (_, preferredPath) => {
-    const data = await readLogFile(preferredPath);
-    return data;
-  });
+      return resolveLogDirectory(result.filePaths[0]);
+    });
 
-  ipcMain.handle('edupace:write-logs', async (_, payload = {}) => {
-    const directory = await writeLogFile(payload.logs ?? [], payload.path);
-    return { path: directory };
-  });
+    ipcMain.handle('edupace:read-logs', async (_, preferredPath) => {
+      const data = await readLogFile(preferredPath);
+      return data;
+    });
 
-  ipcMain.handle('edupace:open-log-dir', async (_, preferredPath) => {
-    const directory = resolveLogDirectory(preferredPath);
-    await shell.openPath(directory);
-    return directory;
-  });
+    ipcMain.handle('edupace:write-logs', async (_, payload = {}) => {
+      const directory = await writeLogFile(payload.logs ?? [], payload.path);
+      return { path: directory };
+    });
+
+    ipcMain.handle('edupace:open-log-dir', async (_, preferredPath) => {
+      const directory = resolveLogDirectory(preferredPath);
+      await shell.openPath(directory);
+      return directory;
+    });
+  }
 }
 
 // -----------------------------------------------------------------------------
