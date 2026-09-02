@@ -2562,6 +2562,25 @@ body.ecg-fullscreen-active {
     right: 0.9rem;
 }
 
+.sensitivity-guide-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.calibration-toggle.is-active,
+.sensitivity-guide-toggle.is-active {
+    background: rgba(51, 255, 102, 0.2);
+    border-color: rgba(51, 255, 102, 0.78);
+    color: #7dff9b;
+}
+
+.ecg-shell[data-background="paper"] .calibration-toggle.is-active,
+.ecg-shell[data-background="paper"] .sensitivity-guide-toggle.is-active {
+    background: rgba(37, 99, 235, 0.12);
+    border-color: rgba(37, 99, 235, 0.55);
+    color: #1d4ed8;
+}
+
 .ecg-audio-toggle {
     right: 3.1rem;
 }
