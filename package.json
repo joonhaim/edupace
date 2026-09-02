@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron .",
     "serve": "python3 -m http.server 8000 --bind 127.0.0.1 --directory simulator-interface",
+    "build:web": "node scripts/build-web.mjs",
     "test": "node --test test/*.test.mjs",
     "dist": "electron-builder"
   },

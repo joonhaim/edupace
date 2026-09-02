@@ -3,4 +3,5 @@
 /.idea
 /node_modules
 /dist
+/build
 simulator-interface/js/.Rhistory
