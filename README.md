@@ -16,6 +16,11 @@ Developed within the TU Delft Minor Biomedical Engineering in collaboration with
 ## Installation & Setup
 [**EduPace User Manual**](simulator-interface/assets/pdf/EduPace_User_Manual_EN.pdf)
 
+### **Web simulator**
+[**Launch the EduPace simulator**](https://joonhaim.github.io/edupace/)
+
+The hosted simulator runs in desktop Google Chrome or Microsoft Edge. Connecting the physical EduPace device requires granting USB serial access when prompted; virtual controls remain available without hardware. Session logs and optional operator names stay in the browser's local storage and are not uploaded.
+
 ### **Requirements**
 - Arduino GIGA R1 WiFi
 - Arduino GIGA Display Shield
