@@ -1,3 +1,10 @@
+import {
+    EDUPACE_PORT_FILTERS,
+    EDUPACE_VENDOR_IDS,
+    isAsyncMode,
+    parsePayload
+} from './arduinoProtocol.mjs';
+
 const ui = {
     connectionStatus: null,
     connectionStatusText: null,
@@ -28,7 +35,6 @@ const ui = {
 };
 
 let defaultPaceMode = '--';
-const ASYNC_SENSITIVITY_THRESHOLD = 20;
 
 const serialState = {
     port: null,
@@ -36,13 +42,15 @@ const serialState = {
     writer: null,
     keepReading: false,
     buffer: '',
-    label: ''
+    label: '',
+    disconnectHandler: null,
+    disconnectPromise: null
 };
 
 const LAST_PORT_STORAGE_KEY = 'edupace:last-serial-port';
 
 const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+let decoder = new TextDecoder();
 const parameterState = {
     rate: null,
     output: null,
@@ -50,16 +58,19 @@ const parameterState = {
     mode: null,
     power: null,
     locked: null,
-    asynchronous: false
+    asynchronous: null
 };
 let isPoweredOn = false;
 let unsupportedHintDismissed = false;
 let hasInitialized = false;
 const resettableParameterKeys = Object.keys(parameterState);
 // Include common USB-serial bridge vendors used on Arduino-compatible boards.
-const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03, 0x1a86, 0x10c4, 0x0403, 0x067b]);
 const EDUPACE_PRODUCT_IDS = new Set([0x0266, 0x0366, 0x0066]);
-const EDUPACE_PORT_FILTERS = Array.from(EDUPACE_VENDOR_IDS, (vendorId) => ({ vendorId }));
+
+function isHardwareInputMode() {
+    const selectedMode = Array.from(ui.inputModeRadios).find((radio) => radio.checked)?.value;
+    return selectedMode !== 'virtual';
+}
 
 function refreshUiBindings() {
     ui.connectionStatus = document.getElementById('connectionStatus');
@@ -415,26 +426,6 @@ function applySensitivityDisplay({ sensitivity, power, asyncMode }) {
     }
 }
 
-function isAsyncMode({ power, sensitivity, mode, asynchronous }) {
-    if (power === false) {
-        return false;
-    }
-
-    if (typeof asynchronous === 'boolean') {
-        return asynchronous;
-    }
-
-    if (typeof mode === 'string' && mode.trim().toUpperCase() === 'ASYNC') {
-        return true;
-    }
-
-    if (typeof sensitivity === 'number') {
-        return sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
-    }
-
-    return false;
-}
-
 function applyAsyncModeIndicator({ sensitivity, mode, asynchronous, power }) {
     if (!ui.paceMode) return;
 
@@ -517,14 +508,16 @@ async function initHardwareIntegration() {
     ui.requestDeviceBtn?.addEventListener('click', () => populateDeviceList({ requestAccess: true }));
 
     ui.inputModeRadios.forEach((radio) => {
-        radio.addEventListener('change', (event) => {
+        radio.addEventListener('change', async (event) => {
             if (event.target.value === 'virtual') {
-                disconnectFromHardware();
-                ui.connectBtn.disabled = true;
+                await disconnectFromHardware({ reset: false });
+                if (isHardwareInputMode()) return;
+                if (ui.connectBtn) ui.connectBtn.disabled = true;
                 updateConnectionStatus('VIRTUAL', true);
                 toggleDevicePopover(false);
             } else {
-                ui.connectBtn.disabled = !supported;
+                resetParameters();
+                if (ui.connectBtn) ui.connectBtn.disabled = !supported;
                 updateConnectionStatus(serialState.port ? 'CONNECTED' : 'DISCONNECTED', Boolean(serialState.port));
             }
         });
@@ -555,11 +548,19 @@ async function initHardwareIntegration() {
 
 function resetParameters() {
     resettableParameterKeys.forEach((key) => {
-        parameterState[key] = key === 'asynchronous' ? false : null;
+        parameterState[key] = null;
     });
+    parameterState.power = false;
+    parameterState.locked = false;
+    parameterState.asynchronous = false;
     isPoweredOn = false;
     applyParameterDisplay(parameterState);
     applyAsyncModeIndicator(parameterState);
+    window.dispatchEvent(
+        new CustomEvent('edupace-parameters', {
+            detail: { ...parameterState }
+        })
+    );
 }
 
 
@@ -568,22 +569,41 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
         return;
     }
 
+    if (serialState.disconnectPromise) {
+        await serialState.disconnectPromise;
+    }
+
+    let port = selectedPort;
+    let reader = null;
+    let writer = null;
+    let opened = false;
+
     try {
-        const port = selectedPort ?? (await navigator.serial.requestPort({ filters: EDUPACE_PORT_FILTERS }));
+        port = port ?? (await navigator.serial.requestPort({ filters: EDUPACE_PORT_FILTERS }));
         await port.open({ baudRate: 115200 });
+        opened = true;
+
+        writer = port.writable?.getWriter() ?? null;
+        reader = port.readable?.getReader() ?? null;
+        if (!reader || !writer) {
+            throw new Error('The selected serial port is not readable and writable.');
+        }
 
         serialState.port = port;
-        serialState.writer = port.writable?.getWriter() ?? null;
-        serialState.reader = port.readable?.getReader() ?? null;
+        serialState.writer = writer;
+        serialState.reader = reader;
         serialState.keepReading = true;
         serialState.buffer = '';
         serialState.label = labelOverride || describeSerialPort(port).name;
 
         rememberLastPort(port);
 
-        port.addEventListener('disconnect', () => {
-            disconnectFromHardware();
-        });
+        serialState.disconnectHandler = () => {
+            if (serialState.port === port) {
+                void disconnectFromHardware({ forget: false });
+            }
+        };
+        port.addEventListener('disconnect', serialState.disconnectHandler);
 
         updateConnectionStatus(serialState.label ? 'Connected' : 'CONNECTED', true);
         ui.connectBtn.textContent = 'DISCONNECT';
@@ -591,45 +611,107 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
 
         toggleDevicePopover(false);
 
-        readLoop();
+        void readLoop(port, reader);
     } catch (error) {
+        if (reader) {
+            try {
+                await reader.cancel();
+            } catch (_) {
+                // The device may already have disappeared.
+            }
+            try {
+                reader.releaseLock();
+            } catch (_) {
+                // Ignore an already released reader.
+            }
+        }
+        if (writer) {
+            try {
+                writer.releaseLock();
+            } catch (_) {
+                // Ignore an already released writer.
+            }
+        }
+        if (opened && port) {
+            try {
+                await port.close();
+            } catch (_) {
+                // Closing a disconnected or partially opened port can fail.
+            }
+        }
         updateConnectionStatus('DISCONNECTED', false);
         console.error('Unable to connect to hardware', error);
     }
 }
 
-async function disconnectFromHardware() {
+async function disconnectFromHardware({ forget = true, reset = true } = {}) {
+    if (serialState.disconnectPromise) {
+        return serialState.disconnectPromise;
+    }
+
+    const port = serialState.port;
+    const reader = serialState.reader;
+    const writer = serialState.writer;
+    const disconnectHandler = serialState.disconnectHandler;
+
     serialState.keepReading = false;
-
-    if (serialState.reader) {
-        await serialState.reader.cancel();
-        serialState.reader.releaseLock();
-    }
-
-    if (serialState.writer) {
-        serialState.writer.releaseLock();
-    }
-
-    if (serialState.port) {
-        await serialState.port.close();
-    }
-
     serialState.port = null;
     serialState.reader = null;
     serialState.writer = null;
+    serialState.disconnectHandler = null;
     serialState.buffer = '';
     serialState.label = '';
-    resetParameters();
-    clearRememberedPort();
+    decoder = new TextDecoder();
 
+    serialState.disconnectPromise = (async () => {
+        if (port && disconnectHandler) {
+            port.removeEventListener('disconnect', disconnectHandler);
+        }
 
-    updateConnectionStatus('DISCONNECTED', false);
-    ui.connectBtn.textContent = 'CONNECT';
-    ui.connectBtn.disabled = false;
-}
+        if (reader) {
+            try {
+                await reader.cancel();
+            } catch (_) {
+                // A physical disconnect commonly rejects the pending read.
+            }
+            try {
+                reader.releaseLock();
+            } catch (_) {
+                // Ignore an already released reader.
+            }
+        }
 
-async function handleSerialDisconnect() {
-    await disconnectFromHardware();
+        if (writer) {
+            try {
+                writer.releaseLock();
+            } catch (_) {
+                // Ignore an already released writer.
+            }
+        }
+
+        if (port) {
+            try {
+                await port.close();
+            } catch (_) {
+                // The OS may already have closed an unplugged device.
+            }
+        }
+
+        if (reset) resetParameters();
+        if (forget) clearRememberedPort();
+
+        updateConnectionStatus('DISCONNECTED', false);
+        if (ui.connectBtn) {
+            ui.connectBtn.textContent = 'CONNECT';
+            ui.connectBtn.disabled = !isHardwareInputMode();
+        }
+    })();
+
+    try {
+        await serialState.disconnectPromise;
+    } finally {
+        serialState.disconnectPromise = null;
+    }
 }
 
 function updateConnectionStatus(text, connected, unsupported = false) {
@@ -660,17 +742,19 @@ function updateConnectionStatus(text, connected, unsupported = false) {
     );
 }
 
-async function readLoop() {
-    if (!serialState.reader) {
+async function readLoop(port, reader) {
+    if (!reader) {
         return;
     }
 
     try {
-        while (serialState.keepReading) {
-            const { value, done } = await serialState.reader.read();
+        while (serialState.keepReading && serialState.port === port) {
+            const { value, done } = await reader.read();
 
             if (done) {
-                await handleSerialDisconnect();
+                if (serialState.port === port) {
+                    await disconnectFromHardware({ forget: false });
+                }
                 break;
             }
 
@@ -678,8 +762,15 @@ async function readLoop() {
                 continue;
             }
 
-            const decoded = decoder.decode(value);
+            const decoded = decoder.decode(value, { stream: true });
             serialState.buffer += decoded;
+
+            if (serialState.buffer.length > 65536) {
+                console.warn('Discarding oversized serial input without a line ending.');
+                serialState.buffer = '';
+                decoder = new TextDecoder();
+                continue;
+            }
 
             const lines = serialState.buffer.split(/\r?\n/);
             serialState.buffer = lines.pop() ?? '';
@@ -687,8 +778,10 @@ async function readLoop() {
             lines.filter(Boolean).forEach((line) => handleHardwareMessage(line));
         }
     } catch (error) {
-        console.error('Web Serial read error', error);
-        disconnectFromHardware();
+        if (serialState.port === port) {
+            console.error('Web Serial read error', error);
+            await disconnectFromHardware({ forget: false });
+        }
     }
 }
 
@@ -734,14 +827,18 @@ function handleHardwareMessage(line) {
         updateParam('sensitivity', payload.sensitivity);
     }
 
+    if (payload.asynchronous !== undefined) {
+        updateParam('asynchronous', payload.asynchronous);
+    }
+
     if (payload.power !== undefined) {
-        ui.powerStatus.textContent = `Power: ${payload.power}`;
+        if (ui.powerStatus) ui.powerStatus.textContent = `Power: ${payload.power}`;
         isPoweredOn = payload.power.toUpperCase() === 'ON';
         updateParam('power', isPoweredOn);
     }
 
     if (payload.lock !== undefined) {
-        ui.lockStatus.textContent = `Lock: ${payload.lock ? 'ON' : 'OFF'}`;
+        if (ui.lockStatus) ui.lockStatus.textContent = `Lock: ${payload.lock ? 'ON' : 'OFF'}`;
         updateParam('locked', payload.lock);
     }
 
@@ -783,74 +880,6 @@ function handleHardwareMessage(line) {
     applyAsyncModeIndicator(parameterState);
 }
 
-function parsePayload(line) {
-    const trimmed = line.trim().toUpperCase();
-    if (trimmed === 'POWER_ON') {
-        return { power: 'ON' };
-    }
-    if (trimmed === 'POWER_OFF') {
-        return { power: 'OFF' };
-    }
-    if (trimmed === 'LOCK_ON') {
-        return { lock: true };
-    }
-    if (trimmed === 'LOCK_OFF') {
-        return { lock: false };
-    }
-    if (trimmed === 'PACE_LED') {
-        return { paceLed: true };
-    }
-    if (trimmed === 'SENSE_LED') {
-        return { senseLed: true };
-    }
-
-    const payload = {};
-    const segments = line.split(/[;,]/);
-
-    segments.forEach((segment) => {
-        const [rawKey, rawValue] = segment.split(/[:=]/);
-        if (!rawKey || rawValue === undefined) {
-            return;
-        }
-
-        const key = rawKey.trim().toLowerCase();
-        const value = rawValue.trim();
-
-        switch (key) {
-            case 'pace':
-            case 'rate':
-                payload.rate = Number.parseFloat(value);
-                break;
-            case 'output':
-                payload.output = Number.parseFloat(value);
-                break;
-            case 'sense':
-            case 'sensitivity':
-                payload.sensitivity = Number.parseFloat(value);
-                break;
-            case 'power':
-                payload.power = value.toUpperCase();
-                break;
-            case 'lock':
-                payload.lock = value === '1' || value.toLowerCase() === 'true';
-                break;
-            case 'mode':
-                payload.mode = value.toUpperCase();
-                break;
-            case 'paceled':
-                payload.paceLed = value === '1' || value.toLowerCase() === 'true';
-                break;
-            case 'senseled':
-                payload.senseLed = value === '1' || value.toLowerCase() === 'true';
-                break;
-            default:
-                break;
-        }
-    });
-
-    return payload;
-}
-
 function flashLed(ledElement, kind = 'pace') {
     if (!isPoweredOn) {
         return;
@@ -883,7 +912,9 @@ function triggerSenseFlash() {
 }
 
 async function sendLedCommand(type) {
-    if (!serialState.writer) {
+    const writer = serialState.writer;
+    const port = serialState.port;
+    if (!writer || !port) {
         return;
     }
 
@@ -891,10 +922,23 @@ async function sendLedCommand(type) {
     const onCommand = isPace ? 'GREEN_ON\n' : 'BLUE_ON\n';
     const offCommand = isPace ? 'GREEN_OFF\n' : 'BLUE_OFF\n';
 
-    await serialState.writer.write(encoder.encode(onCommand));
-    setTimeout(() => {
-        serialState.writer?.write(encoder.encode(offCommand));
-    }, 180);
+    try {
+        await writer.write(encoder.encode(onCommand));
+        window.setTimeout(async () => {
+            if (serialState.writer !== writer || serialState.port !== port) return;
+            try {
+                await writer.write(encoder.encode(offCommand));
+            } catch (error) {
+                if (serialState.writer === writer) {
+                    console.error('Unable to switch off the hardware LED', error);
+                }
+            }
+        }, 180);
+    } catch (error) {
+        if (serialState.writer === writer) {
+            console.error('Unable to switch on the hardware LED', error);
+        }
+    }
 }
 
 export { initHardwareIntegration, sendLedCommand };

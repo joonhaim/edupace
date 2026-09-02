@@ -1,9 +1,7 @@
-import { stitchBeats } from './ecgStitcher.js';
-import { thirdDegHeartBlock } from './ecgThirdDegree.js';
-import { mobitzTypeII } from './ecgMobitz2.js';
-import { slowConduction } from './ecgSlowConduction.js';
+import { createEcgSimulation } from './ecgSimulation.js';
+import { getTimelineSliceGeometry } from './ecgRenderGeometry.js';
 import { createHeartRateEngine } from '../js/heartRateEngine.js';
-import { defaultSettings } from '../js/settingsPanel.js';
+import { applySettingsPatch, defaultSettings } from '../js/settingsPanel.js';
 
 const ASYNC_SENSITIVITY_THRESHOLD = 20;
 const DEFAULT_PARAMS = {
@@ -25,9 +23,6 @@ const Y_MAX = 1;
 // Keep your existing sizing constants (these influence the “paper-style” scaling)
 const VERTICAL_SCALE = 3;
 const PX_PER_SMALL_BOX = 6;
-
-// 1 screen (6s) per 6 real seconds
-const SWEEP_TIME_SCALE = 1.0;
 
 const R_Y_MIN = Y_MIN * VERTICAL_SCALE;
 const R_Y_MAX = Y_MAX * VERTICAL_SCALE;
@@ -56,6 +51,7 @@ function initEcgEngine() {
     const pausedBadge = frame?.querySelector('.ecg-paused-badge');
     const caliperReadout = frame?.querySelector('#caliperReadout');
     const calibrationToggle = frame?.querySelector('.calibration-toggle');
+    const sensitivityGuideToggle = frame?.querySelector('.sensitivity-guide-toggle');
     const audioToggle = frame?.querySelector('.ecg-audio-toggle');
     const pauseToggle = frame?.querySelector('.pause-toggle');
     const fullscreenToggle = frame?.querySelector('.fullscreen-toggle');
@@ -90,17 +86,11 @@ function initEcgEngine() {
         settings: { ...defaultSettings },
         params: { ...DEFAULT_PARAMS },
         scenarioId: 'NSR',
-        stripPaper: null,
-        stripLive: null,
-
         // sweep state
         sweepX: 0,
         prevSweepX: 0,
         lastTimestamp: null,
         playbackTime: 0,
-
-        // led event schedule (unchanged)
-        eventSchedule: [],
 
         lastCanvasSize: { width: 0, height: 0 },
         muted: false,
@@ -115,8 +105,6 @@ function initEcgEngine() {
             dragMoved: false
         },
 
-        needsRegenerate: true,
-
         // monitor init/visual refresh flags
         monitorInitialized: false,
         monitorNeedsVisualRefresh: true, // build background/buffer at least once
@@ -130,6 +118,26 @@ function initEcgEngine() {
         }
         return state.params.sensitivity > ASYNC_SENSITIVITY_THRESHOLD;
     };
+
+    const getSimulationConfig = () => {
+        const scenarioRates = state.settings.scenarioIntrinsicRates ?? {};
+        const fallbackRate = Number(state.settings.intrinsicRate ?? 60);
+        const scenarioRate = Number(scenarioRates[state.scenarioId]);
+        const intrinsicRate = Number.isFinite(scenarioRate) ? scenarioRate : fallbackRate;
+
+        return {
+            scenarioId: state.scenarioId,
+            intrinsicRate: Math.min(120, Math.max(30, intrinsicRate)),
+            intrinsicRegularity: state.settings.intrinsicRegularity ?? 'regular',
+            pacingRate: state.params.rate,
+            output: state.params.output,
+            sensitivity: state.params.sensitivity,
+            power: state.params.power !== false,
+            asynchronous: state.params.power !== false && getAsyncMode()
+        };
+    };
+
+    const simulation = createEcgSimulation(getSimulationConfig());
 
     const applyOverlaySettings = () => {
         if (overlay) {
@@ -151,6 +159,20 @@ function initEcgEngine() {
 
         if (calibrationValue) {
             calibrationValue.textContent = `${VIEW_SEC} s window · 10 mm/mV · 25 mm/s`;
+        }
+
+        if (sensitivityGuideToggle) {
+            const guideVisible = Boolean(state.settings.sensitivityGuide);
+            sensitivityGuideToggle.classList.toggle('is-active', guideVisible);
+            sensitivityGuideToggle.setAttribute('aria-pressed', String(guideVisible));
+            sensitivityGuideToggle.setAttribute(
+                'aria-label',
+                guideVisible ? 'Hide sensitivity guide' : 'Show sensitivity guide'
+            );
+            sensitivityGuideToggle.setAttribute(
+                'title',
+                guideVisible ? 'Hide sensitivity guide' : 'Show sensitivity guide'
+            );
         }
 
         const hrColor = TRACE_COLORS[state.settings.hrColor] ?? TRACE_COLORS.green;
@@ -221,6 +243,7 @@ function initEcgEngine() {
             hrEngine.setSuspended(true);
             state.playbackTime = 0;
             state.lastTimestamp = null;
+            simulation.reset(getSimulationConfig());
             resetSweepAndBlankScreen();
         } else {
             hrEngine.setSuspended(false);
@@ -237,11 +260,13 @@ function initEcgEngine() {
     const setCalibrationVisible = (visible) => {
         if (calibrationInline) {
             calibrationInline.toggleAttribute('hidden', !visible);
+            calibrationInline.classList.toggle('is-visible', visible);
         }
         if (calibrationToggle) {
             calibrationToggle.classList.toggle('is-active', visible);
             calibrationToggle.setAttribute('aria-pressed', String(visible));
             calibrationToggle.setAttribute('aria-label', visible ? 'Hide calibration details' : 'Show calibration details');
+            calibrationToggle.setAttribute('title', visible ? 'Hide calibration details' : 'Show calibration details');
         }
     };
 
@@ -280,9 +305,10 @@ function initEcgEngine() {
 
     const resizeCanvas = () => {
         if (!frame) return;
-        const rect = frame.getBoundingClientRect();
-        const width = Math.max(1, Math.floor(rect.width));
-        const height = Math.max(1, Math.floor(rect.height));
+        // The canvas is absolutely positioned, so its bitmap follows the frame
+        // without contributing its own dimensions back into the frame's layout.
+        const width = Math.max(1, Math.floor(frame.clientWidth));
+        const height = Math.max(1, Math.floor(frame.clientHeight));
         if (width === state.lastCanvasSize.width && height === state.lastCanvasSize.height) {
             return;
         }
@@ -290,108 +316,13 @@ function initEcgEngine() {
         const D = dpr();
         canvas.width = Math.floor(width * D);
         canvas.height = Math.floor(height * D);
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
         ctx.setTransform(D, 0, 0, D, 0, 0);
 
         resizeMonitorOffscreenPreserveReveal();
     };
 
     // -------------------------
-    // Sampling + draw helpers (same logic as test.html)
-    // -------------------------
-    const lowerBound = (arr, val) => {
-        let lo = 0;
-        let hi = arr.length;
-        while (lo < hi) {
-            const mid = (lo + hi) >> 1;
-            if (arr[mid] < val) lo = mid + 1;
-            else hi = mid;
-        }
-        return lo;
-    };
-
-    const sampleStripLinear = (strip, t) => {
-        const x = strip.x;
-        const y = strip.y;
-        const n = x.length;
-        if (!n) return 0;
-        if (t <= x[0]) return y[0];
-        if (t >= x[n - 1]) return y[n - 1];
-
-        const i = lowerBound(x, t);
-        if (i <= 0) return y[0];
-        const x0 = x[i - 1];
-        const x1 = x[i];
-        const y0 = y[i - 1];
-        const y1 = y[i];
-        const a = (t - x0) / (x1 - x0 || 1e-9);
-        return y0 + a * (y1 - y0);
-    };
-
-    const sampleStripPeakHold = (strip, t0, t1) => {
-        const x = strip.x;
-        const y = strip.y;
-        const n = x.length;
-        if (!n) return 0;
-
-        if (t1 <= t0) return sampleStripLinear(strip, t0);
-        const tMin = Math.max(t0, x[0]);
-        const tMax = Math.min(t1, x[n - 1]);
-        if (tMax <= tMin) return sampleStripLinear(strip, t0);
-
-        const i0 = Math.max(0, lowerBound(x, tMin) - 1);
-        const i1 = Math.min(n - 1, lowerBound(x, tMax) + 1);
-
-        let best = sampleStripLinear(strip, tMin);
-        let bestAbs = Math.abs(best);
-
-        for (let i = i0; i <= i1; i += 1) {
-            const v = y[i];
-            const av = Math.abs(v);
-            if (av > bestAbs) {
-                bestAbs = av;
-                best = v;
-            }
-        }
-
-        const vEnd = sampleStripLinear(strip, tMax);
-        if (Math.abs(vEnd) > bestAbs) best = vEnd;
-        return best;
-    };
-
-    const drawWaveWindowToSize = (drawCtx, w, h, strip, tLeft, tRight, strokeStyle, lineWidth) => {
-        const X = (t) => ((t - tLeft) / (tRight - tLeft)) * w;
-        const Y = (v) => h - ((v - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
-
-        const i0 = lowerBound(strip.x, tLeft);
-        const i1 = lowerBound(strip.x, tRight);
-        if (i0 >= strip.x.length) return;
-
-        drawCtx.beginPath();
-        drawCtx.strokeStyle = strokeStyle;
-        drawCtx.lineWidth = lineWidth;
-        drawCtx.lineJoin = 'round';
-        drawCtx.lineCap = 'round';
-
-        drawCtx.moveTo(X(strip.x[i0]), Y(strip.y[i0]));
-        let endIdx = Math.min(i1, strip.x.length - 1);
-        if (endIdx >= 0 && strip.x[endIdx] > tRight) endIdx -= 1;
-
-        for (let i = i0 + 1; i <= endIdx; i += 1) {
-            if (i < 0 || i >= strip.x.length) break;
-            drawCtx.lineTo(X(strip.x[i]), Y(strip.y[i]));
-        }
-
-        const lastX = strip.x[Math.max(i0, endIdx)] ?? strip.x[i0];
-        if (Number.isFinite(lastX) && lastX < tRight && tRight <= strip.x[strip.x.length - 1]) {
-            drawCtx.lineTo(X(tRight), Y(sampleStripLinear(strip, tRight)));
-        }
-        drawCtx.stroke();
-    };
-
-    // -------------------------
-    // Background draw (to arbitrary ctx) — so buffer/screen match main
+    // Background draw
     // -------------------------
     const drawPaperGridTo = (drawCtx, width, height) => {
         drawCtx.clearRect(0, 0, width, height);
@@ -469,11 +400,6 @@ function initEcgEngine() {
 
     };
 
-    const yToCanvasPx = (value) => {
-        const height = canvas.clientHeight || state.lastCanvasSize.height || 1;
-        return height - ((value - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * height;
-    };
-
     const shouldRenderSensitivityGuide = () =>
         state.settings.sensitivityGuide && state.params.power !== false && Number.isFinite(state.params.sensitivity);
 
@@ -494,88 +420,6 @@ function initEcgEngine() {
         drawCtx.moveTo(0, y);
         drawCtx.lineTo(width, y);
         drawCtx.stroke();
-    };
-
-    // -------------------------
-    // Scenario generation (kept as you wrote it)
-    // -------------------------
-    const generateStripFromParams = (iterations) => {
-        const scenarioRates = state.settings.scenarioIntrinsicRates ?? {};
-        const fallbackRate = Number(state.settings.intrinsicRate ?? 60);
-        const scenarioRate = Number(scenarioRates[state.scenarioId]);
-        const rawIntrinsicRate = Number.isFinite(scenarioRate) ? scenarioRate : fallbackRate;
-        const intrinsicRate = Math.min(Math.max(rawIntrinsicRate, 30), 120);
-        const regularity = state.settings.intrinsicRegularity ?? 'regular';
-        const jitter = regularity === 'irregular' ? (0.85 + Math.random() * 0.3) : 1;
-        const patientHR = Math.max(20, intrinsicRate * jitter);
-
-        // Pacemaker power OFF => no pacing (force rate=0)
-        const pacingEnabled = state.params.power !== false;
-        const effectiveRate = pacingEnabled ? state.params.rate : 0;
-
-        // If pacing is off, async should not matter
-        const asynchronous = pacingEnabled ? getAsyncMode() : false;
-
-        if (state.scenarioId === 'AV3') {
-            return thirdDegHeartBlock({
-                iterations,
-                sensitivity: state.params.sensitivity,
-                output: state.params.output,
-                rate: effectiveRate,
-                patientHR,
-                asynchronous
-            });
-        }
-
-        if (state.scenarioId === 'Mobitz2') {
-            return mobitzTypeII({
-                iterations,
-                sensitivity: state.params.sensitivity,
-                output: state.params.output,
-                rate: effectiveRate,
-                patientHR,
-                asynchronous
-            });
-        }
-
-        if (state.scenarioId === 'SlowConduction') {
-            return slowConduction({
-                iterations,
-                sensitivity: state.params.sensitivity,
-                output: state.params.output,
-                rate: effectiveRate,
-                patientHR,
-                asynchronous
-            });
-        }
-
-        return stitchBeats({
-            patientHR,
-            sensitivity: state.params.sensitivity,
-            rate: effectiveRate,
-            output: state.params.output,
-            asynchronous,
-            iterations
-        });
-    };
-
-    // -------------------------
-    // LED / event schedule (unchanged)
-    // -------------------------
-    const buildEventSchedule = (strip) => {
-        const schedule = [];
-        const events = strip?.events;
-        if (!events) return schedule;
-
-        (events.pace ?? []).forEach((time) => {
-            if (Number.isFinite(time)) schedule.push({ time, kind: 'pace' });
-        });
-        (events.sense ?? []).forEach((time) => {
-            if (Number.isFinite(time)) schedule.push({ time, kind: 'sense' });
-        });
-
-        schedule.sort((a, b) => a.time - b.time);
-        return schedule;
     };
 
     const flashLed = (kind) => {
@@ -603,38 +447,8 @@ function initEcgEngine() {
         );
     };
 
-    const dispatchLedEvents = (startTime, endTime) => {
-        if (!state.eventSchedule.length || !state.stripLive?.x?.length) return;
-        const tEnd = state.stripLive.x[state.stripLive.x.length - 1];
-        if (!Number.isFinite(tEnd) || tEnd <= 0) return;
-        if (startTime === endTime) return;
-
-        const mod = (value) => ((value % tEnd) + tEnd) % tEnd;
-        const start = mod(startTime);
-        const end = mod(endTime);
-        const wrapped = end < start;
-
-        state.eventSchedule.forEach((event) => {
-            if (!Number.isFinite(event.time)) return;
-            const inRange = wrapped
-                ? event.time > start || event.time <= end
-                : event.time > start && event.time <= end;
-            if (inRange) {
-                flashLed(event.kind);
-            }
-        });
-    };
-
-    const ensureLiveStripLongEnough = () => {
-        if (!state.stripLive || !state.stripLive.x.length) return;
-        const tEnd = state.stripLive.x[state.stripLive.x.length - 1];
-        if (tEnd >= VIEW_SEC * 8) return;
-        state.stripLive = generateStripFromParams(120);
-        state.eventSchedule = buildEventSchedule(state.stripLive);
-    };
-
     // -------------------------
-    // Monitor buffer/screen (test.html behavior)
+    // Rolling monitor screen
     // -------------------------
     const getTraceStyle = () => {
         const traceColor = TRACE_COLORS[state.settings.traceColor] ?? TRACE_COLORS.green;
@@ -656,13 +470,8 @@ function initEcgEngine() {
     const rebuildMonitorBuffer = () => {
         const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
         const h = canvas.clientHeight || state.lastCanvasSize.height || 1;
-        if (!state.stripLive || !state.stripLive.x.length) return;
-
         setCanvasSize(monitorBuffer, w, h);
         drawBackgroundTo(monitorBufferCtx, w, h);
-
-        const { traceColor, traceWeight } = getTraceStyle();
-        drawWaveWindowToSize(monitorBufferCtx, w, h, state.stripLive, 0, VIEW_SEC, traceColor, traceWeight);
     };
 
     const initMonitorScreenBlank = () => {
@@ -673,7 +482,7 @@ function initEcgEngine() {
         drawBackgroundTo(monitorScreenCtx, w, h);
     };
 
-    const overwriteSliceOnScreen = (x0, x1) => {
+    const copyBackgroundSlice = (x0, x1) => {
         const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
         const h = canvas.clientHeight || state.lastCanvasSize.height || 1;
         if (x1 <= x0) return;
@@ -691,6 +500,67 @@ function initEcgEngine() {
         );
     };
 
+    const drawTimelineSlice = (x0, x1, startTime, endTime, joinFromPrevious = false) => {
+        const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
+        const h = canvas.clientHeight || state.lastCanvasSize.height || 1;
+        const geometry = getTimelineSliceGeometry({
+            x0,
+            x1,
+            startTime,
+            endTime,
+            width: w,
+            joinFromPrevious
+        });
+        if (!geometry) return;
+
+        const {
+            paintX0,
+            paintStartTime,
+            secondsPerPixel,
+            startCol,
+            endCol,
+            anchorCol
+        } = geometry;
+        copyBackgroundSlice(startCol, endCol);
+
+        const { traceColor, traceWeight } = getTraceStyle();
+        const timeAtX = (x) => paintStartTime + (x - paintX0) * secondsPerPixel;
+
+        monitorScreenCtx.save();
+        monitorScreenCtx.beginPath();
+        monitorScreenCtx.rect(startCol, 0, Math.max(1, endCol - startCol), h);
+        monitorScreenCtx.clip();
+        monitorScreenCtx.beginPath();
+        monitorScreenCtx.strokeStyle = traceColor;
+        monitorScreenCtx.lineWidth = traceWeight;
+        monitorScreenCtx.lineJoin = 'round';
+        monitorScreenCtx.lineCap = 'round';
+
+        let started = false;
+        if (anchorCol !== null) {
+            const anchorStart = timeAtX(anchorCol);
+            const anchorEnd = timeAtX(anchorCol + 1);
+            const anchorValue = simulation.sampleRange(anchorStart, anchorEnd);
+            const anchorY = h - ((anchorValue - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
+            monitorScreenCtx.moveTo(anchorCol, anchorY);
+            started = true;
+        }
+        for (let col = startCol; col <= endCol; col += 1) {
+            const sampleStart = timeAtX(Math.max(paintX0, col));
+            const sampleEnd = timeAtX(Math.min(x1, col + 1));
+            const value = simulation.sampleRange(sampleStart, Math.max(sampleStart, sampleEnd));
+            const y = h - ((value - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * h;
+            if (!started) {
+                monitorScreenCtx.moveTo(col, y);
+                started = true;
+            } else {
+                monitorScreenCtx.lineTo(col, y);
+            }
+        }
+        monitorScreenCtx.stroke();
+        monitorScreenCtx.restore();
+    };
+
     const resetSweepAndBlankScreen = () => {
         state.sweepX = 0;
         state.prevSweepX = 0;
@@ -699,133 +569,77 @@ function initEcgEngine() {
         state.monitorInitialized = true;
     };
 
+    const redrawMonitorScreen = () => {
+        rebuildMonitorBuffer();
+        const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
+        initMonitorScreenBlank();
+
+        const cycleStart = Math.floor(state.playbackTime / VIEW_SEC) * VIEW_SEC;
+        const cycleOffset = state.playbackTime - cycleStart;
+        state.sweepX = (cycleOffset / VIEW_SEC) * w;
+
+        if (cycleStart >= VIEW_SEC) {
+            drawTimelineSlice(
+                state.sweepX,
+                w,
+                state.playbackTime - VIEW_SEC,
+                cycleStart
+            );
+        }
+        if (cycleOffset > 0) {
+            drawTimelineSlice(0, state.sweepX, cycleStart, state.playbackTime);
+        }
+
+        state.monitorInitialized = true;
+    };
+
     const resizeMonitorOffscreenPreserveReveal = () => {
-        // Called on visible canvas resize
-        if (!state.stripLive || !state.stripLive.x.length) {
-            // still make screen blank so we don't show garbage
-            initMonitorScreenBlank();
-            state.monitorInitialized = true;
-            return;
-        }
-
-        rebuildMonitorBuffer();
-
-        // preserve already-revealed look: blank + reveal up to current sweepX
-        const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
-        state.sweepX = Math.min(state.sweepX, w);
-        state.prevSweepX = 0;
-
-        initMonitorScreenBlank();
-        overwriteSliceOnScreen(0, state.sweepX);
-
-        state.monitorInitialized = true;
+        redrawMonitorScreen();
     };
 
-    // This is the sweep movement + overwrite (test.html logic), plus HR sampling + LED dispatch.
-    const stepSweepAndProcess = (dtSec, previousPlaybackTime) => {
-        if (!state.stripLive || !state.stripLive.x.length) return;
+    const processHeartRateInterval = (startTime, endTime) => {
+        const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
+        const sampleInterval = VIEW_SEC / Math.max(1, w - 1);
+        const firstSample = Math.max(startTime, endTime - 8);
+        for (let sampleTime = firstSample; sampleTime < endTime; sampleTime += sampleInterval) {
+            const sampleEnd = Math.min(endTime, sampleTime + sampleInterval);
+            hrEngine.processSample(
+                sampleTime + (sampleEnd - sampleTime) / 2,
+                simulation.sampleRange(sampleTime, sampleEnd)
+            );
+        }
+    };
 
-        ensureLiveStripLongEnough();
+    const stepSweepAndProcess = (previousPlaybackTime) => {
+        const emittedEvents = simulation.advanceTo(state.playbackTime);
+        emittedEvents.forEach((event) => flashLed(event.kind));
+        processHeartRateInterval(previousPlaybackTime, state.playbackTime);
 
         const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
-        const sweepLimit = w;
-        const pxPerSec = (sweepLimit / VIEW_SEC) * SWEEP_TIME_SCALE;
-
         state.prevSweepX = state.sweepX;
-        let nextX = state.sweepX + pxPerSec * dtSec;
 
-        const wrapped = nextX >= sweepLimit;
-        if (wrapped) nextX = nextX % sweepLimit;
-
-        // Visual overwrite (exactly like test.html)
-        if (nextX >= state.prevSweepX) {
-            overwriteSliceOnScreen(state.prevSweepX, nextX);
-        } else {
-            overwriteSliceOnScreen(state.prevSweepX, sweepLimit);
-            overwriteSliceOnScreen(0, nextX);
-        }
-
-        // HR + LED sampling (keep your existing behavior)
-        // We sample per crossed column using peak-hold to preserve spikes.
-        const segments = [];
-        if (!wrapped) {
-            segments.push({ startPx: state.prevSweepX, endPx: nextX, startTime: previousPlaybackTime });
-        } else {
-            const dur1 = (sweepLimit - state.prevSweepX) / pxPerSec;
-            segments.push({ startPx: state.prevSweepX, endPx: sweepLimit, startTime: previousPlaybackTime });
-            segments.push({ startPx: 0, endPx: nextX, startTime: previousPlaybackTime + dur1 });
-        }
-
-        const tEnd = state.stripLive.x[state.stripLive.x.length - 1] || VIEW_SEC;
-
-        for (const seg of segments) {
-            const { startPx, endPx, startTime } = seg;
-
-            const startCol = Math.max(0, Math.floor(startPx));
-            const endCol = Math.min(sweepLimit, Math.ceil(endPx));
-
-            for (let col = startCol; col < endCol; col += 1) {
-                const t0 = (col / Math.max(1, sweepLimit - 1)) * VIEW_SEC;
-                const t1 = ((col + 1) / Math.max(1, sweepLimit - 1)) * VIEW_SEC;
-
-                const a = ((t0 % tEnd) + tEnd) % tEnd;
-                const b = ((t1 % tEnd) + tEnd) % tEnd;
-
-                let yVal;
-                if (b >= a) {
-                    yVal = sampleStripPeakHold(state.stripLive, a, b);
-                } else {
-                    const v1 = sampleStripPeakHold(state.stripLive, a, tEnd);
-                    const v2 = sampleStripPeakHold(state.stripLive, 0, b);
-                    yVal = Math.abs(v1) >= Math.abs(v2) ? v1 : v2;
-                }
-
-                const timeSeconds = startTime + (col + 0.5 - startPx) / pxPerSec;
-                hrEngine.processSample(timeSeconds, yVal);
-            }
-        }
-
-        dispatchLedEvents(previousPlaybackTime, state.playbackTime);
-
-        state.sweepX = nextX;
-    };
-
-    // -------------------------
-    // Strips refresh
-    // -------------------------
-    const refreshStrips = () => {
-        state.stripPaper = generateStripFromParams(60);
-        state.stripLive = generateStripFromParams(80);
-        state.eventSchedule = buildEventSchedule(state.stripLive);
-        state.needsRegenerate = false;
-
-        // Always rebuild source buffer when the underlying strip changes.
-        rebuildMonitorBuffer();
-
-        // First time: start blank (no trace before the first sweep).
-        if (!state.monitorInitialized) {
-            resetSweepAndBlankScreen();
-        }
-        // Do NOT blank the screen on parameter changes — just like test.html.
-        // New content will appear only as the sweep overwrites those regions.
-    };
-
-    // If only visual settings changed (background/grid/trace style), refresh screen *preserving* progress.
-    const refreshMonitorVisualsPreserveSweep = () => {
-        if (!state.stripLive || !state.stripLive.x.length) {
-            initMonitorScreenBlank();
-            state.monitorInitialized = true;
+        if (state.playbackTime - previousPlaybackTime >= VIEW_SEC) {
+            redrawMonitorScreen();
             return;
         }
-        rebuildMonitorBuffer();
 
-        const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
-        state.sweepX = Math.min(state.sweepX, w);
+        let cursor = previousPlaybackTime;
+        while (cursor < state.playbackTime - 1e-9) {
+            const nextBoundary = (Math.floor(cursor / VIEW_SEC) + 1) * VIEW_SEC;
+            const segmentEnd = Math.min(state.playbackTime, nextBoundary);
+            const x0 = ((cursor % VIEW_SEC) / VIEW_SEC) * w;
+            const x1 = segmentEnd === nextBoundary
+                ? w
+                : ((segmentEnd % VIEW_SEC) / VIEW_SEC) * w;
+            drawTimelineSlice(x0, x1, cursor, segmentEnd, x0 > 0);
+            cursor = segmentEnd;
+        }
 
-        initMonitorScreenBlank();
-        overwriteSliceOnScreen(0, state.sweepX);
+        state.sweepX = ((state.playbackTime % VIEW_SEC) / VIEW_SEC) * w;
+    };
 
-        state.monitorInitialized = true;
+    const refreshMonitorVisualsPreserveSweep = () => {
+        redrawMonitorScreen();
     };
 
     // -------------------------
@@ -888,10 +702,6 @@ function initEcgEngine() {
     const render = (timestamp) => {
         resizeCanvas();
 
-        if (state.needsRegenerate) {
-            refreshStrips();
-        }
-
         if (state.monitorNeedsVisualRefresh) {
             // Visual settings changed (grid/background/trace style): refresh immediately
             refreshMonitorVisualsPreserveSweep();
@@ -915,7 +725,7 @@ function initEcgEngine() {
                 state.calipers.dragMoved = false;
                 updateCaliperReadout(true);
             }
-            stepSweepAndProcess(dt, previousPlaybackTime);
+            stepSweepAndProcess(previousPlaybackTime);
         }
 
         renderMonitor();
@@ -952,7 +762,6 @@ function initEcgEngine() {
     setCalibrationVisible(false);
     fixFrameSize();
     resizeCanvas();
-    refreshStrips();
     setSessionActive(false);
     requestAnimationFrame(render);
 
@@ -1027,7 +836,7 @@ function initEcgEngine() {
             state.calipers.active = false;
             updateCaliperReadout(true);
         }
-        state.needsRegenerate = true;
+        simulation.updateConfig(getSimulationConfig(), state.playbackTime);
         // visuals will be refreshed via key in applyOverlaySettings
     });
 
@@ -1038,12 +847,12 @@ function initEcgEngine() {
         if (Number.isFinite(detail.sensitivity)) state.params.sensitivity = detail.sensitivity;
         if (typeof detail.power === 'boolean') state.params.power = detail.power;
         if (typeof detail.asynchronous === 'boolean') state.params.asynchronous = detail.asynchronous;
-        state.needsRegenerate = true;
+        simulation.updateConfig(getSimulationConfig(), state.playbackTime);
     });
 
     window.addEventListener('edupace-scenario-change', (event) => {
         state.scenarioId = event.detail?.id ?? 'NSR';
-        state.needsRegenerate = true;
+        simulation.updateConfig(getSimulationConfig(), state.playbackTime);
     });
 
     window.addEventListener('edupace-session-status', (event) => {
@@ -1062,8 +871,11 @@ function initEcgEngine() {
 
     calibrationToggle?.addEventListener('click', () => {
         if (!calibrationInline) return;
-        const isHidden = calibrationInline.hasAttribute('hidden');
-        setCalibrationVisible(isHidden);
+        setCalibrationVisible(!calibrationInline.classList.contains('is-visible'));
+    });
+
+    sensitivityGuideToggle?.addEventListener('click', () => {
+        applySettingsPatch({ sensitivityGuide: !state.settings.sensitivityGuide });
     });
 
     audioToggle?.addEventListener('click', () => {

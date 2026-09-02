@@ -7,10 +7,12 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
+    "serve": "python3 -m http.server 8000 --bind 127.0.0.1 --directory simulator-interface",
+    "test": "node --test test/*.test.mjs",
     "dist": "electron-builder"
   },
   "devDependencies": {
-    "electron": "^31.2.0",
+    "electron": "^43.2.0",
     "electron-builder": "^26.0.12"
   },
   "build": {
