@@ -15,8 +15,13 @@ test('mobile shell exposes navigation and responsive styling', async () => {
     assert.match(html, /class="mobile-nav"/);
     assert.equal((html.match(/class="mobile-nav-item/g) ?? []).length, 4);
     assert.match(responsiveCss, /@media \(max-width: 1099px\)/);
+    assert.match(responsiveCss, /body:not\(\.ecg-fullscreen-active\) \.view-stack[\s\S]*overflow: visible/);
+    assert.match(responsiveCss, /\.mobile-nav[\s\S]*position: fixed/);
     assert.match(responsiveCss, /grid-template-areas:[\s\S]*"start"[\s\S]*"resources"/);
     assert.match(responsiveCss, /\.overlay-action\s*\{[\s\S]*pointer-events: auto/);
+    assert.match(responsiveCss, /Keep the phone training flow focused/);
+    assert.match(responsiveCss, /\.control-column\s*\{\s*order: initial/);
+    assert.match(responsiveCss, /\.control-column \.control-stack,[\s\S]*\.graph-column \.calibration-performance[\s\S]*display: none/);
 });
 
 test('touch-sized layouts prefer virtual input mode', async () => {

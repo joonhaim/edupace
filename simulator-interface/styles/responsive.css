@@ -18,36 +18,39 @@
     }
 
     html,
-    body,
-    .app-shell {
+    body:not(.ecg-fullscreen-active) {
         width: 100%;
         min-width: 0;
-        height: 100%;
-        min-height: 0;
+        min-height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
 
-    .app-shell--desktop {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(0, 1fr) auto;
-        height: 100vh;
-        height: 100dvh;
-        overflow: hidden;
+    body:not(.ecg-fullscreen-active) .app-shell--desktop {
+        display: block;
+        width: 100%;
+        height: auto;
+        min-height: 100dvh;
+        padding-bottom: calc(4.6rem + env(safe-area-inset-bottom));
+        overflow: visible;
     }
 
     .sidebar {
         display: none;
     }
 
-    .view-stack {
+    body:not(.ecg-fullscreen-active) .view-stack {
         width: 100%;
         height: auto;
         min-height: 0;
+        overflow: visible;
+        display: block;
     }
 
-    .view {
-        overscroll-behavior-y: contain;
-        scroll-padding-bottom: 1.5rem;
-        -webkit-overflow-scrolling: touch;
+    body:not(.ecg-fullscreen-active) .view {
+        min-height: 0;
+        overflow: visible;
+        scroll-margin-bottom: 1.5rem;
     }
 
     .global-toolbar {
@@ -148,6 +151,10 @@
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         z-index: 30;
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
     }
 
     .mobile-nav-item {
@@ -346,6 +353,18 @@
         align-items: stretch;
         gap: 1rem;
         padding: 1rem;
+    }
+
+    /* Keep the phone training flow focused: ECG first, virtual controller next. */
+    .control-column {
+        order: initial;
+    }
+
+    .control-column .control-stack,
+    .control-column .settings-launch,
+    .graph-column .alarm-banner,
+    .graph-column .calibration-performance {
+        display: none;
     }
 
     .scenario-banner-text {
