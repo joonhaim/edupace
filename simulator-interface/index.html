@@ -108,6 +108,9 @@
 
     <div class="view-stack">
       <header class="toolbar global-toolbar" aria-label="Toolbar">
+        <a class="mobile-toolbar-brand" href="#home" data-view-target="home" aria-label="EduPace dashboard">
+          <span class="brand-mark" aria-hidden="true"></span>
+        </a>
         <div class="toolbar-title">
           <strong data-global-title>Dashboard</strong>
           <span class="muted" data-global-subtitle>Temporary External Pacemaker Trainer</span>
@@ -784,7 +787,7 @@
                     <p class="instruction-step" data-i18n-key="instructions.steps.input.step">Mode</p>
                     <h3 data-i18n-key="instructions.steps.input.title">Choose input mode</h3>
                     <p data-i18n-key="instructions.steps.input.body">
-                      Choose <strong>Hardware</strong> to use the EduPace device, or <strong>Virtual</strong> to practice with keyboard/mouse.
+                      Choose <strong>Hardware</strong> to use the EduPace device, or <strong>Virtual</strong> to practice with the on-screen controls.
                     </p>
                   </div>
                 </li>
@@ -1361,8 +1364,26 @@
                                 </div>
                             </div>
 
+</div>
 
-  </div>
+    <nav class="mobile-nav" aria-label="Primary navigation">
+      <a class="mobile-nav-item active" href="#home" data-view-target="home" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1Z"/></svg>
+        <span data-i18n-key="nav.home">Dashboard</span>
+      </a>
+      <a class="mobile-nav-item" href="#training" data-view-target="training">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h3l2-6 4 11 2-5h5"/></svg>
+        <span data-i18n-key="nav.training">Training</span>
+      </a>
+      <a class="mobile-nav-item" href="#logs" data-view-target="logs">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10M7 9h10M7 14h6M5 2h14a1 1 0 0 1 1 1v18l-3-2-3 2-3-2-3 2-4-2V3a1 1 0 0 1 1-1Z"/></svg>
+        <span data-i18n-key="nav.logs">Session Log</span>
+      </a>
+      <a class="mobile-nav-item" href="#instructions" data-view-target="instructions">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H12v18H7.5A2.5 2.5 0 0 0 5 22Zm14 0A2.5 2.5 0 0 0 16.5 2H12v18h4.5A2.5 2.5 0 0 1 19 22Z"/></svg>
+        <span data-i18n-key="nav.instructions">Instructions</span>
+      </a>
+    </nav>
 </div>
 
         <div
