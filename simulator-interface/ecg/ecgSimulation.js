@@ -9,6 +9,8 @@ const DEFAULT_CONFIG = Object.freeze({
     intrinsicRegularity: 'regular',
     pacingRate: 70,
     output: 1.5,
+    captureThresholdMa: 1.5,
+    rWaveAmplitudeMv: 5,
     sensitivity: 2,
     power: false,
     asynchronous: false
@@ -59,8 +61,10 @@ export function createEcgSimulation(initialConfig = {}, options = {}) {
     let nextPaceTime = Infinity;
     let lastControlTime = time;
     let ventricularRefractoryUntil = -Infinity;
+    let pacerSensingBlankedUntil = -Infinity;
+    let nsrSurfaceAmplitude = 1;
 
-    const pacingInterval = () => 60 / Math.min(220, Math.max(30, Number(config.pacingRate) || 70));
+    const pacingInterval = () => 60 / Math.min(200, Math.max(30, Number(config.pacingRate) || 70));
     const pacingEnabled = () => config.power !== false && Number(config.pacingRate) > 0;
 
     function schedulePacerFrom(anchor) {
@@ -75,21 +79,36 @@ export function createEcgSimulation(initialConfig = {}, options = {}) {
         controlEvents.push({ kind, time: eventTime, ...detail });
     }
 
+    // All physical times are seconds; the myocardial refractory period is 300 ms.
+    function depolarize(eventTime, source) {
+        ventricularRefractoryUntil = eventTime + 0.3;
+        emitControl('ventricular', eventTime, { source, scenarioId: config.scenarioId });
+    }
+
     function processIntrinsic(event) {
-        const suppressed = event.ventricular
-            && !config.asynchronous
-            && event.time < ventricularRefractoryUntil;
-        const amplitude = event.morphology === '3rd degree heart block P wave'
-            ? 0.8 + random() * 0.4
-            : 0.7 + random() * 0.6;
-
-        if (!suppressed) {
-            appendWaveform(event.morphology, event.time, amplitude);
+        if (event.ventricular && event.time + EPSILON < ventricularRefractoryUntil) return;
+        let surfaceAmplitude;
+        if (config.scenarioId === 'NSR') {
+            // Correlated visual gain, bounded by 0.95–1.05, shared by P and QRS.
+            // It has no effect on the intracardiac R-wave sensing amplitude.
+            if (!event.ventricular) {
+                nsrSurfaceAmplitude += 0.25 * (0.95 + random() * 0.1 - nsrSurfaceAmplitude);
+            }
+            surfaceAmplitude = nsrSurfaceAmplitude;
+        } else {
+            surfaceAmplitude = event.ventricular ? 0.7 + random() * 0.6 : 0.8 + random() * 0.4;
         }
+        appendWaveform(event.morphology, event.time, surfaceAmplitude);
+        if (!event.ventricular) {
+            emitControl('atrial', event.time);
+            return;
+        }
+        depolarize(event.time, 'intrinsic');
+        if (!event.canBeSensed || !pacingEnabled() || config.asynchronous
+            || event.time + EPSILON < pacerSensingBlankedUntil) return;
 
-        if (!event.canBeSensed || suppressed || !pacingEnabled() || config.asynchronous) return;
-
-        if (amplitude >= Number(config.sensitivity)) {
+        if (Number(config.rWaveAmplitudeMv) >= Number(config.sensitivity)) {
+            pacerSensingBlankedUntil = event.time + 0.12;
             lastControlTime = event.time;
             schedulePacerFrom(event.time);
             emitControl('sense', event.time, { scenarioId: config.scenarioId });
@@ -97,18 +116,17 @@ export function createEcgSimulation(initialConfig = {}, options = {}) {
     }
 
     function processPace(eventTime) {
-        const captureThreshold = 1.4 + random() * 0.2;
-        const captured = Number(config.output) >= captureThreshold;
-        const morphology = captured
-            ? (config.scenarioId === 'AV3'
-                ? '3rd degree heart block ventricular pacing'
-                : 'Ventricular pacing')
-            : 'Pacing spike without capture';
-
-        appendWaveform(morphology, eventTime, captured ? 0.85 + random() * 0.3 : 1);
-        emitControl('pace', eventTime, { captured, scenarioId: config.scenarioId });
+        const refractory = eventTime + EPSILON < ventricularRefractoryUntil;
+        const captured = Number(config.output) >= Number(config.captureThresholdMa) && !refractory;
+        // The 12 ms display spike is exaggerated; capture occurs at eventTime.
+        appendWaveform('Pacing spike without capture', eventTime, 1);
+        emitControl('pace', eventTime, { captured, refractory, scenarioId: config.scenarioId });
+        pacerSensingBlankedUntil = eventTime + 0.2;
+        if (captured) {
+            appendWaveform('Paced ventricular', eventTime, 0.85 + random() * 0.3);
+            depolarize(eventTime, 'paced');
+        }
         lastControlTime = eventTime;
-        if (captured) ventricularRefractoryUntil = eventTime + 0.3;
         schedulePacerFrom(eventTime);
     }
 
@@ -206,6 +224,8 @@ export function createEcgSimulation(initialConfig = {}, options = {}) {
         nextPaceTime = Infinity;
         lastControlTime = time;
         ventricularRefractoryUntil = -Infinity;
+        pacerSensingBlankedUntil = -Infinity;
+        nsrSurfaceAmplitude = 1;
         schedulePacerFrom(time);
     }
 
@@ -217,6 +237,11 @@ export function createEcgSimulation(initialConfig = {}, options = {}) {
         sampleAt,
         sampleRange,
         reset,
+        getState: () => ({
+            captureThresholdMa: Number(config.captureThresholdMa),
+            rWaveAmplitudeMv: Number(config.rWaveAmplitudeMv),
+            ventricularRefractoryUntil, pacerSensingBlankedUntil, nextPaceTime
+        }),
         getTime: () => time,
         getConfig: () => ({ ...config }),
         getEvents: () => controlEvents.map((event) => ({ ...event }))

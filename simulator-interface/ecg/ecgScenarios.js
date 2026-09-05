@@ -12,10 +12,14 @@ function createSingleRhythm(morphology, options = {}) {
     return ({ startTime, random }) => {
         let nextBeatTime = startTime + 0.05;
         let beatNumber = 0;
+        const pendingVentricular = [];
 
         return {
-            nextTime: () => nextBeatTime,
+            nextTime: () => Math.min(nextBeatTime, pendingVentricular[0]?.time ?? Infinity),
             takeNext(config) {
+                if (pendingVentricular.length && pendingVentricular[0].time <= nextBeatTime) {
+                    return pendingVentricular.shift();
+                }
                 const time = nextBeatTime;
                 beatNumber += 1;
                 nextBeatTime += beatInterval(config, random);
@@ -23,11 +27,20 @@ function createSingleRhythm(morphology, options = {}) {
                 const conducted = options.conductionProbability === undefined
                     || random() < options.conductionProbability;
 
+                if (conducted) {
+                    pendingVentricular.push({
+                        time: time + (morphology === 'Slow conduction' ? 0.25 : 0.16),
+                        morphology: 'Intrinsic ventricular',
+                        ventricular: true,
+                        canBeSensed: true,
+                        beatNumber
+                    });
+                }
                 return {
                     time,
-                    morphology: conducted ? morphology : 'Mobitz type II - no conduction',
-                    ventricular: conducted,
-                    canBeSensed: conducted,
+                    morphology: 'Atrial P wave',
+                    ventricular: false,
+                    canBeSensed: false,
                     beatNumber
                 };
             },
@@ -65,7 +78,7 @@ function createThirdDegreeBlock({ startTime, random }) {
             nextVentricularTime += ventricularInterval(config);
             return {
                 time,
-                morphology: '3rd degree heart block R wave',
+                morphology: 'Escape ventricular',
                 ventricular: true,
                 canBeSensed: true
             };
