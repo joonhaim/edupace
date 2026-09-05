@@ -1,3 +1,4 @@
+import { getSensitivityGuideAmplitude } from './ecgWaveformLibrary.js';
 import { createEcgSimulation } from './ecgSimulation.js';
 import { getTimelineSliceGeometry } from './ecgRenderGeometry.js';
 import { createHeartRateEngine } from '../js/heartRateEngine.js';
@@ -405,7 +406,11 @@ function initEcgEngine() {
 
     const drawSensitivityGuideLine = (drawCtx, width, height) => {
         if (!shouldRenderSensitivityGuide()) return;
-        const y = height - ((state.params.sensitivity - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * height;
+        const { rWaveAmplitudeMv } = simulation.getState();
+        const guideAmplitude = getSensitivityGuideAmplitude(
+            state.params.sensitivity, rWaveAmplitudeMv, state.scenarioId
+        );
+        const y = height - ((guideAmplitude - R_Y_MIN) / (R_Y_MAX - R_Y_MIN)) * height;
         if (!Number.isFinite(y)) return;
 
         drawCtx.beginPath();
@@ -597,23 +602,13 @@ function initEcgEngine() {
         redrawMonitorScreen();
     };
 
-    const processHeartRateInterval = (startTime, endTime) => {
-        const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
-        const sampleInterval = VIEW_SEC / Math.max(1, w - 1);
-        const firstSample = Math.max(startTime, endTime - 8);
-        for (let sampleTime = firstSample; sampleTime < endTime; sampleTime += sampleInterval) {
-            const sampleEnd = Math.min(endTime, sampleTime + sampleInterval);
-            hrEngine.processSample(
-                sampleTime + (sampleEnd - sampleTime) / 2,
-                simulation.sampleRange(sampleTime, sampleEnd)
-            );
-        }
-    };
-
     const stepSweepAndProcess = (previousPlaybackTime) => {
         const emittedEvents = simulation.advanceTo(state.playbackTime);
-        emittedEvents.forEach((event) => flashLed(event.kind));
-        processHeartRateInterval(previousPlaybackTime, state.playbackTime);
+        emittedEvents.forEach((event) => {
+            if (event.kind === 'pace' || event.kind === 'sense') flashLed(event.kind);
+            if (event.kind === 'ventricular') hrEngine.recordVentricularEvent(event.time);
+        });
+        hrEngine.advanceTime(state.playbackTime);
 
         const w = canvas.clientWidth || state.lastCanvasSize.width || 1;
         state.prevSweepX = state.sweepX;

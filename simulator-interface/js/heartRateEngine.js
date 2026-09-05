@@ -476,11 +476,20 @@ function createHeartRateEngine(displayElement) {
         dispatchHeartRateUpdate(timeSeconds);
     }
 
+    // The simulator supplies actual depolarizations, excluding spikes and P/T waves.
+    function advanceTime(timeSeconds) {
+        purgeOldPeaks(timeSeconds);
+        evaluateAlarm(timeSeconds);
+        dispatchHeartRateUpdate(timeSeconds);
+    }
+
     // Initial display state
     updateDisplay();
 
     return {
         processSample,
+        recordVentricularEvent: recordPeak,
+        advanceTime,
         reset,
         setMaxWaveAmplitude,
         setBeepMode,

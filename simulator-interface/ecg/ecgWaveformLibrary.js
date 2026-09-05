@@ -40,6 +40,24 @@ function createTemplate(signalType) {
 const TEMPLATE_NAMES = Object.keys(MORPHOLOGY_SCALES);
 const TEMPLATES = new Map(TEMPLATE_NAMES.map((name) => [name, createTemplate(name)]));
 
+// Reuse the Bézier shapes, but expose chamber-specific templates. QRS onset
+// is time zero for ventricular events; rendering never drives device timing.
+function addComponent(name, sourceName, first, last, timeScale) {
+    const source = getECGWave(sourceName);
+    const x = source.x.slice(first, last);
+    const y = source.y.slice(first, last);
+    const amplitudeScale = 1 / range(source.y);
+    TEMPLATES.set(name, Object.freeze({
+        type: name,
+        x: Object.freeze(x.map(value => (value - x[0]) * timeScale)),
+        y: Object.freeze(y.map(value => value * amplitudeScale))
+    }));
+}
+addComponent('Atrial P wave', 'Normal', 0, 101, 0.03333);
+addComponent('Intrinsic ventricular', 'Normal', 202, undefined, 0.09 / 3.9);
+addComponent('Escape ventricular', '3rd degree heart block R wave', 0, undefined, 0.09 / 1.3);
+addComponent('Paced ventricular', '3rd degree heart block ventricular pacing', 101, undefined, 0.15 / 1.472);
+
 const FAILED_CAPTURE_TEMPLATE = Object.freeze({
     type: 'Pacing spike without capture',
     x: Object.freeze([0, 0.006, 0.012]),
@@ -63,4 +81,17 @@ export function createWaveformEvent(signalType, startTime, amplitude = 1) {
         amplitude: safeAmplitude,
         template
     };
+}
+
+// Use the template's nominal R deflection, never a beat's varying surface gain.
+// Escape beats have a dominant negative deflection; the guide uses its magnitude.
+export function getNominalRWaveDisplayAmplitude(scenarioId = 'NSR') {
+    const template = getWaveformTemplate(scenarioId === 'AV3'
+        ? 'Escape ventricular' : 'Intrinsic ventricular');
+    return Math.max(...template.y.map(Math.abs));
+}
+
+export function getSensitivityGuideAmplitude(sensitivityMv, rWaveAmplitudeMv, scenarioId = 'NSR') {
+    if (!Number.isFinite(rWaveAmplitudeMv) || rWaveAmplitudeMv <= 0) return Infinity;
+    return (sensitivityMv / rWaveAmplitudeMv) * getNominalRWaveDisplayAmplitude(scenarioId);
 }
