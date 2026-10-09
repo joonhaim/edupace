@@ -1,5 +1,4 @@
 import {
-    EDUPACE_PORT_FILTERS,
     EDUPACE_VENDOR_IDS,
     isAsyncMode,
     parsePayload
@@ -44,7 +43,8 @@ const serialState = {
     buffer: '',
     label: '',
     disconnectHandler: null,
-    disconnectPromise: null
+    disconnectPromise: null,
+    connecting: false
 };
 
 const LAST_PORT_STORAGE_KEY = 'edupace:last-serial-port';
@@ -108,7 +108,7 @@ function createUnsupportedHint() {
 
     const text = document.createElement('span');
     text.textContent =
-        'This browser does not support connection with the EduPace device. Please use Chrome, Edge, or any other browser that supports the Web Serial API.';
+        'Wired connection requires desktop Chrome or Edge on HTTPS (or localhost), or the EduPace Windows/macOS app.';
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
@@ -221,7 +221,7 @@ function rememberLastPort(port) {
 }
 
 function clearRememberedPort() {
-    localStorage.removeItem(LAST_PORT_STORAGE_KEY);
+    try { localStorage.removeItem(LAST_PORT_STORAGE_KEY); } catch (_) { /* Storage may be disabled. */ }
 }
 
 function getRememberedPortInfo() {
@@ -235,7 +235,7 @@ function getRememberedPortInfo() {
 }
 
 function portsMatchSavedInfo(port, saved) {
-    if (!port || !saved) return false;
+    if (!port || !saved || (!saved.vendorId && !saved.productId && !saved.serial)) return false;
 
     const info = port.getInfo?.();
     if (!info) return false;
@@ -255,6 +255,7 @@ function renderDeviceList(ports) {
 
     if (list.length === 0) {
         ui.deviceListEmpty.hidden = false;
+        ui.deviceListEmpty.textContent = 'No authorized ports. Connect a USB data cable, then choose a port below.';
         return;
     }
 
@@ -302,7 +303,6 @@ function renderDeviceList(ports) {
 
 async function populateDeviceList({ requestAccess = false } = {}) {
     if (!ui.deviceList) return;
-    const isElectron = /electron/i.test(navigator.userAgent ?? '');
 
     if (!('serial' in navigator)) {
         ui.deviceList.innerHTML = '';
@@ -314,31 +314,13 @@ async function populateDeviceList({ requestAccess = false } = {}) {
     }
 
     if (requestAccess) {
-        try {
-            await navigator.serial.requestPort({ filters: EDUPACE_PORT_FILTERS });
-        } catch (error) {
-            if (error?.name !== 'NotFoundError') {
-                console.error('Unable to request serial device', error);
-            }
-        }
+        await handleDeviceSelection(null);
+        return;
     }
 
     try {
         const ports = await navigator.serial.getPorts();
-        const connectedPorts = ports.filter((port) => Boolean(port));
-        const filteredPorts = isElectron
-            ? connectedPorts.filter((port) => isEduPaceDevice(port?.getInfo?.()))
-            : connectedPorts;
-
-        if (isElectron && filteredPorts.length === 0) {
-            ui.deviceList.innerHTML = '';
-            ui.deviceListEmpty.hidden = false;
-            ui.deviceListEmpty.textContent =
-                'No EduPace devices detected. Connect the console and press Scan to request access.';
-            return;
-        }
-
-        renderDeviceList(filteredPorts);
+        renderDeviceList(ports.filter(Boolean));
     } catch (error) {
         console.error('Unable to list serial ports', error);
         if (ui.deviceListEmpty) {
@@ -349,19 +331,17 @@ async function populateDeviceList({ requestAccess = false } = {}) {
 }
 
 async function restoreLastPortConnection() {
-    if (!('serial' in navigator)) return;
+    if (!('serial' in navigator) || !isHardwareInputMode() || serialState.port || serialState.connecting) return;
 
     const saved = getRememberedPortInfo();
     if (!saved) return;
 
     try {
         const ports = await navigator.serial.getPorts();
-        const matchingPort = ports.find((port) => portsMatchSavedInfo(port, saved));
-
-        if (!matchingPort) {
-            clearRememberedPort();
-            return;
-        }
+        const matches = ports.filter((port) => portsMatchSavedInfo(port, saved));
+        // USB IDs identify a model, not a unique board. Ask when ambiguous.
+        if (matches.length !== 1) return;
+        const matchingPort = matches[0];
 
         updateConnectionStatus('Reconnecting...', false);
         if (ui.connectBtn) {
@@ -376,13 +356,13 @@ async function restoreLastPortConnection() {
     } finally {
         if (!serialState.port && ui.connectBtn) {
             ui.connectBtn.textContent = 'CONNECT';
-            ui.connectBtn.disabled = false;
+            ui.connectBtn.disabled = !isHardwareInputMode();
         }
     }
 }
 
 async function handleDeviceSelection(port, label) {
-    if (!port) return;
+    if (serialState.connecting || serialState.port) return;
 
     toggleDevicePopover(false);
     ui.connectBtn.textContent = 'Connecting...';
@@ -391,7 +371,7 @@ async function handleDeviceSelection(port, label) {
     try {
         await connectToHardware(port, label);
     } finally {
-        ui.connectBtn.disabled = false;
+        ui.connectBtn.disabled = !isHardwareInputMode();
         if (!serialState.port) {
             ui.connectBtn.textContent = 'CONNECT';
         }
@@ -492,7 +472,14 @@ async function initHardwareIntegration() {
     }
 
     populateDeviceList();
-    await restoreLastPortConnection();
+    if (supported) {
+        navigator.serial.addEventListener('connect', () => {
+            void populateDeviceList();
+            void restoreLastPortConnection();
+        });
+        navigator.serial.addEventListener('disconnect', () => { void populateDeviceList(); });
+    }
+    void restoreLastPortConnection();
 
     ui.connectBtn?.addEventListener('click', () => {
         if (serialState.port) {
@@ -565,9 +552,9 @@ function resetParameters() {
 
 
 async function connectToHardware(selectedPort = null, labelOverride = '') {
-    if (!('serial' in navigator)) {
-        return;
-    }
+    if (!('serial' in navigator) || serialState.connecting || serialState.port || !isHardwareInputMode()) return;
+    serialState.connecting = true;
+    showConnectionError('');
 
     if (serialState.disconnectPromise) {
         await serialState.disconnectPromise;
@@ -579,9 +566,23 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
     let opened = false;
 
     try {
-        port = port ?? (await navigator.serial.requestPort({ filters: EDUPACE_PORT_FILTERS }));
-        await port.open({ baudRate: 115200 });
+        port = port ?? (await navigator.serial.requestPort());
+        if (!isHardwareInputMode()) return;
+        await port.open({ baudRate: 115200, flowControl: 'none' });
         opened = true;
+        // Native USB Arduino serial checks DTR before transmitting. Some
+        // USB bridges do not implement control signals, so keep reading then.
+        try {
+            await port.setSignals({ dataTerminalReady: true });
+        } catch (error) {
+            console.warn('Serial control signals unavailable', error);
+        }
+        if (!isHardwareInputMode()) {
+            await port.close();
+            return;
+        }
+        resettableParameterKeys.forEach(key => { parameterState[key] = null; });
+        decoder = new TextDecoder();
 
         writer = port.writable?.getWriter() ?? null;
         reader = port.readable?.getReader() ?? null;
@@ -640,7 +641,24 @@ async function connectToHardware(selectedPort = null, labelOverride = '') {
             }
         }
         updateConnectionStatus('DISCONNECTED', false);
-        console.error('Unable to connect to hardware', error);
+        if (error?.name !== 'NotFoundError') {
+            console.error('Unable to connect to hardware', error);
+            showConnectionError('Could not open the Arduino serial port. Close Arduino Serial Monitor and other apps using it, check the USB data cable and driver, then try again.');
+        }
+    } finally {
+        serialState.connecting = false;
+        if (!serialState.port && ui.connectBtn) {
+            ui.connectBtn.textContent = 'CONNECT';
+            ui.connectBtn.disabled = !isHardwareInputMode();
+        }
+    }
+}
+
+function showConnectionError(message) {
+    const element = document.getElementById('connectionError');
+    if (element) {
+        element.textContent = message;
+        element.hidden = !message;
     }
 }
 

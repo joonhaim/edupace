@@ -1,23 +1,12 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, dialog } = require('electron');
 const fs = require('fs');
+const { installSerialAccess } = require('./serial');
 const path = require('path');
 
 const LOG_FILE_NAME = 'session-logs.json';
-const EDUPACE_VENDOR_IDS = new Set([0x2341, 0x2a03, 0x1a86, 0x10c4, 0x0403, 0x067b]);
-
 let mainWindow = null;
 let aboutWindow = null;
 let ipcHandlersRegistered = false;
-
-function isLocalAppOrigin(origin = '') {
-  return origin === 'file://' || origin.startsWith('file:///');
-}
-
-function isEduPaceSerialDevice(device) {
-  if (!device || device.vendorId === undefined) return false;
-  const vendorId = Number.parseInt(String(device.vendorId), 10);
-  return Number.isFinite(vendorId) && EDUPACE_VENDOR_IDS.has(vendorId);
-}
 
 function normalizeAppName() {
   app.setName('EduPace');
@@ -44,6 +33,7 @@ function createMainWindow() {
   });
 
   const indexPath = path.join(__dirname, '..', 'simulator-interface', 'index.html');
+  installSerialAccess(mainWindow, dialog);
   mainWindow.loadFile(indexPath);
 
   // Open external links in browser
@@ -77,31 +67,6 @@ function createMainWindow() {
 
   mainWindow.webContents.on('leave-html-full-screen', () => {
     if (mainWindow.isFullScreen()) mainWindow.setFullScreen(false);
-  });
-
-  // --------- Web Serial integration (Arduino / hardware console) ---------
-  const ses = mainWindow.webContents.session;
-
-  ses.setPermissionCheckHandler((_, permission, requestingOrigin, details) => {
-    const origin = details?.securityOrigin || details?.requestingUrl || requestingOrigin;
-    return permission === 'serial' && isLocalAppOrigin(origin);
-  });
-
-  ses.setDevicePermissionHandler(({ deviceType, origin, device }) => {
-    return deviceType === 'serial' && isLocalAppOrigin(origin) && isEduPaceSerialDevice(device);
-  });
-
-  // Electron has no built-in serial picker. The renderer supplies the EduPace
-  // USB filters, so finish the request with a compatible device.
-  const handleSerialPortSelection = (event, portList, _, callback) => {
-    event.preventDefault();
-    const selectedPort = portList.find(isEduPaceSerialDevice);
-    callback(selectedPort?.portId ?? '');
-  };
-  ses.on('select-serial-port', handleSerialPortSelection);
-
-  mainWindow.once('closed', () => {
-    ses.removeListener('select-serial-port', handleSerialPortSelection);
   });
 
   if (!ipcHandlersRegistered) {

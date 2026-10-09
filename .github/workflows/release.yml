@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Test serial connection and simulator
+        run: npm test
+
       # Build installers only — do NOT publish from electron-builder
       - name: Build Electron app
         run: npm run dist -- --publish never
