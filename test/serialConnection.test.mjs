@@ -6,9 +6,12 @@ import { EventEmitter } from 'node:events';
 import { installSerialAccess } from '../electron/serial.js';
 import { EDUPACE_VENDOR_IDS, parsePayload, isAsyncMode } from '../simulator-interface/js/arduinoProtocol.mjs';
 
-const source = readFileSync(new URL('../simulator-interface/js/arduinoSerialAdapter.js', import.meta.url), 'utf8')
-    .replace(/^import [\s\S]*?from .*?;\n/, '').replace(/export \{[^}]+\};/, '');
-function adapter() {
+const adapterSource = readFileSync(new URL('../simulator-interface/js/arduinoSerialAdapter.js', import.meta.url), 'utf8');
+function adapter(source = adapterSource) {
+    // Windows checkouts can use CRLF. Normalize before stripping module syntax
+    // for the isolated VM, which deliberately runs the adapter as a script.
+    source = source.replace(/\r\n/g, '\n')
+        .replace(/^import [\s\S]*?from .*?;\n/, '').replace(/export \{[^}]+\};/, '');
     const elements = new Map();
     const element = id => {
         if (!elements.has(id)) elements.set(id, {
@@ -48,6 +51,18 @@ function port(info = { usbVendorId: 0x2341, usbProductId: 0x0366 }) {
         writable: { getWriter: () => ({ releaseLock() { calls.push('writer released'); } }) },
         addEventListener() {}, removeEventListener() {}
     };
+}
+
+for (const [format, newline] of [['LF', '\n'], ['CRLF', '\r\n']]) {
+    test(`serial adapter connects with ${format} source line endings`, async () => {
+        const source = adapterSource.replace(/\r\n/g, '\n').replace(/\n/g, newline);
+        const h = adapter(source);
+        h.context.device = port();
+        await h.run('connectToHardware(device)');
+        assert.equal(h.run('serialState.port'), h.context.device);
+        assert.equal(h.element('connectBtn').textContent, 'DISCONNECT');
+        await h.run('disconnectFromHardware()');
+    });
 }
 
 test('unfiltered selection connects an unknown USB bridge and asserts DTR at firmware baud rate', async () => {

@@ -1,0 +1,32 @@
+name: Validate platforms
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Test simulator and serial connections
+        run: npm test
+      - name: Build web simulator
+        run: npm run build:web
+      - name: Package desktop app without publishing
+        if: runner.os != 'Linux'
+        run: npm run dist -- --dir --publish never
